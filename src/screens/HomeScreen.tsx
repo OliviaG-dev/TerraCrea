@@ -3,9 +3,9 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Dimensions,
+  Image,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -17,162 +17,174 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
-      {/* Logo TerraCrea */}
-      <View style={styles.logoContainer}>
-        <Text style={styles.logoText}>TerraCrea</Text>
-        <View style={styles.logoIcon}>
-          <Text style={styles.leafIcon}>🌿</Text>
+    <View style={styles.container}>
+      {/* Header Section */}
+      <View style={styles.headerSection}>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../../assets/logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
       </View>
 
-      {/* Main Title */}
-      <Text style={styles.mainTitle}>
-        Discover Unique{"\n"}Handmade Creations
-      </Text>
+      {/* Content Section */}
+      <View style={styles.contentSection}>
+        <Text style={styles.mainTitle}>La création prend{"\n"}racine ici</Text>
 
-      {/* Subtitle */}
-      <Text style={styles.subtitle}>
-        Shop locally crafted jewelry,{"\n"}ceramics, decor, and more.
-      </Text>
+        <Text style={styles.subtitle}>
+          Achetez des bijoux, poterie,{"\n"}décorations et plus encore fabriqués
+          localement.
+        </Text>
 
-      {/* Product Images Grid */}
-      <View style={styles.productsContainer}>
-        {/* Product 1 - Jewelry */}
-        <View style={styles.productCard}>
-          <View style={styles.productImage1}>
-            <View style={styles.jewelryDisplay}>
-              <View style={styles.earringSet}>
-                <View style={[styles.earring, styles.earringGold]} />
-                <View style={[styles.earring, styles.earringPink]} />
-                <View style={[styles.earring, styles.earringGold]} />
+        <View style={styles.productsContainer}>
+          <View style={styles.productCard}>
+            <View style={styles.productImage1}>
+              <View style={styles.jewelryDisplay}>
+                <View style={styles.earringSet}>
+                  <View style={[styles.earring, styles.earringGold]} />
+                  <View style={[styles.earring, styles.earringPink]} />
+                  <View style={[styles.earring, styles.earringGold]} />
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.productCard}>
+            <View style={styles.productImage2}>
+              <View style={styles.ceramicVase} />
+              <View style={styles.frameDecor} />
+            </View>
+          </View>
+
+          <View style={styles.productCard}>
+            <View style={styles.productImage3}>
+              <View style={styles.basketContainer}>
+                <View style={styles.basket} />
+                <View style={styles.utensils} />
               </View>
             </View>
           </View>
         </View>
-
-        {/* Product 2 - Ceramics */}
-        <View style={styles.productCard}>
-          <View style={styles.productImage2}>
-            <View style={styles.ceramicVase} />
-            <View style={styles.frameDecor} />
-          </View>
-        </View>
-
-        {/* Product 3 - Basket */}
-        <View style={styles.productCard}>
-          <View style={styles.productImage3}>
-            <View style={styles.basketContainer}>
-              <View style={styles.basket} />
-              <View style={styles.utensils} />
-            </View>
-          </View>
-        </View>
       </View>
 
-      {/* Get Started Button */}
-      <TouchableOpacity
-        style={styles.getStartedButton}
-        onPress={handleGetStarted}
-      >
-        <Text style={styles.getStartedText}>Get Started</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      {/* Footer Section */}
+      <View style={styles.footerSection}>
+        <TouchableOpacity
+          style={styles.getStartedButton}
+          onPress={handleGetStarted}
+        >
+          <Text style={styles.getStartedText}>Visitez</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f6f3",
-  },
-  contentContainer: {
+    backgroundColor: "#fafaf9",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
+  },
+  headerSection: {
+    flex: 0.26,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  contentSection: {
+    flex: 0.6,
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: "100%",
+  },
+  footerSection: {
+    flex: 0.14,
+    justifyContent: "center",
+    alignItems: "center",
   },
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 60,
   },
-  logoText: {
-    fontSize: 32,
-    fontWeight: "300",
-    color: "#7a8471",
-    fontStyle: "italic",
-  },
-  logoIcon: {
-    marginLeft: 8,
-  },
-  leafIcon: {
-    fontSize: 24,
-    color: "#7a8471",
+  logoImage: {
+    width: 340,
+    height: 110,
   },
   mainTitle: {
-    fontSize: 42,
-    fontWeight: "bold",
-    color: "#2d4a3a",
+    fontSize: 28,
+    fontWeight: "300",
+    color: "#4a5c4a",
     textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 48,
+    lineHeight: 34,
+    letterSpacing: 1.2,
+    paddingHorizontal: 30,
+    fontFamily: "System",
   },
   subtitle: {
-    fontSize: 18,
-    color: "#6b7c6b",
+    fontSize: 14,
+    fontWeight: "300",
+    color: "#7a8a7a",
     textAlign: "center",
-    marginBottom: 50,
-    lineHeight: 26,
+    lineHeight: 20,
+    letterSpacing: 0.3,
+    paddingHorizontal: 40,
+    fontFamily: "System",
   },
   productsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 60,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
   },
   productCard: {
-    width: (width - 80) / 3,
-    height: 120,
-    marginHorizontal: 5,
+    width: (width - 120) / 3,
+    height: 60,
+    marginHorizontal: 8,
   },
   productImage1: {
     flex: 1,
-    backgroundColor: "#f0ece3",
-    borderRadius: 16,
+    backgroundColor: "#f5f5f4",
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 2,
+    elevation: 1,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.03)",
   },
   productImage2: {
     flex: 1,
-    backgroundColor: "#ebe7dc",
-    borderRadius: 16,
+    backgroundColor: "#f5f5f4",
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 2,
+    elevation: 1,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.03)",
   },
   productImage3: {
     flex: 1,
-    backgroundColor: "#ede9de",
-    borderRadius: 16,
+    backgroundColor: "#f5f5f4",
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 2,
+    elevation: 1,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.03)",
   },
   jewelryDisplay: {
     width: 40,
@@ -232,23 +244,22 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   getStartedButton: {
-    backgroundColor: "#2d4a3a",
-    paddingVertical: 18,
-    paddingHorizontal: 60,
-    borderRadius: 50,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    width: width - 40,
-    maxWidth: 300,
+    backgroundColor: "transparent",
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#a0a0a0",
+    width: 200,
+    alignSelf: "center",
   },
   getStartedText: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "600",
+    color: "#6a6a6a",
+    fontSize: 14,
+    fontWeight: "300",
     textAlign: "center",
+    letterSpacing: 0.8,
+    fontFamily: "System",
   },
 });
 
