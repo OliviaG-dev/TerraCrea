@@ -31,3 +31,4 @@ jobs:
 
       - name: Build project
         run: npx expo export --platform web
+  
