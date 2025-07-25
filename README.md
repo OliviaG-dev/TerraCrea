@@ -1,29 +1,44 @@
 # TerraCréa 🌱
 
-Une application React Native moderne construite avec TypeScript, Expo et les meilleures pratiques de développement.
+Une plateforme React Native pour découvrir et acheter des créations artisanales locales, construite avec TypeScript, Expo et Supabase.
 
 ## 📋 Vue d'ensemble
 
-TerraCréa est une application React Native starter qui utilise les technologies les plus récentes et les meilleures pratiques de développement. Elle fournit une base solide pour développer des applications mobiles multiplateformes avec une architecture propre et modulaire.
+TerraCréa est une application React Native moderne qui connecte les créateurs locaux avec les amateurs d'artisanat. L'application propose un système d'authentification flexible permettant aux utilisateurs de découvrir les créations en tant que visiteur ou de s'inscrire pour une expérience complète.
 
-## 🚀 Fonctionnalités
+## ✨ Fonctionnalités principales
 
-- ✅ **React Native** avec TypeScript strict
-- ✅ **Expo** pour un développement rapide et un déploiement simplifié
-- ✅ **React Navigation** pour la navigation entre écrans
-- ✅ **TanStack Query** pour la gestion d'état et la mise en cache des données
-- ✅ **Zustand** pour la gestion d'état globale
-- ✅ **Axios** pour les requêtes HTTP
-- ✅ **Context API** pour la gestion des utilisateurs
-- ✅ **React Native Vector Icons** pour les icônes
-- ✅ **Architecture modulaire** avec séparation des responsabilités
+### 🔐 **Authentification avec Supabase**
 
-## 🛠️ Technologies utilisées
+- ✅ **Connexion/Inscription** avec email et mot de passe
+- ✅ **Gestion des sessions** automatique et persistante
+- ✅ **Navigation conditionnelle** selon l'état d'authentification
+- ✅ **Mode visiteur** pour explorer sans compte
+- ✅ **Déconnexion sécurisée** avec confirmation
+
+### 🎨 **Interface utilisateur moderne**
+
+- ✅ **Écran d'accueil adaptatif** selon l'état de connexion
+- ✅ **Écran de connexion modal** avec design élégant
+- ✅ **Navigation fluide** avec React Navigation
+- ✅ **Design cohérent** avec palette de couleurs terre
+- ✅ **Responsive design** pour toutes les tailles d'écran
+
+### 🏗️ **Architecture technique**
+
+- ✅ **TypeScript strict** pour la sécurité des types
+- ✅ **Hooks personnalisés** pour la gestion d'état
+- ✅ **Context API** pour l'état global utilisateur
+- ✅ **Services centralisés** pour l'API Supabase
+- ✅ **Composants réutilisables** et modulaires
+
+## 🚀 Technologies utilisées
 
 - **React Native** 0.79.5
 - **React** 19.0.0
 - **TypeScript** ~5.8.3
 - **Expo** ~53.0.17
+- **Supabase** ^2.45.4 (Authentification et Backend)
 - **React Navigation** ^7.1.14
 - **TanStack Query** ^5.82.0
 - **Zustand** ^5.0.6
@@ -36,17 +51,20 @@ src/
 ├── components/       # Composants réutilisables
 │   └── MyButton.tsx
 ├── context/         # Contextes React
-│   └── UserContext.tsx
+│   └── UserContext.tsx    # Gestion état utilisateur avec auth
 ├── hooks/           # Hooks personnalisés
-│   └── useUser.ts
+│   ├── useUser.ts
+│   └── useAuth.ts         # Hook d'authentification Supabase
 ├── navigation/      # Configuration de navigation
-│   └── RootNavigator.tsx
+│   └── RootNavigator.tsx  # Navigation conditionnelle auth/non-auth
 ├── screens/         # Écrans de l'application
-│   └── HomeScreen.tsx
+│   ├── HomeScreen.tsx     # Écran d'accueil adaptatif
+│   └── LoginScreen.tsx    # Écran de connexion/inscription
 ├── services/        # Services API
-│   └── api.ts
+│   ├── api.ts
+│   └── supabase.ts        # Configuration et services Supabase
 ├── types/          # Types TypeScript
-│   └── User.ts
+│   └── User.ts            # Types utilisateur compatibles Supabase
 └── utils/          # Utilitaires
     └── formatDate.ts
 ```
@@ -57,36 +75,28 @@ src/
 
 - **Node.js** 22.0.0 ou plus récent
 - **npm** ou **yarn**
+- **Compte Supabase** (gratuit)
 
-### Gestion des versions Node.js
+### Configuration Supabase
 
-Le projet utilise le fichier `.nvmrc` comme **source de vérité** pour la version Node.js. Cela garantit que :
+1. **Créer un projet Supabase**
 
-- ✅ Le développement local et la CI/CD utilisent la même version
-- ✅ Les mises à jour de version se font en un seul endroit
-- ✅ Tous les développeurs utilisent la version correcte
+   - Aller sur [supabase.com](https://supabase.com)
+   - Créer un compte et un nouveau projet
+   - Noter l'URL du projet et la clé API anonyme
 
-Pour une gestion simplifiée des versions Node.js, vous pouvez utiliser **nvm** (Node Version Manager) :
+2. **Configurer les clés dans l'application**
 
-```bash
-# Installer nvm (Linux/Mac)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+   ```typescript
+   // Dans src/services/supabase.ts
+   const supabaseUrl = "VOTRE_URL_SUPABASE";
+   const supabaseKey = "VOTRE_CLE_ANONYME";
+   ```
 
-# Ou pour Windows, installer nvm-windows
-# https://github.com/coreybutler/nvm-windows
-
-# Utiliser la version Node.js du projet
-nvm install 22
-nvm use 22
-
-# Ou utiliser directement le fichier .nvmrc (Linux/Mac seulement)
-nvm use
-
-# Pour Windows, utiliser explicitement la version :
-nvm use 22
-```
-
-**Note** : Les workflows GitHub Actions lisent automatiquement le fichier `.nvmrc` pour configurer la version Node.js.
+3. **Configuration de l'authentification**
+   - Dans le dashboard Supabase, aller dans **Authentication** > **Settings**
+   - Site URL : `http://localhost:19006` (développement)
+   - Activer les confirmations email (recommandé)
 
 ### Installation
 
@@ -103,170 +113,118 @@ nvm use 22
    npm install
    ```
 
-3. **Installer Expo CLI** (si pas déjà installé)
+3. **Configurer Supabase**
+   - Modifier `src/services/supabase.ts` avec vos clés
+4. **Démarrer l'application**
    ```bash
-   npm install -g @expo/cli
+   npm start
    ```
 
 ## 🚀 Développement
 
-### Migration depuis Node.js 18
-
-Si vous migrez depuis Node.js 18, voici les étapes recommandées :
-
-1. **Vérifier la compatibilité des dépendances**
-
-   ```bash
-   npm outdated
-   ```
-
-2. **Mettre à jour Node.js**
-
-   ```bash
-   nvm install 22
-   nvm use 22
-   ```
-
-3. **Nettoyer et réinstaller les dépendances**
-
-   ```bash
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
-
-4. **Vérifier que tout fonctionne**
-   ```bash
-   npm run check-node
-   npm start
-   ```
-
-### Démarrer l'application
+### Scripts disponibles
 
 ```bash
 # Démarrer le serveur de développement
 npm start
 
-# Démarrer sur Android
-npm run android
+# Lancer sur différentes plateformes
+npm run android    # Android
+npm run ios        # iOS
+npm run web        # Web
 
-# Démarrer sur iOS
-npm run ios
-
-# Démarrer sur Web
-npm run web
+# Utilitaires
+npm run check-node # Vérifier la version Node.js
 ```
 
-### Scripts disponibles
+## 📱 Parcours utilisateur
 
-- `npm start` - Démarre le serveur de développement Expo
-- `npm run android` - Lance l'application sur Android
-- `npm run ios` - Lance l'application sur iOS
-- `npm run web` - Lance l'application sur le web
+### 🏠 **Écran d'accueil**
 
-## 📱 Fonctionnalités actuelles
+- **Visiteurs non connectés** :
 
-- **Écran d'accueil** avec interface utilisateur de base
-- **Composant bouton personnalisé** réutilisable
-- **Configuration API** avec JSONPlaceholder pour les tests
-- **Gestion des utilisateurs** avec Context API
-- **Hook personnalisé** pour récupérer les données utilisateur
-- **Formatage de dates** en français
-- **Navigation** prête pour l'ajout d'écrans supplémentaires
+  - Boutons "Se connecter" et "S'inscrire" en en-tête
+  - Bouton "Continuer" principal (vers nouveau screen)
+  - Interface d'exploration libre
 
-## 🎨 Développement futur
+- **Utilisateurs connectés** :
+  - Message de bienvenue personnalisé avec email
+  - Bouton "Explorez" pour accéder aux fonctionnalités complètes
+  - Bouton de déconnexion discret
 
-Le projet est configuré pour supporter :
+### 🔐 **Authentification**
 
-- Gestion d'état avancée avec Zustand
-- Authentification utilisateur
-- Écrans supplémentaires
-- Intégration API complète
-- Gestion des erreurs
-- Tests unitaires et d'intégration
+- **Modal de connexion/inscription** accessible depuis l'accueil
+- **Basculement facile** entre connexion et inscription
+- **Retour automatique** à l'accueil après connexion
+- **Fermeture possible** pour rester en mode visiteur
 
-## 📝 Configuration
+### 🔄 **Gestion des sessions**
 
-### TypeScript
+- **Sessions persistantes** - L'utilisateur reste connecté
+- **Vérification automatique** de la session au démarrage
+- **Écoute des changements** d'état d'authentification
+- **Déconnexion sécurisée** avec confirmation
 
-Le projet utilise TypeScript en mode strict avec la configuration Expo de base.
+## 🎨 Design et UX
 
-### Expo
+### 🎯 **Palette de couleurs**
 
-Configuration dans `app.json` avec support pour :
+- **Primaire** : `#4a5c4a` (vert terre)
+- **Fond** : `#fafaf9` (blanc cassé)
+- **Texte secondaire** : `#7a8a7a` (gris vert)
+- **Accents** : Tons terre et naturels
 
-- iOS et Android
-- Interface utilisateur adaptable
-- Nouvelle architecture React Native activée
-- Support web avec favicon
+### 📐 **Principes de design**
 
-### API
+- **Design cohérent** sur tous les écrans
+- **Navigation intuitive** et accessible
+- **Feedback visuel** approprié (loading, erreurs)
+- **Expérience fluide** entre modes visiteur/connecté
 
-Service API configuré avec Axios pointant vers JSONPlaceholder pour les tests de développement.
+## 🔒 Sécurité
 
-## 🚀 CI/CD et Déploiement
+- **Mots de passe sécurisés** gérés par Supabase
+- **Sessions chiffrées** et tokens sécurisés
+- **Navigation protégée** selon l'état d'authentification
+- **Gestion d'erreurs** appropriée sans exposer de données sensibles
 
-Le projet inclut des workflows GitHub Actions pour l'intégration continue et le déploiement automatique. Tous les workflows utilisent le fichier `.nvmrc` comme source de vérité pour la version Node.js :
+## 🧪 Fonctionnalités à venir
 
-### Workflows disponibles
+- [ ] **Écran d'exploration** des créations
+- [ ] **Profils créateurs** avec portfolios
+- [ ] **Système de favoris** et collections
+- [ ] **Messagerie** créateur-acheteur
+- [ ] **Géolocalisation** des créateurs locaux
+- [ ] **Notifications push** pour nouveautés
+- [ ] **Reset de mot de passe** par email
+- [ ] **Authentification sociale** (Google, Apple)
 
-#### 🔄 **CI (Intégration Continue)**
+## 🏗️ Architecture
 
-- **Déclenchement** : Push et Pull Request sur `main`, `master`, `develop`
-- **Actions** : Vérification TypeScript, build web, validation Expo
-- **Fichier** : `.github/workflows/ci.yml`
+### 🔗 **Flux d'authentification**
 
-#### 🔍 **Code Quality (Qualité du code)**
-
-- **Déclenchement** : Push et Pull Request sur `main`, `master`, `develop`
-- **Actions** : Vérification TypeScript strict, audit sécurité, analyse des dépendances
-- **Fichier** : `.github/workflows/code-quality.yml`
-
-#### 📱 **EAS Build (Applications natives)**
-
-- **Déclenchement** : Push sur `main`/`master`, tags `v*`, ou manuellement
-- **Actions** : Build iOS et Android avec EAS (Expo Application Services)
-- **Fichier** : `.github/workflows/eas-build.yml`
-- **Profils** : `development`, `preview`, `production`
-
-#### 🌐 **Web Deploy (GitHub Pages)**
-
-- **Déclenchement** : Push sur `main`/`master` ou manuellement
-- **Actions** : Build et déploiement de la version web sur GitHub Pages
-- **Fichier** : `.github/workflows/web-deploy.yml`
-
-#### 📦 **Expo Publish (Mises à jour OTA)**
-
-- **Déclenchement** : Push sur `main`/`master` ou manuellement
-- **Actions** : Publication de mises à jour over-the-air via EAS Update
-- **Fichier** : `.github/workflows/expo-publish.yml`
-
-### Configuration requise
-
-#### Secrets GitHub à configurer :
-
-1. **`EXPO_TOKEN`** : Token d'accès Expo
-   - Créer sur : https://expo.dev/accounts/[username]/settings/access-tokens
-   - Ajouter dans : Repository Settings > Secrets and variables > Actions
-
-#### Pour GitHub Pages :
-
-1. Activer GitHub Pages dans les paramètres du repository
-2. Source : "GitHub Actions"
-
-#### Pour les builds EAS :
-
-1. Installer EAS CLI : `npm install -g @expo/eas-cli`
-2. Login : `eas login`
-3. Configurer le projet : `eas build:configure`
-
-### Utilisation
-
-```bash
-# Déclenchement manuel des workflows
-gh workflow run "EAS Build" --field platform=ios --field profile=preview
-gh workflow run "Deploy Web to GitHub Pages"
-gh workflow run "Expo Publish" --field message="Nouvelle fonctionnalité"
 ```
+📱 App Launch
+    ↓
+🔍 Session Check (useAuth)
+    ↓
+🏠 HomeScreen
+    ├── 👤 Non connecté → Boutons Auth + Exploration libre
+    │   ↓
+    │   🔐 LoginScreen (modal)
+    │   ├── ✅ Connexion → Retour HomeScreen (connecté)
+    │   ├── ✅ Inscription → Confirmation email
+    │   └── ❌ Fermer → Mode visiteur
+    │
+    └── ✅ Connecté → Interface personnalisée + Fonctionnalités complètes
+```
+
+### 🎯 **Hooks et Context**
+
+- **`useAuth`** : Gestion complète de l'authentification
+- **`UserContext`** : État global utilisateur partagé
+- **`useUserContext`** : Hook pour accéder au contexte utilisateur
 
 ## 🤝 Contribution
 
@@ -286,4 +244,4 @@ Pour toute question ou problème, n'hésitez pas à ouvrir une issue sur le repo
 
 ---
 
-Fait avec ❤️ et React Native
+Fait avec ❤️ et React Native pour promouvoir l'artisanat local 🎨

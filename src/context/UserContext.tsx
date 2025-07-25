@@ -1,20 +1,23 @@
-import React, { createContext, useState, ReactNode, useContext } from "react";
+import React, { createContext, ReactNode, useContext } from "react";
 import { User } from "../types/User";
+import { useAuth } from "../hooks/useAuth";
 
 interface UserContextProps {
   user: User | null;
-  setUser: (user: User | null) => void;
+  loading: boolean;
+  error: string | null;
+  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string) => Promise<any>;
+  signOut: () => Promise<any>;
+  isAuthenticated: boolean;
 }
 
 const UserContext = createContext<UserContextProps | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  return (
-    <UserContext.Provider value={{ user, setUser }}>
-      {children}
-    </UserContext.Provider>
-  );
+  const auth = useAuth();
+
+  return <UserContext.Provider value={auth}>{children}</UserContext.Provider>;
 };
 
 export const useUserContext = () => {

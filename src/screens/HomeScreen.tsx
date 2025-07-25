@@ -6,36 +6,130 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
+  Alert,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useUserContext } from "../context/UserContext";
+import { RootStackParamList } from "../navigation/RootNavigator";
 
 const { width } = Dimensions.get("window");
 
+type HomeScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Home"
+>;
+
 const HomeScreen: React.FC = () => {
+  const { user, signOut, isAuthenticated } = useUserContext();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
+
   const handleGetStarted = () => {
     console.log("Get Started pressed!");
     // Ici vous pouvez ajouter la navigation vers l'écran suivant
   };
 
+  const handleSignOut = async () => {
+    Alert.alert("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Déconnexion",
+        style: "destructive",
+        onPress: async () => {
+          const result = await signOut();
+          if (!result?.success) {
+            Alert.alert("Erreur", "Impossible de se déconnecter");
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleLogin = () => {
+    navigation.navigate("Login");
+  };
+
+  const handleContinue = () => {
+    console.log("Navigation vers le nouveau screen - à implémenter");
+    // TODO: Naviguer vers le nouveau screen
+  };
+
+  // Interface pour utilisateur connecté
+  const renderAuthenticatedHeader = () => (
+    <View style={styles.headerSection}>
+      <View style={styles.userInfo}>
+        <Text style={styles.welcomeText}>Bonjour,</Text>
+        <Text style={styles.userEmail}>{user?.email}</Text>
+      </View>
+      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+        <Text style={styles.signOutText}>Déconnexion</Text>
+      </TouchableOpacity>
+
+      <View style={styles.logoContainer}>
+        <Image
+          source={require("../../assets/logo.png")}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
+      </View>
+    </View>
+  );
+
+  // Interface pour visiteur non connecté
+  const renderGuestHeader = () => (
+    <View style={styles.headerSection}>
+      <View style={styles.authButtons}>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+          <Text style={styles.loginButtonText}>Se connecter</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.signupButton} onPress={handleLogin}>
+          <Text style={styles.signupButtonText}>S'inscrire</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.logoContainer}>
+        <Image
+          source={require("../../assets/logo.png")}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
+      </View>
+    </View>
+  );
+
+  // Boutons du footer adaptés
+  const renderFooterButtons = () => {
+    if (isAuthenticated) {
+      return (
+        <TouchableOpacity
+          style={styles.getStartedButton}
+          onPress={handleGetStarted}
+        >
+          <Text style={styles.getStartedText}>Explorez</Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <TouchableOpacity style={styles.primaryButton} onPress={handleContinue}>
+        <Text style={styles.primaryButtonText}>Continuer</Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.headerSection}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("../../assets/logo.png")}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-        </View>
-      </View>
+      {/* Header dynamique */}
+      {isAuthenticated ? renderAuthenticatedHeader() : renderGuestHeader()}
 
       {/* Content Section */}
       <View style={styles.contentSection}>
         <Text style={styles.mainTitle}>La création prend{"\n"}racine ici</Text>
 
         <Text style={styles.subtitle}>
-          Achetez des bijoux, poterie,{"\n"}décorations et plus encore fabriqués
-          localement.
+          {isAuthenticated
+            ? "Découvrez des bijoux, poterie,\ndécorations et plus encore fabriqués localement."
+            : "Achetez des bijoux, poterie,\ndécorations et plus encore fabriqués localement."}
         </Text>
 
         <View style={styles.productsContainer}>
@@ -69,15 +163,8 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Footer Section */}
-      <View style={styles.footerSection}>
-        <TouchableOpacity
-          style={styles.getStartedButton}
-          onPress={handleGetStarted}
-        >
-          <Text style={styles.getStartedText}>Visitez</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Footer dynamique */}
+      <View style={styles.footerSection}>{renderFooterButtons()}</View>
     </View>
   );
 };
@@ -88,15 +175,86 @@ const styles = StyleSheet.create({
     backgroundColor: "#fafaf9",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 30,
+    paddingHorizontal: 0,
   },
   headerSection: {
-    flex: 0.26,
-    justifyContent: "center",
+    flex: 0.3,
+    justifyContent: "space-between",
     alignItems: "center",
+    width: "100%",
+    paddingTop: 50,
+  },
+  // Styles pour utilisateur connecté
+  userInfo: {
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  welcomeText: {
+    fontSize: 16,
+    fontWeight: "300",
+    color: "#7a8a7a",
+    fontFamily: "System",
+  },
+  userEmail: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#4a5c4a",
+    marginTop: 4,
+    fontFamily: "System",
+  },
+  signOutButton: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#d0d0d0",
+    backgroundColor: "rgba(255,255,255,0.8)",
+  },
+  signOutText: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "400",
+    fontFamily: "System",
+  },
+  // Styles pour visiteur
+  authButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  loginButton: {
+    backgroundColor: "transparent",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#4a5c4a",
+  },
+  loginButtonText: {
+    color: "#4a5c4a",
+    fontSize: 14,
+    fontWeight: "500",
+    fontFamily: "System",
+  },
+  signupButton: {
+    backgroundColor: "#4a5c4a",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+  },
+  signupButtonText: {
+    color: "#fafaf9",
+    fontSize: 14,
+    fontWeight: "500",
+    fontFamily: "System",
   },
   contentSection: {
-    flex: 0.6,
+    flex: 0.56,
     justifyContent: "space-around",
     alignItems: "center",
     width: "100%",
@@ -105,14 +263,17 @@ const styles = StyleSheet.create({
     flex: 0.14,
     justifyContent: "center",
     alignItems: "center",
+    width: "100%",
   },
   logoContainer: {
-    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
+    width: "100%",
   },
   logoImage: {
-    width: 340,
-    height: 110,
+    width: 280,
+    height: 90,
+    alignSelf: "center",
   },
   mainTitle: {
     fontSize: 28,
@@ -243,6 +404,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#8b6f47",
     borderRadius: 1,
   },
+  // Footer buttons
   getStartedButton: {
     backgroundColor: "transparent",
     paddingVertical: 12,
@@ -259,6 +421,25 @@ const styles = StyleSheet.create({
     fontWeight: "300",
     textAlign: "center",
     letterSpacing: 0.8,
+    fontFamily: "System",
+  },
+  primaryButton: {
+    backgroundColor: "#4a5c4a",
+    paddingVertical: 14,
+    paddingHorizontal: 60,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  primaryButtonText: {
+    color: "#fafaf9",
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
+    letterSpacing: 0.5,
     fontFamily: "System",
   },
 });
