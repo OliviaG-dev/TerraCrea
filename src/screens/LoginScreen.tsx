@@ -11,6 +11,7 @@ import {
   Platform,
   Image,
   Dimensions,
+  Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -30,6 +31,8 @@ const LoginScreen: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const { signIn, signUp, loading } = useAuth();
   const navigation = useNavigation<LoginScreenNavigationProp>();
+  const scaleAnim = new Animated.Value(1);
+  const backgroundOpacity = new Animated.Value(0);
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -75,8 +78,41 @@ const LoginScreen: React.FC = () => {
     resetForm();
   };
 
+  const handleClosePress = () => {
+    // Animation de pression avec effet d'arrière-plan
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(backgroundOpacity, {
+          toValue: 0.1,
+          duration: 100,
+          useNativeDriver: false,
+        }),
+        Animated.timing(backgroundOpacity, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: false,
+        }),
+      ]),
+    ]).start();
+  };
+
   const handleClose = () => {
-    navigation.goBack();
+    handleClosePress();
+    setTimeout(() => {
+      navigation.goBack();
+    }, 150);
   };
 
   return (
@@ -84,10 +120,34 @@ const LoginScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Bouton de fermeture */}
-      <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-        <Text style={styles.closeButtonText}>✕</Text>
-      </TouchableOpacity>
+      {/* Bouton de fermeture amélioré */}
+      <Animated.View
+        style={[
+          styles.closeButtonContainer,
+          { transform: [{ scale: scaleAnim }] },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={handleClose}
+          activeOpacity={0.6}
+          accessibilityLabel="Fermer l'écran de connexion"
+          accessibilityRole="button"
+          accessibilityHint="Retourner à l'écran précédent"
+        >
+          {/* Arrière-plan animé pour l'effet de touch */}
+          <Animated.View
+            style={[
+              styles.closeButtonBackground,
+              { opacity: backgroundOpacity },
+            ]}
+          />
+          <View style={styles.closeIconContainer}>
+            <View style={[styles.closeLine, styles.closeLineLeft]} />
+            <View style={[styles.closeLine, styles.closeLineRight]} />
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* Header avec logo */}
       <View style={styles.headerSection}>
@@ -184,32 +244,47 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 20,
   },
-  closeButton: {
+  closeButtonContainer: {
     position: "absolute",
     top: 50,
     right: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    zIndex: 1,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.08)",
+    // Suppression des ombres pour un look plus minimaliste
   },
-  closeButtonText: {
-    fontSize: 16,
-    color: "#4a5c4a",
-    fontWeight: "600",
-    textAlign: "center",
-    includeFontPadding: false,
-    marginTop: -1,
+  closeButtonBackground: {
+    position: "absolute",
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#4a5c4a",
+  },
+  closeIconContainer: {
+    width: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeLine: {
+    position: "absolute",
+    width: 18,
+    height: 2.5,
+    backgroundColor: "#4a5c4a",
+    borderRadius: 1.5,
+    opacity: 0.8,
+  },
+  closeLineLeft: {
+    transform: [{ rotate: "45deg" }],
+  },
+  closeLineRight: {
+    transform: [{ rotate: "-45deg" }],
   },
   headerSection: {
     height: screenHeight * 0.25,
