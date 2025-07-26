@@ -4,11 +4,13 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
+import ExploreScreen from "../screens/ExploreScreen";
 import { useUserContext } from "../context/UserContext";
 
 export type RootStackParamList = {
   Home: undefined;
   Login: undefined;
+  Explore: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -43,6 +45,13 @@ const RootNavigator = () => {
             presentation: "modal",
             gestureEnabled: true,
             gestureDirection: "vertical",
+          }}
+        />
+        <Stack.Screen
+          name="Explore"
+          component={ExploreScreen}
+          options={{
+            gestureEnabled: true,
           }}
         />
       </Stack.Navigator>

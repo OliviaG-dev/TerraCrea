@@ -15,6 +15,10 @@ import { RootStackParamList } from "../navigation/RootNavigator";
 
 const { width } = Dimensions.get("window");
 
+// Constantes pour éviter le débordement horizontal
+const HORIZONTAL_PADDING = 16;
+const CARD_SPACING = 12;
+
 type HomeScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "Home"
@@ -25,8 +29,7 @@ const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
 
   const handleGetStarted = () => {
-    console.log("Get Started pressed!");
-    // Ici vous pouvez ajouter la navigation vers l'écran suivant
+    navigation.navigate("Explore");
   };
 
   const handleSignOut = async () => {
@@ -50,8 +53,7 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleContinue = () => {
-    console.log("Navigation vers le nouveau screen - à implémenter");
-    // TODO: Naviguer vers le nouveau screen
+    navigation.navigate("Explore");
   };
 
   // Interface pour utilisateur connecté
@@ -224,7 +226,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    paddingHorizontal: 20,
+    paddingHorizontal: HORIZONTAL_PADDING,
     marginBottom: 20,
   },
   loginButton: {
@@ -282,7 +284,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 34,
     letterSpacing: 1.2,
-    paddingHorizontal: 30,
+    paddingHorizontal: HORIZONTAL_PADDING + 10,
     fontFamily: "System",
   },
   subtitle: {
@@ -292,18 +294,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
     letterSpacing: 0.3,
-    paddingHorizontal: 40,
+    paddingHorizontal: HORIZONTAL_PADDING + 20,
     fontFamily: "System",
   },
   productsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: HORIZONTAL_PADDING,
+    width: "100%",
   },
   productCard: {
-    width: (width - 120) / 3,
+    width: (width - HORIZONTAL_PADDING * 2 - CARD_SPACING * 2 - 4) / 3, // -4 marge de sécurité
     height: 60,
-    marginHorizontal: 8,
+    maxWidth: width * 0.28, // Limite la largeur maximale
   },
   productImage1: {
     flex: 1,

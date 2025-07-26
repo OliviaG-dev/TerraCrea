@@ -18,7 +18,10 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../hooks/useAuth";
 import { RootStackParamList } from "../navigation/RootNavigator";
 
-const { height: screenHeight } = Dimensions.get("window");
+const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
+
+// Constantes pour éviter le débordement horizontal
+const HORIZONTAL_PADDING = 16;
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -297,9 +300,10 @@ const styles = StyleSheet.create({
     height: 80,
   },
   contentSection: {
-    paddingHorizontal: 30,
+    paddingHorizontal: HORIZONTAL_PADDING + 10,
     justifyContent: "center",
     alignItems: "center",
+    width: "100%",
   },
   welcomeTitle: {
     fontSize: 28,
@@ -323,7 +327,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: "100%",
-    maxWidth: 400,
+    maxWidth: Math.min(400, screenWidth - (HORIZONTAL_PADDING + 10) * 2),
   },
   inputContainer: {
     marginBottom: 20,

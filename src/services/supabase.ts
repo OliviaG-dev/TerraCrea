@@ -1,9 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Configuration Supabase
-// Remplacez ces valeurs par vos vraies clés Supabase
-const supabaseUrl = "https://tdijehdgocbzrmbgbikl.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkaWplaGRnb2NienJtYmdiaWtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NTk4NDYsImV4cCI6MjA2OTAzNTg0Nn0.NdMnVRafNGfD9z1liixKXrpN7m5V5nvhlnwqtNZnWGs";
+// Configuration Supabase depuis les variables d'environnement
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+
+// Vérification des variables d'environnement
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error(
+    "Variables d'environnement Supabase manquantes. Vérifiez votre fichier .env"
+  );
+}
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
