@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  FlatList,
   Image,
   Dimensions,
   SafeAreaView,
@@ -19,11 +18,10 @@ import { RootStackParamList } from "../navigation/RootNavigator";
 import { Creation, CreationCategory, CATEGORY_LABELS } from "../types/Creation";
 import { CreationsApi, useFavorites } from "../services/creationsApi";
 
-const { width, height } = Dimensions.get("window");
-const HORIZONTAL_PADDING = 16; // Réduit pour éviter le débordement
-const CARD_SPACING = 6; // Encore plus réduit l'espace entre cartes
-const CARD_WIDTH = width - HORIZONTAL_PADDING * 2; // Largeur complète pour 1 colonne
-const CARD_HEIGHT = 480; // Hauteur réduite pour un format plus compact
+const { width } = Dimensions.get("window");
+const HORIZONTAL_PADDING = 16;
+const CARD_WIDTH = width - HORIZONTAL_PADDING * 2;
+const CARD_HEIGHT = 480;
 
 type ExploreScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -36,13 +34,10 @@ const ExploreScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<
     CreationCategory | "all"
   >("all");
-
-  // États pour Supabase
   const [allCreations, setAllCreations] = useState<Creation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Hook pour les favoris
   const { favorites, toggleFavorite } = useFavorites();
 
   const categories = [
@@ -53,20 +48,17 @@ const ExploreScreen: React.FC = () => {
     })),
   ];
 
-  // Charger les créations depuis Supabase
   const loadCreations = async () => {
     try {
       setError(null);
       let data: Creation[];
 
       if (searchQuery.trim() || selectedCategory !== "all") {
-        // Utiliser la recherche avec filtres
         data = await CreationsApi.searchCreations(
           searchQuery,
           selectedCategory
         );
       } else {
-        // Charger toutes les créations
         data = await CreationsApi.getAllCreations();
       }
 
@@ -81,12 +73,10 @@ const ExploreScreen: React.FC = () => {
     }
   };
 
-  // Charger les données au montage du composant
   useEffect(() => {
     loadCreations();
   }, []);
 
-  // Recharger quand la recherche ou la catégorie change
   useEffect(() => {
     if (!loading) {
       setLoading(true);
@@ -94,7 +84,6 @@ const ExploreScreen: React.FC = () => {
     }
   }, [searchQuery, selectedCategory]);
 
-  // Gestion des favoris
   const handleToggleFavorite = async (creationId: string) => {
     try {
       await toggleFavorite(creationId);
@@ -107,11 +96,6 @@ const ExploreScreen: React.FC = () => {
     }
   };
 
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
-
-  // Formater la date de création
   const formatCreationDate = (dateString: string) => {
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = {
@@ -122,13 +106,9 @@ const ExploreScreen: React.FC = () => {
     return date.toLocaleDateString("fr-FR", options);
   };
 
-  // Vérifier si une création est en favoris
   const isFavorite = (creationId: string) => {
     return favorites.some((fav) => fav.id === creationId);
   };
-
-  // Afficher toutes les créations avec scroll
-  const displayedCreations = allCreations;
 
   const renderCreationCard = ({ item }: { item: Creation }) => (
     <TouchableOpacity style={styles.creationCard} activeOpacity={0.7}>
@@ -142,7 +122,6 @@ const ExploreScreen: React.FC = () => {
           <Text style={styles.priceText}>{item.price}€</Text>
         </View>
 
-        {/* Bouton favoris */}
         <TouchableOpacity
           style={[
             styles.favoriteButton,
@@ -161,14 +140,12 @@ const ExploreScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* Date de création en bas à gauche de l'image */}
         <View style={styles.dateOverlay}>
           <Text style={styles.dateOverlayText}>
             {formatCreationDate(item.createdAt)}
           </Text>
         </View>
 
-        {/* Note et avis en bas à droite de l'image */}
         <View style={styles.ratingOverlay}>
           <Text style={styles.ratingOverlayText}>⭐ {item.rating}</Text>
           <Text style={styles.reviewOverlayText}>
@@ -190,18 +167,15 @@ const ExploreScreen: React.FC = () => {
           />
         </View>
 
-        {/* Description courte */}
         <Text style={styles.creationDescription} numberOfLines={2}>
           {item.description}
         </Text>
 
-        {/* Nom du créateur */}
         <View style={styles.creatorContainer}>
           <Text style={styles.creatorLabel}>Créateur: </Text>
           <Text style={styles.creatorNameText}>{item.artisan.name}</Text>
         </View>
 
-        {/* Tags de l'article */}
         {item.tags && item.tags.length > 0 && (
           <View style={styles.tagsContainer}>
             <Text style={styles.tagsLabel}>Tags:</Text>
@@ -219,7 +193,6 @@ const ExploreScreen: React.FC = () => {
         )}
       </View>
 
-      {/* Catégorie en bas à droite */}
       <View style={styles.categoryTag}>
         <Text style={styles.categoryText}>
           {CATEGORY_LABELS[item.category]}
@@ -228,25 +201,24 @@ const ExploreScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
-  // Composant de chargement
-  const renderLoading = () => (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#4a5c4a" />
-      <Text style={styles.loadingText}>Chargement...</Text>
-    </View>
-  );
-
-  // Composant d'erreur
-  const renderError = () => (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>😕 {error}</Text>
-      <TouchableOpacity style={styles.retryButton} onPress={loadCreations}>
-        <Text style={styles.retryButtonText}>Réessayer</Text>
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
+      <Text style={styles.headerTitle}>Explorer les créations</Text>
+      {!loading && !error && (
+        <View style={styles.favoritesIndicator}>
+          <Text style={styles.favoritesCount}>❤️ {favorites.length}</Text>
+        </View>
+      )}
+      {(loading || error) && <View style={styles.placeholder} />}
     </View>
   );
 
-  // Composant si aucune création trouvée
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
@@ -271,14 +243,11 @@ const ExploreScreen: React.FC = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Explorer les créations</Text>
-          <View style={styles.placeholder} />
+        {renderHeader()}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4a5c4a" />
+          <Text style={styles.loadingText}>Chargement...</Text>
         </View>
-        {renderLoading()}
       </SafeAreaView>
     );
   }
@@ -286,40 +255,26 @@ const ExploreScreen: React.FC = () => {
   if (error) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-            <Text style={styles.backButtonText}>←</Text>
+        {renderHeader()}
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>😕 {error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadCreations}>
+            <Text style={styles.retryButtonText}>Réessayer</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Explorer les créations</Text>
-          <View style={styles.placeholder} />
         </View>
-        {renderError()}
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header fixe */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Explorer les créations</Text>
+      {renderHeader()}
 
-        {/* Indicateur de favoris */}
-        <View style={styles.favoritesIndicator}>
-          <Text style={styles.favoritesCount}>❤️ {favorites.length}</Text>
-        </View>
-      </View>
-
-      {/* Contenu principal avec scroll vertical */}
       <ScrollView
         style={styles.scrollableContent}
         showsVerticalScrollIndicator={true}
         bounces={true}
       >
-        {/* Search Bar */}
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
@@ -330,7 +285,6 @@ const ExploreScreen: React.FC = () => {
           />
         </View>
 
-        {/* Category Filters - Grille sur 2 lignes */}
         <View style={styles.filtersSection}>
           <View style={styles.categoryGrid}>
             {categories.map((item) => (
@@ -359,21 +313,19 @@ const ExploreScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Results Count */}
         <View style={styles.resultsHeader}>
           <Text style={styles.resultsText}>
-            {displayedCreations.length} création
-            {displayedCreations.length > 1 ? "s" : ""}
+            {allCreations.length} création
+            {allCreations.length > 1 ? "s" : ""}
           </Text>
         </View>
 
-        {/* Creations Grid - Scrollable */}
         <View style={styles.scrollableGrid}>
-          {displayedCreations.length === 0 ? (
+          {allCreations.length === 0 ? (
             renderEmptyState()
           ) : (
             <View style={styles.creationsGrid}>
-              {displayedCreations.map((item, index) => (
+              {allCreations.map((item) => (
                 <View key={item.id} style={styles.cardWrapper}>
                   {renderCreationCard({ item })}
                 </View>
@@ -536,11 +488,7 @@ const styles = StyleSheet.create({
     fontFamily: "System",
     flex: 1,
   },
-  // NOUVEAU: Container sans scroll
-  creationsContainer: {
-    flex: 1,
-    paddingHorizontal: HORIZONTAL_PADDING,
-  },
+
   creationsGrid: {
     flexDirection: "column",
     justifyContent: "flex-start",

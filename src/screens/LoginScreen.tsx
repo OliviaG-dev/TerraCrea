@@ -245,11 +245,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fafaf9",
     justifyContent: "space-between",
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
   closeButtonContainer: {
     position: "absolute",
-    top: 50,
+    top: 30,
     right: 20,
     zIndex: 1,
   },
@@ -290,14 +290,14 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "-45deg" }],
   },
   headerSection: {
-    height: screenHeight * 0.25,
+    height: screenHeight * 0.18,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 40,
+    paddingTop: 10,
   },
   logoImage: {
-    width: 240,
-    height: 80,
+    width: 200,
+    height: 65,
   },
   contentSection: {
     paddingHorizontal: HORIZONTAL_PADDING + 10,
@@ -306,13 +306,13 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   welcomeTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "300",
     color: "#4a5c4a",
     textAlign: "center",
-    lineHeight: 34,
+    lineHeight: 32,
     letterSpacing: 1.2,
-    marginBottom: 20,
+    marginBottom: 15,
     fontFamily: "System",
   },
   subtitle: {
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
     letterSpacing: 0.3,
-    marginBottom: 40,
+    marginBottom: 25,
     fontFamily: "System",
   },
   formContainer: {
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     maxWidth: Math.min(400, screenWidth - (HORIZONTAL_PADDING + 10) * 2),
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 15,
   },
   inputLabel: {
     fontSize: 14,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4a5c4a",
     paddingVertical: 16,
     borderRadius: 8,
-    marginTop: 20,
+    marginTop: 15,
     alignItems: "center",
     justifyContent: "center",
     elevation: 2,
@@ -375,10 +375,10 @@ const styles = StyleSheet.create({
     fontFamily: "System",
   },
   footerSection: {
-    height: screenHeight * 0.15,
+    height: screenHeight * 0.12,
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 20,
+    paddingBottom: 15,
   },
   switchText: {
     fontSize: 14,

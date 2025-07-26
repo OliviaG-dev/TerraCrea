@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
-    paddingTop: 50,
+    paddingTop: 25,
   },
   // Styles pour utilisateur connecté
   userInfo: {
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   signOutButton: {
     position: "absolute",
-    top: 50,
+    top: 20,
     right: 20,
     paddingVertical: 8,
     paddingHorizontal: 16,
