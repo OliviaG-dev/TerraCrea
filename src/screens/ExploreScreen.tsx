@@ -13,20 +13,20 @@ import {
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/RootNavigator";
-import { Creation, CreationCategory, CATEGORY_LABELS } from "../types/Creation";
+import {
+  CreationWithArtisan,
+  CreationCategory,
+  CATEGORY_LABELS,
+} from "../types/Creation";
 import { CreationsApi, useFavorites } from "../services/creationsApi";
+import { ScreenNavigationProp } from "../types/Navigation";
 
 const { width } = Dimensions.get("window");
 const HORIZONTAL_PADDING = 16;
 const CARD_WIDTH = width - HORIZONTAL_PADDING * 2;
-const CARD_HEIGHT = 480;
+const CARD_HEIGHT = 460; // Réduit pour équilibrer image/contenu
 
-type ExploreScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Explore"
->;
+type ExploreScreenNavigationProp = ScreenNavigationProp<"Explore">;
 
 const ExploreScreen: React.FC = () => {
   const navigation = useNavigation<ExploreScreenNavigationProp>();
@@ -34,7 +34,7 @@ const ExploreScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<
     CreationCategory | "all"
   >("all");
-  const [allCreations, setAllCreations] = useState<Creation[]>([]);
+  const [allCreations, setAllCreations] = useState<CreationWithArtisan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +51,7 @@ const ExploreScreen: React.FC = () => {
   const loadCreations = async () => {
     try {
       setError(null);
-      let data: Creation[];
+      let data: CreationWithArtisan[];
 
       if (searchQuery.trim() || selectedCategory !== "all") {
         data = await CreationsApi.searchCreations(
@@ -106,64 +106,81 @@ const ExploreScreen: React.FC = () => {
     return date.toLocaleDateString("fr-FR", options);
   };
 
-  const isFavorite = (creationId: string) => {
-    return favorites.some((fav) => fav.id === creationId);
-  };
-
-  const renderCreationCard = ({ item }: { item: Creation }) => (
-    <TouchableOpacity style={styles.creationCard} activeOpacity={0.7}>
+  const renderCreationCard = (item: CreationWithArtisan) => (
+    <View key={item.id} style={styles.creationCard}>
+      {/* Container d'image avec overlays */}
       <View style={styles.imageContainer}>
         <Image
           source={{ uri: item.imageUrl }}
           style={styles.creationImage}
-          defaultSource={require("../../assets/logo.png")}
+          accessible={true}
+          accessibilityLabel={`Image de ${item.title}`}
         />
-        <View style={styles.priceTag}>
-          <Text style={styles.priceText}>{item.price}€</Text>
-        </View>
 
+        {/* Cœur favoris - Haut gauche */}
         <TouchableOpacity
           style={[
-            styles.favoriteButton,
-            isFavorite(item.id) && styles.favoriteButtonActive,
+            styles.favoriteOverlay,
+            favorites.some((fav) => fav.id === item.id) &&
+              styles.favoriteOverlayActive,
           ]}
           onPress={() => handleToggleFavorite(item.id)}
-          activeOpacity={0.8}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Ajouter aux favoris"
+          accessibilityHint="Double-tap pour ajouter ou retirer des favoris"
         >
           <Text
             style={[
-              styles.favoriteIcon,
-              isFavorite(item.id) && styles.favoriteIconActive,
+              styles.favoriteOverlayIcon,
+              favorites.some((fav) => fav.id === item.id) &&
+                styles.favoriteOverlayIconActive,
             ]}
           >
-            {isFavorite(item.id) ? "♥" : "♡"}
+            {favorites.some((fav) => fav.id === item.id) ? "♥" : "♡"}
           </Text>
         </TouchableOpacity>
 
+        {/* Prix - Haut droite */}
+        <View style={styles.priceOverlay}>
+          <Text style={styles.priceOverlayText}>{item.price.toFixed(2)} €</Text>
+        </View>
+
+        {/* Rating et avis - Bas droite */}
+        <View style={styles.ratingOverlay}>
+          <View style={styles.ratingOverlayContainer}>
+            <Text style={styles.ratingOverlayText}>
+              ⭐ {item.rating.toFixed(1)}
+            </Text>
+            <Text style={styles.reviewOverlayText}>
+              ({item.reviewCount} avis)
+            </Text>
+          </View>
+        </View>
+
+        {/* Date de création - Bas gauche */}
         <View style={styles.dateOverlay}>
           <Text style={styles.dateOverlayText}>
             {formatCreationDate(item.createdAt)}
           </Text>
         </View>
-
-        <View style={styles.ratingOverlay}>
-          <Text style={styles.ratingOverlayText}>⭐ {item.rating}</Text>
-          <Text style={styles.reviewOverlayText}>
-            ({item.reviewCount} avis)
-          </Text>
-        </View>
       </View>
 
       <View style={styles.cardContent}>
-        <View style={styles.titleContainer}>
+        {/* Titre avec indicateur de disponibilité */}
+        <View style={styles.titleWithAvailability}>
           <Text style={styles.creationTitle} numberOfLines={2}>
             {item.title}
           </Text>
           <View
             style={[
               styles.availabilityDot,
-              item.isAvailable ? styles.availableDot : styles.unavailableDot,
+              { backgroundColor: item.isAvailable ? "#22c55e" : "#ef4444" },
             ]}
+            accessible={true}
+            accessibilityLabel={
+              item.isAvailable ? "Disponible" : "Non disponible"
+            }
           />
         </View>
 
@@ -173,39 +190,90 @@ const ExploreScreen: React.FC = () => {
 
         <View style={styles.creatorContainer}>
           <Text style={styles.creatorLabel}>Créateur: </Text>
-          <Text style={styles.creatorNameText}>{item.artisan.name}</Text>
+          <Text style={styles.creatorNameText}>
+            {item.artisan?.displayName ||
+              (item.artisan?.firstName && item.artisan?.lastName
+                ? `${item.artisan.firstName} ${item.artisan.lastName}`
+                : item.artisan?.username || "Artisan inconnu")}
+          </Text>
         </View>
 
-        {item.tags && item.tags.length > 0 && (
-          <View style={styles.tagsContainer}>
-            <Text style={styles.tagsLabel}>Tags:</Text>
-            <View style={styles.tagsList}>
-              {item.tags.slice(0, 4).map((tag, index) => (
-                <View key={index} style={styles.tagItem}>
-                  <Text style={styles.tagText}>#{tag}</Text>
+        {/* Tags repositionnés au-dessus */}
+        <View style={styles.tagsContainer}>
+          <Text style={styles.tagsLabel}>Tags:</Text>
+          <View style={styles.tagsList}>
+            {item.tags && item.tags.length > 0 ? (
+              <>
+                {item.tags.slice(0, 4).map((tag: string, index: number) => (
+                  <View key={index} style={styles.tagItem}>
+                    <Text style={styles.tagText}>#{tag}</Text>
+                  </View>
+                ))}
+                {item.tags.length > 4 && (
+                  <Text style={styles.moreTags}>+{item.tags.length - 4}</Text>
+                )}
+              </>
+            ) : (
+              // Tags par défaut si aucun tag de la DB
+              <>
+                <View style={styles.tagItem}>
+                  <Text style={styles.tagText}>#fait-main</Text>
                 </View>
-              ))}
-              {item.tags.length > 4 && (
-                <Text style={styles.moreTags}>+{item.tags.length - 4}</Text>
-              )}
-            </View>
+                <View style={styles.tagItem}>
+                  <Text style={styles.tagText}>
+                    #{item.category ? item.category.toLowerCase() : "artisanal"}
+                  </Text>
+                </View>
+                <View style={styles.tagItem}>
+                  <Text style={styles.tagText}>
+                    #
+                    {item.price < 50
+                      ? "abordable"
+                      : item.price > 100
+                      ? "premium"
+                      : "qualité"}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
-        )}
-      </View>
+        </View>
 
-      <View style={styles.categoryTag}>
-        <Text style={styles.categoryText}>
-          {CATEGORY_LABELS[item.category]}
-        </Text>
+        {/* Section inférieure avec catégorie et bouton */}
+        <View style={styles.bottomSection}>
+          {/* Catégorie en bas à gauche */}
+          <View style={styles.categoryContainer}>
+            <Text style={styles.categoryLabel}>
+              {item.category ? CATEGORY_LABELS[item.category] : "ARTISANAT"}
+            </Text>
+          </View>
+
+          {/* Bouton d'action intégré */}
+          <TouchableOpacity
+            style={styles.viewDetailsButton}
+            onPress={() => {
+              // TODO: Navigation vers les détails de la création
+              console.log("Voir détails de:", item.title);
+            }}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={`Voir les détails de ${item.title}`}
+          >
+            <Text style={styles.viewDetailsText}>Voir plus</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => navigation.goBack()}
+        onPress={() => navigation.navigate("Home")}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel="Retour à l'accueil"
       >
         <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
@@ -233,6 +301,9 @@ const ExploreScreen: React.FC = () => {
             setSearchQuery("");
             setSelectedCategory("all");
           }}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Effacer tous les filtres de recherche"
         >
           <Text style={styles.clearFiltersText}>Effacer les filtres</Text>
         </TouchableOpacity>
@@ -244,9 +315,20 @@ const ExploreScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         {renderHeader()}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4a5c4a" />
-          <Text style={styles.loadingText}>Chargement...</Text>
+        <View style={styles.loadingContainer} importantForAccessibility="yes">
+          <ActivityIndicator
+            size="large"
+            color="#4a5c4a"
+            accessible={true}
+            accessibilityLabel="Chargement des créations en cours"
+          />
+          <Text
+            style={styles.loadingText}
+            accessible={true}
+            accessibilityLiveRegion="polite"
+          >
+            Chargement...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -256,9 +338,21 @@ const ExploreScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         {renderHeader()}
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>😕 {error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadCreations}>
+        <View style={styles.errorContainer} importantForAccessibility="yes">
+          <Text
+            style={styles.errorText}
+            accessible={true}
+            accessibilityLiveRegion="assertive"
+          >
+            {error}
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={loadCreations}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Réessayer de charger les créations"
+          >
             <Text style={styles.retryButtonText}>Réessayer</Text>
           </TouchableOpacity>
         </View>
@@ -270,69 +364,74 @@ const ExploreScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       {renderHeader()}
 
-      <ScrollView
-        style={styles.scrollableContent}
-        showsVerticalScrollIndicator={true}
-        bounces={true}
-      >
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Rechercher une création..."
-            placeholderTextColor="#999"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
+      {/* Barre de recherche */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Rechercher des créations..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          accessible={true}
+          accessibilityRole="search"
+          accessibilityLabel="Champ de recherche"
+          accessibilityHint="Tapez pour rechercher des créations"
+        />
+      </View>
 
-        <View style={styles.filtersSection}>
-          <View style={styles.categoryGrid}>
-            {categories.map((item) => (
-              <TouchableOpacity
-                key={item.key}
+      {/* Filtres par catégorie sur 2 lignes */}
+      <View style={styles.categoriesContainer}>
+        <View style={styles.categoriesGrid}>
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category.key}
+              style={[
+                styles.categoryButton,
+                selectedCategory === category.key &&
+                  styles.categoryButtonActive,
+              ]}
+              onPress={() => setSelectedCategory(category.key as any)}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`Filtrer par catégorie ${category.label}`}
+              accessibilityState={{
+                selected: selectedCategory === category.key,
+              }}
+            >
+              <Text
                 style={[
-                  styles.categoryButton,
-                  selectedCategory === item.key && styles.categoryButtonActive,
+                  styles.categoryButtonText,
+                  selectedCategory === category.key &&
+                    styles.categoryButtonTextActive,
                 ]}
-                onPress={() =>
-                  setSelectedCategory(item.key as CreationCategory | "all")
-                }
               >
-                <Text
-                  style={[
-                    styles.categoryButtonText,
-                    selectedCategory === item.key &&
-                      styles.categoryButtonTextActive,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                {category.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </View>
 
-        <View style={styles.resultsHeader}>
-          <Text style={styles.resultsText}>
-            {allCreations.length} création
-            {allCreations.length > 1 ? "s" : ""}
-          </Text>
-        </View>
-
-        <View style={styles.scrollableGrid}>
-          {allCreations.length === 0 ? (
-            renderEmptyState()
-          ) : (
-            <View style={styles.creationsGrid}>
+      {/* Liste des créations */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+      >
+        {allCreations.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <View style={styles.creationsGrid}>
+            <View style={styles.gridContent}>
               {allCreations.map((item) => (
                 <View key={item.id} style={styles.cardWrapper}>
-                  {renderCreationCard({ item })}
+                  {renderCreationCard(item)}
                 </View>
               ))}
             </View>
-          )}
-        </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -515,26 +614,78 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: "relative",
-    height: 220, // Hauteur réduite pour l'image
+    height: 140, // Même taille que l'image
   },
   creationImage: {
-    width: "100%",
-    height: "100%",
+    width: CARD_WIDTH,
+    height: 140, // Réduit pour voir plus d'infos
+    resizeMode: "cover",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     backgroundColor: "#f5f5f4",
   },
-  priceTag: {
+
+  // ❤️ FAVORIS - Design harmonisé TerraCréa
+  favoriteOverlay: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: 10,
+    left: 10,
+    backgroundColor: "rgba(245, 240, 235, 0.95)", // Beige naturel
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "rgba(139, 111, 71, 0.25)", // Ombre terre
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
+    elevation: 4,
+    borderWidth: 1.5,
+    borderColor: "rgba(212, 165, 116, 0.4)", // Bordure dorée subtile
+  },
+  favoriteOverlayIcon: {
+    fontSize: 19,
+    lineHeight: 19,
+    color: "#8b6f47", // Couleur terre pour état normal
+    fontWeight: "300",
+  },
+  // État actif (favori ajouté)
+  favoriteOverlayActive: {
+    backgroundColor: "rgba(212, 165, 116, 0.95)", // Doré chaud
+    borderColor: "rgba(139, 111, 71, 0.8)", // Bordure terre plus marquée
+    shadowColor: "rgba(212, 165, 116, 0.35)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 6,
+    transform: [{ scale: 1.05 }], // Légère animation
+  },
+  favoriteOverlayIconActive: {
+    color: "#8b6f47", // Rouge terre pour cœur actif
+    fontWeight: "600",
+    fontSize: 20,
+  },
+
+  // 💰 PRIX - Haut droite
+  priceOverlay: {
+    position: "absolute",
+    top: 8,
+    right: 8,
     backgroundColor: "rgba(45, 58, 45, 0.9)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 12,
     shadowColor: "rgba(0, 0, 0, 0.2)",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  priceOverlayText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "System",
   },
   priceText: {
     color: "#fff",
@@ -600,6 +751,7 @@ const styles = StyleSheet.create({
     fontFamily: "System",
     letterSpacing: 0.3,
   },
+  // ⭐ RATING - Bas droite
   ratingOverlay: {
     position: "absolute",
     bottom: 8,
@@ -608,6 +760,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
+  },
+  ratingOverlayContainer: {
     flexDirection: "column",
     alignItems: "flex-end",
   },
@@ -626,14 +780,23 @@ const styles = StyleSheet.create({
   cardContent: {
     paddingTop: 16,
     paddingHorizontal: 20,
+    paddingBottom: 16,
     flex: 1,
     justifyContent: "flex-start",
     width: "100%",
-    minHeight: 240, // Hauteur réduite pour être plus compact
+    minHeight: 280, // Augmenté pour donner plus de place au contenu
   },
   titleContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    width: "100%",
+  },
+  // Titre avec indicateur de disponibilité
+  titleWithAvailability: {
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
     width: "100%",
@@ -648,16 +811,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     marginRight: 8,
   },
+  // Rond de disponibilité (vert = dispo, rouge = pas dispo)
   availabilityDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginTop: 8,
-    shadowColor: "rgba(0, 0, 0, 0.1)",
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginLeft: 8,
+    shadowColor: "rgba(0, 0, 0, 0.2)",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 1,
     shadowRadius: 2,
-    elevation: 1,
+    elevation: 2,
   },
   availableDot: {
     backgroundColor: "#4caf50",
@@ -694,8 +858,39 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
+  // Section inférieure avec catégorie et bouton
+  bottomSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: 12,
+    width: "100%",
+  },
+  // Catégorie en bas à gauche
+  categoryContainer: {
+    flex: 1,
+    alignItems: "flex-start",
+  },
+  categoryLabel: {
+    fontSize: 11,
+    color: "#8a9a8a",
+    fontWeight: "600",
+    fontFamily: "System",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    backgroundColor: "#f5f6f5",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: "#e8e9e8",
+    overflow: "hidden",
+  },
+  // Tags sans trait séparateur
   tagsContainer: {
-    marginBottom: 20,
+    marginTop: 8,
+    marginBottom: 8,
   },
   tagsLabel: {
     fontSize: 13,
@@ -736,29 +931,38 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
 
-  categoryTag: {
-    position: "absolute",
-    bottom: 12,
-    right: 12,
+  // Container pour filtres de catégories
+  categoriesContainer: {
+    paddingHorizontal: HORIZONTAL_PADDING,
+    paddingVertical: 8,
     backgroundColor: "#f5f6f5",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 0.5,
-    borderColor: "#e8e9e8",
-    shadowColor: "rgba(0, 0, 0, 0.1)",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e8e9e8",
+  },
+  // Grille des filtres sur 2 lignes
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
   },
   categoryText: {
-    fontSize: 10,
+    fontSize: 11,
     color: "#8a9a8a",
-    fontWeight: "500",
+    fontWeight: "600",
     fontFamily: "System",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    backgroundColor: "#f5f6f5",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: "#e8e9e8",
+    marginRight: 6,
+    marginBottom: 4,
+    overflow: "hidden",
   },
   // Nouveaux styles pour les états
   loadingContainer: {
@@ -820,6 +1024,79 @@ const styles = StyleSheet.create({
     color: "#4a5c4a",
     fontSize: 14,
     fontWeight: "500",
+  },
+  // New styles for the new structure
+
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: HORIZONTAL_PADDING,
+    paddingBottom: 20,
+  },
+  gridContent: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  viewDetailsButton: {
+    backgroundColor: "#4a5c4a",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    marginLeft: 12,
+    maxWidth: 120,
+    shadowColor: "rgba(74, 92, 74, 0.25)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#3d4f3d",
+  },
+  viewDetailsText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+    fontFamily: "System",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
+  ratingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  ratingContainer: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+  },
+  ratingText: {
+    fontSize: 14,
+    color: "#4a5c4a",
+    fontWeight: "600",
+    fontFamily: "System",
+  },
+  reviewText: {
+    fontSize: 10,
+    color: "#999",
+    fontFamily: "System",
+  },
+  availabilityText: {
+    fontSize: 12,
+    fontWeight: "500",
+    fontFamily: "System",
   },
 });
 

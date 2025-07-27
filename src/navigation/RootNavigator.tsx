@@ -1,71 +1,61 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
-import HomeScreen from "../screens/HomeScreen";
-import LoginScreen from "../screens/LoginScreen";
-import ExploreScreen from "../screens/ExploreScreen";
-import { useUserContext } from "../context/UserContext";
+import { HomeScreen } from "../screens/HomeScreen"; // Named export
+import LoginScreen from "../screens/LoginScreen"; // Default export
+import ExploreScreen from "../screens/ExploreScreen"; // Default export
+import { ProfilScreen } from "../screens/ProfilScreen"; // Named export
+import { EmailConfirmationScreen } from "../screens/EmailConfirmationScreen"; // Named export
+import { EmailConfirmedScreen } from "../screens/EmailConfirmedScreen"; // Named export
 
-export type RootStackParamList = {
-  Home: undefined;
-  Login: undefined;
-  Explore: undefined;
-};
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
-const LoadingScreen = () => (
-  <View style={styles.loadingContainer}>
-    <ActivityIndicator size="large" color="#4a5c4a" />
-  </View>
-);
+const Stack = createNativeStackNavigator();
 
 const RootNavigator = () => {
-  const { loading } = useUserContext();
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Home"
-        screenOptions={{
-          headerShown: false,
-          gestureEnabled: true,
-        }}
-      >
-        <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Navigator initialRouteName="Home">
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ title: "TerraCréa" }}
+        />
         <Stack.Screen
           name="Login"
           component={LoginScreen}
-          options={{
-            presentation: "modal",
-            gestureEnabled: true,
-            gestureDirection: "vertical",
-          }}
+          options={{ title: "Connexion" }}
         />
         <Stack.Screen
           name="Explore"
           component={ExploreScreen}
+          options={{ title: "Explorer" }}
+        />
+        <Stack.Screen
+          name="Profil"
+          component={ProfilScreen}
           options={{
-            gestureEnabled: true,
+            title: "Mon Profil",
+            headerBackTitle: "Retour",
+          }}
+        />
+        <Stack.Screen
+          name="EmailConfirmation"
+          component={EmailConfirmationScreen}
+          options={{
+            title: "Confirmation Email",
+            headerBackTitle: "Retour",
+          }}
+        />
+        <Stack.Screen
+          name="EmailConfirmed"
+          component={EmailConfirmedScreen}
+          options={{
+            title: "Email Confirmé",
+            headerLeft: () => null, // Empêche le retour
           }}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fafaf9",
-  },
-});
 
 export default RootNavigator;

@@ -5,17 +5,32 @@ export interface Creation {
   price: number;
   imageUrl: string;
   category: CreationCategory;
-  artisan: {
-    name: string;
-    location: string;
-    profileImage?: string;
-  };
+  artisanId: string; // Référence à l'ID de l'artisan (User)
   materials: string[];
   isAvailable: boolean;
   rating: number;
   reviewCount: number;
   createdAt: string;
+  updatedAt?: string;
   tags: string[];
+}
+
+// Interface pour affichage avec données artisan jointes
+export interface CreationWithArtisan extends Creation {
+  artisan: {
+    id: string;
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+    profileImage?: string;
+    displayName?: string; // Nom d'affichage calculé
+    artisanProfile?: {
+      businessName?: string;
+      location?: string;
+      verified: boolean;
+      rating?: number;
+    };
+  };
 }
 
 export enum CreationCategory {
@@ -37,3 +52,18 @@ export const CATEGORY_LABELS: Record<CreationCategory, string> = {
   [CreationCategory.METALWORK]: "Métal",
   [CreationCategory.OTHER]: "Autre",
 };
+
+// Types pour la création/modification
+export interface CreateCreationData {
+  title: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: CreationCategory;
+  materials: string[];
+  tags: string[];
+}
+
+export interface UpdateCreationData extends Partial<CreateCreationData> {
+  isAvailable?: boolean;
+}

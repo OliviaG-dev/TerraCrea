@@ -6,116 +6,110 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ActivityIndicator,
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
-  Image,
-  Dimensions,
-  Animated,
+  ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../hooks/useAuth";
-import { RootStackParamList } from "../navigation/RootNavigator";
+import { ScreenNavigationProp } from "../types/Navigation";
 
 const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
 
 // Constantes pour éviter le débordement horizontal
 const HORIZONTAL_PADDING = 16;
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Login"
->;
+type LoginScreenNavigationProp = ScreenNavigationProp<"Login">;
 
 const LoginScreen: React.FC = () => {
+  const navigation = useNavigation<LoginScreenNavigationProp>();
+  const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
-  const { signIn, signUp, loading } = useAuth();
-  const navigation = useNavigation<LoginScreenNavigationProp>();
-  const scaleAnim = new Animated.Value(1);
-  const backgroundOpacity = new Animated.Value(0);
-
-  const handleSubmit = async () => {
-    if (!email || !password) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs");
-      return;
-    }
-
-    if (isSignUp) {
-      const result = await signUp(email, password);
-      if (result?.success) {
-        Alert.alert(
-          "Inscription réussie",
-          "Vérifiez votre email pour confirmer votre compte"
-        );
-        setIsSignUp(false);
-      } else {
-        Alert.alert(
-          "Erreur d'inscription",
-          result?.error || "Une erreur est survenue"
-        );
-      }
-    } else {
-      const result = await signIn(email, password);
-      if (result?.success) {
-        // Connexion réussie, retour automatique à l'écran d'accueil
-        navigation.goBack();
-      } else {
-        Alert.alert(
-          "Erreur de connexion",
-          result?.error || "Une erreur est survenue"
-        );
-      }
-    }
-  };
-
-  const resetForm = () => {
-    setEmail("");
-    setPassword("");
-  };
+  const [loading, setLoading] = useState(false);
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
-    resetForm();
-  };
-
-  const handleClosePress = () => {
-    // Animation de pression avec effet d'arrière-plan
-    Animated.parallel([
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 0.95,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.sequence([
-        Animated.timing(backgroundOpacity, {
-          toValue: 0.1,
-          duration: 100,
-          useNativeDriver: false,
-        }),
-        Animated.timing(backgroundOpacity, {
-          toValue: 0,
-          duration: 100,
-          useNativeDriver: false,
-        }),
-      ]),
-    ]).start();
+    setEmail("");
+    setPassword("");
+    setFirstName("");
+    setLastName("");
   };
 
   const handleClose = () => {
-    handleClosePress();
-    setTimeout(() => {
-      navigation.goBack();
-    }, 150);
+    navigation.navigate("Home");
+  };
+
+  const handleSubmit = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Erreur", "Veuillez remplir tous les champs requis");
+      return;
+    }
+
+    // Validation supplémentaire pour l'inscription
+    if (isSignUp && (!firstName.trim() || !lastName.trim())) {
+      Alert.alert("Erreur", "Veuillez remplir votre prénom et nom");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (isSignUp) {
+        const result = await signUp(email, password, {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          username: email.split("@")[0], // Nom d'utilisateur par défaut
+        });
+
+        if (result?.needsConfirmation) {
+          // Rediriger vers l'écran de confirmation
+          navigation.navigate("EmailConfirmation", { email });
+          Alert.alert(
+            "Email envoyé !",
+            "Un email de confirmation a été envoyé à votre adresse. Vérifiez votre boîte de réception.",
+            [{ text: "OK" }]
+          );
+        } else if (result?.error) {
+          Alert.alert("Erreur d'inscription", result.error);
+        } else if (result?.success) {
+          // Inscription réussie sans confirmation nécessaire
+          Alert.alert(
+            "Inscription réussie !",
+            "Votre compte a été créé avec succès.",
+            [{ text: "OK", onPress: () => navigation.navigate("Home") }]
+          );
+        }
+      } else {
+        const result = await signIn(email, password);
+
+        if (result?.needsConfirmation) {
+          // Rediriger vers l'écran de confirmation
+          navigation.navigate("EmailConfirmation", { email });
+          Alert.alert(
+            "Confirmation requise",
+            "Veuillez confirmer votre email avant de vous connecter.",
+            [{ text: "OK" }]
+          );
+        } else if (result?.success) {
+          Alert.alert("Connexion réussie !", "Bienvenue sur TerraCréa", [
+            { text: "OK", onPress: () => navigation.navigate("Home") },
+          ]);
+        } else {
+          Alert.alert(
+            "Erreur de connexion",
+            result?.error || "Une erreur est survenue"
+          );
+        }
+      }
+    } catch (error) {
+      Alert.alert("Erreur", "Une erreur inattendue s'est produite");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -123,82 +117,73 @@ const LoginScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Bouton de fermeture amélioré */}
-      <Animated.View
-        style={[
-          styles.closeButtonContainer,
-          { transform: [{ scale: scaleAnim }] },
-        ]}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={handleClose}
-          activeOpacity={0.6}
-          accessibilityLabel="Fermer l'écran de connexion"
-          accessibilityRole="button"
-          accessibilityHint="Retourner à l'écran précédent"
-        >
-          {/* Arrière-plan animé pour l'effet de touch */}
-          <Animated.View
-            style={[
-              styles.closeButtonBackground,
-              { opacity: backgroundOpacity },
-            ]}
-          />
-          <View style={styles.closeIconContainer}>
-            <View style={[styles.closeLine, styles.closeLineLeft]} />
-            <View style={[styles.closeLine, styles.closeLineRight]} />
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
+        {/* Header */}
+        <View style={styles.headerSection}>
+          <Text style={styles.title}>
+            {isSignUp ? "Créer un compte" : "Se connecter"}
+          </Text>
+          <Text style={styles.subtitle}>
+            {isSignUp
+              ? "Rejoignez notre communauté d'artisans et découvrez des créations uniques"
+              : "Accédez à votre compte pour découvrir des créations artisanales"}
+          </Text>
+        </View>
 
-      {/* Header avec logo */}
-      <View style={styles.headerSection}>
-        <Image
-          source={require("../../assets/logo.png")}
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
-      </View>
-
-      {/* Contenu principal */}
-      <View style={styles.contentSection}>
-        <Text style={styles.welcomeTitle}>
-          {isSignUp ? "Rejoignez\nTerraCréa" : "Bon retour\nsur TerraCréa"}
-        </Text>
-
-        <Text style={styles.subtitle}>
-          {isSignUp
-            ? "Créez votre compte pour découvrir\nles créations locales"
-            : "Connectez-vous pour continuer\nvotre découverte"}
-        </Text>
-
+        {/* Form */}
         <View style={styles.formContainer}>
+          {isSignUp && (
+            <>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Prénom *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="Votre prénom"
+                  autoComplete="given-name"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Nom *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Votre nom"
+                  autoComplete="family-name"
+                />
+              </View>
+            </>
+          )}
+
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Email</Text>
+            <Text style={styles.inputLabel}>Email *</Text>
             <TextInput
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
               placeholder="votre@email.com"
-              placeholderTextColor="#a0a0a0"
               keyboardType="email-address"
               autoCapitalize="none"
-              autoCorrect={false}
+              autoComplete="email"
             />
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Mot de passe</Text>
+            <Text style={styles.inputLabel}>Mot de passe *</Text>
             <TextInput
               style={styles.textInput}
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
-              placeholderTextColor="#a0a0a0"
               secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
+              autoComplete="password"
             />
           </View>
 
@@ -210,32 +195,35 @@ const LoginScreen: React.FC = () => {
             onPress={handleSubmit}
             disabled={loading}
           >
-            {loading ? (
-              <ActivityIndicator color="#fafaf9" size="small" />
-            ) : (
-              <Text style={styles.submitButtonText}>
-                {isSignUp ? "Créer un compte" : "Se connecter"}
-              </Text>
-            )}
+            <Text style={styles.submitButtonText}>
+              {loading
+                ? "Chargement..."
+                : isSignUp
+                ? "Créer le compte"
+                : "Se connecter"}
+            </Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Footer */}
-      <View style={styles.footerSection}>
-        <Text style={styles.switchText}>
-          {isSignUp ? "Déjà un compte ?" : "Pas encore de compte ?"}
-        </Text>
-        <TouchableOpacity onPress={toggleMode}>
-          <Text style={styles.switchButtonText}>
-            {isSignUp ? "Se connecter" : "S'inscrire"}
+        {/* Footer */}
+        <View style={styles.footerSection}>
+          <Text style={styles.switchText}>
+            {isSignUp ? "Déjà un compte ?" : "Pas encore de compte ?"}
           </Text>
-        </TouchableOpacity>
+          <TouchableOpacity onPress={toggleMode}>
+            <Text style={styles.switchButtonText}>
+              {isSignUp ? "Se connecter" : "S'inscrire"}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.backToHomeButton} onPress={handleClose}>
-          <Text style={styles.backToHomeText}>← Retour à l'accueil</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.backToHomeButton}
+            onPress={handleClose}
+          >
+            <Text style={styles.backToHomeText}>← Retour à l'accueil</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -244,75 +232,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fafaf9",
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "space-between",
-    paddingVertical: 10,
-  },
-  closeButtonContainer: {
-    position: "absolute",
-    top: 30,
-    right: 20,
-    zIndex: 1,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
-    // Suppression des ombres pour un look plus minimaliste
-  },
-  closeButtonBackground: {
-    position: "absolute",
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: "#4a5c4a",
-  },
-  closeIconContainer: {
-    width: 18,
-    height: 18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  closeLine: {
-    position: "absolute",
-    width: 18,
-    height: 2.5,
-    backgroundColor: "#4a5c4a",
-    borderRadius: 1.5,
-    opacity: 0.8,
-  },
-  closeLineLeft: {
-    transform: [{ rotate: "45deg" }],
-  },
-  closeLineRight: {
-    transform: [{ rotate: "-45deg" }],
+    paddingHorizontal: HORIZONTAL_PADDING,
   },
   headerSection: {
-    height: screenHeight * 0.18,
+    flex: 0.3,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 10,
+    paddingTop: 40,
+    minHeight: screenHeight * 0.25,
   },
-  logoImage: {
-    width: 200,
-    height: 65,
-  },
-  contentSection: {
-    paddingHorizontal: HORIZONTAL_PADDING + 10,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-  },
-  welcomeTitle: {
-    fontSize: 26,
+  title: {
+    fontSize: 24,
     fontWeight: "300",
     color: "#4a5c4a",
     textAlign: "center",
-    lineHeight: 32,
-    letterSpacing: 1.2,
     marginBottom: 15,
+    letterSpacing: 1,
     fontFamily: "System",
   },
   subtitle: {

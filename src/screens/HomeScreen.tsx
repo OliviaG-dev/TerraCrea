@@ -9,9 +9,8 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useUserContext } from "../context/UserContext";
-import { RootStackParamList } from "../navigation/RootNavigator";
+import { ScreenNavigationProp } from "../types/Navigation";
 
 const { width } = Dimensions.get("window");
 
@@ -19,12 +18,9 @@ const { width } = Dimensions.get("window");
 const HORIZONTAL_PADDING = 16;
 const CARD_SPACING = 12;
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Home"
->;
+type HomeScreenNavigationProp = ScreenNavigationProp<"Home">;
 
-const HomeScreen: React.FC = () => {
+export const HomeScreen: React.FC = () => {
   const { user, signOut, isAuthenticated } = useUserContext();
   const navigation = useNavigation<HomeScreenNavigationProp>();
 
@@ -63,9 +59,18 @@ const HomeScreen: React.FC = () => {
         <Text style={styles.welcomeText}>Bonjour,</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
       </View>
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-        <Text style={styles.signOutText}>Déconnexion</Text>
-      </TouchableOpacity>
+
+      <View style={styles.headerButtons}>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => navigation.navigate("Profil")}
+        >
+          <Text style={styles.profileButtonText}>Profil</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutText}>Déconnexion</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.logoContainer}>
         <Image
@@ -214,6 +219,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#d0d0d0",
     backgroundColor: "rgba(255,255,255,0.8)",
+  },
+  headerButtons: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    flexDirection: "row",
+    gap: 10,
+  },
+  profileButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#4a5c4a",
+    backgroundColor: "#4a5c4a",
+  },
+  profileButtonText: {
+    fontSize: 12,
+    color: "#fff",
+    fontWeight: "400",
+    fontFamily: "System",
   },
   signOutText: {
     fontSize: 12,
@@ -446,5 +472,3 @@ const styles = StyleSheet.create({
     fontFamily: "System",
   },
 });
-
-export default HomeScreen;

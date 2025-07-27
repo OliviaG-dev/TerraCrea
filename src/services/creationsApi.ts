@@ -1,27 +1,43 @@
 import { supabase } from "./supabase";
-import { Creation, CreationCategory } from "../types/Creation";
+import {
+  Creation,
+  CreationCategory,
+  CreationWithArtisan,
+} from "../types/Creation";
 import { useState, useEffect } from "react";
 
 // =============================================
 // INTERFACES POUR LES RÉPONSES SUPABASE
 // =============================================
 
-interface SupabaseCreation {
+interface SupabaseCreationWithUser {
   id: string;
   title: string;
   description: string;
   price: number;
   image_url: string;
-  category_id: CreationCategory;
-  artisan_name: string;
-  artisan_location: string;
-  artisan_profile_image?: string;
+  category: CreationCategory;
+  artisan_id: string;
   materials: string[];
   is_available: boolean;
   rating: number;
   review_count: number;
   created_at: string;
-  tags: string[];
+  updated_at?: string;
+  tags: string[]; // Tags directement dans creations_full
+  // Données jointes de la table artisans (structure réelle)
+  artisans: {
+    id: string;
+    name: string;
+    location?: string;
+    profile_image_url?: string;
+    bio?: string;
+    email?: string;
+    phone?: string;
+    is_verified: boolean;
+    joined_at: string;
+    updated_at: string;
+  } | null;
 }
 
 interface CategoryWithCount {
@@ -35,29 +51,69 @@ interface CategoryWithCount {
 // =============================================
 
 /**
- * Transforme une création Supabase en format attendu par l'app
+ * Transforme une création Supabase avec données utilisateur en format attendu par l'app
  */
-const transformSupabaseCreation = (
-  supabaseCreation: SupabaseCreation
-): Creation => {
+const transformSupabaseCreationWithUser = (
+  supabaseCreation: SupabaseCreationWithUser
+): CreationWithArtisan => {
+  const artisan = supabaseCreation.artisans || {
+    id: supabaseCreation.artisan_id,
+    name: "Artisan inconnu",
+    location: "",
+    is_verified: false,
+    joined_at: "",
+    updated_at: "",
+  };
+
+  // Créer le nom d'affichage de l'artisan avec les données de la table artisans
+  const getArtisanDisplayName = () => {
+    // Utiliser le nom de l'artisan directement
+    if (artisan.name && artisan.name.trim()) {
+      return artisan.name.trim();
+    }
+
+    // Fallback avec email (première partie) si pas de nom
+    if (artisan.email) {
+      return artisan.email.split("@")[0];
+    }
+
+    // Dernier recours
+    return "Artisan";
+  };
+
+  // Séparer le nom en prénom et nom de famille pour compatibilité
+  const [firstName = "", ...lastNameParts] = artisan.name?.split(" ") || [];
+  const lastName = lastNameParts.join(" ");
+
   return {
     id: supabaseCreation.id,
     title: supabaseCreation.title,
     description: supabaseCreation.description,
     price: supabaseCreation.price,
     imageUrl: supabaseCreation.image_url,
-    category: supabaseCreation.category_id,
-    artisan: {
-      name: supabaseCreation.artisan_name,
-      location: supabaseCreation.artisan_location,
-      profileImage: supabaseCreation.artisan_profile_image,
-    },
+    category: supabaseCreation.category,
+    artisanId: supabaseCreation.artisan_id,
     materials: supabaseCreation.materials || [],
     isAvailable: supabaseCreation.is_available,
     rating: supabaseCreation.rating,
     reviewCount: supabaseCreation.review_count,
     createdAt: supabaseCreation.created_at,
+    updatedAt: supabaseCreation.updated_at,
     tags: supabaseCreation.tags || [],
+    artisan: {
+      id: artisan.id,
+      username: artisan.email?.split("@")[0], // Généré à partir de l'email
+      firstName: firstName,
+      lastName: lastName,
+      profileImage: artisan.profile_image_url,
+      displayName: getArtisanDisplayName(),
+      artisanProfile: {
+        businessName: artisan.name, // Le nom peut servir de nom de commerce
+        location: artisan.location,
+        verified: artisan.is_verified,
+        rating: supabaseCreation.rating, // Utiliser la note de la création
+      },
+    },
   };
 };
 
@@ -67,13 +123,29 @@ const transformSupabaseCreation = (
 
 export class CreationsApi {
   /**
-   * Récupère toutes les créations disponibles
+   * Récupère toutes les créations disponibles avec informations artisan
    */
-  static async getAllCreations(): Promise<Creation[]> {
+  static async getAllCreations(): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
         .from("creations_full")
-        .select("*")
+        .select(
+          `
+          *,
+          artisans:artisan_id (
+            id,
+            name,
+            location,
+            profile_image_url,
+            bio,
+            email,
+            phone,
+            is_verified,
+            joined_at,
+            updated_at
+          )
+        `
+        )
         .eq("is_available", true)
         .order("created_at", { ascending: false });
 
@@ -82,7 +154,7 @@ export class CreationsApi {
         throw error;
       }
 
-      return data?.map(transformSupabaseCreation) || [];
+      return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
       console.error("Erreur getAllCreations:", error);
       return [];
@@ -95,17 +167,34 @@ export class CreationsApi {
   static async searchCreations(
     searchQuery: string,
     category?: CreationCategory | "all"
-  ): Promise<Creation[]> {
+  ): Promise<CreationWithArtisan[]> {
     try {
       let query = supabase
         .from("creations_full")
-        .select("*")
+        .select(
+          `
+          *,
+          artisans:artisan_id (
+            id,
+            name,
+            location,
+            profile_image_url,
+            bio,
+            email,
+            phone,
+            is_verified,
+            joined_at,
+            updated_at
+          )
+        `
+        )
         .eq("is_available", true);
 
+      // TODO: Décommenté quand la colonne category existe
       // Filtre par catégorie si spécifié et différent de 'all'
-      if (category && category !== "all") {
-        query = query.eq("category_id", category);
-      }
+      // if (category && category !== "all") {
+      //   query = query.eq("category", category);
+      // }
 
       // Filtre par terme de recherche si fourni
       if (searchQuery.trim()) {
@@ -114,14 +203,16 @@ export class CreationsApi {
         );
       }
 
-      const { data, error } = await query.order("rating", { ascending: false });
+      const { data, error } = await query.order("created_at", {
+        ascending: false,
+      });
 
       if (error) {
         console.error("Erreur lors de la recherche:", error);
         throw error;
       }
 
-      return data?.map(transformSupabaseCreation) || [];
+      return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
       console.error("Erreur searchCreations:", error);
       return [];
@@ -133,21 +224,37 @@ export class CreationsApi {
    */
   static async getCreationsByCategory(
     category: CreationCategory
-  ): Promise<Creation[]> {
+  ): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations_full")
-        .select("*")
-        .eq("is_available", true)
-        .eq("category_id", category)
-        .order("rating", { ascending: false });
+        .from("creations")
+        .select(
+          `
+          *,
+          artisans:artisan_id (
+            id,
+            name,
+            location,
+            profile_image_url,
+            bio,
+            email,
+            phone,
+            is_verified,
+            joined_at,
+            updated_at
+          )
+        `
+        )
+        .eq("is_available", true);
+      // TODO: Décommenté quand la colonne category existe
+      // .eq("category", category)
 
       if (error) {
         console.error("Erreur lors du filtrage par catégorie:", error);
         throw error;
       }
 
-      return data?.map(transformSupabaseCreation) || [];
+      return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
       console.error("Erreur getCreationsByCategory:", error);
       return [];
@@ -157,11 +264,29 @@ export class CreationsApi {
   /**
    * Récupère les créations les mieux notées
    */
-  static async getTopRatedCreations(limit: number = 10): Promise<Creation[]> {
+  static async getTopRatedCreations(
+    limit: number = 10
+  ): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations_full")
-        .select("*")
+        .from("creations")
+        .select(
+          `
+          *,
+          artisans:artisan_id (
+            id,
+            name,
+            location,
+            profile_image_url,
+            bio,
+            email,
+            phone,
+            is_verified,
+            joined_at,
+            updated_at
+          )
+        `
+        )
         .eq("is_available", true)
         .gte("review_count", 5) // Minimum 5 avis
         .order("rating", { ascending: false })
@@ -176,7 +301,7 @@ export class CreationsApi {
         throw error;
       }
 
-      return data?.map(transformSupabaseCreation) || [];
+      return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
       console.error("Erreur getTopRatedCreations:", error);
       return [];
@@ -186,11 +311,29 @@ export class CreationsApi {
   /**
    * Récupère les créations récentes
    */
-  static async getRecentCreations(limit: number = 20): Promise<Creation[]> {
+  static async getRecentCreations(
+    limit: number = 20
+  ): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations_full")
-        .select("*")
+        .from("creations")
+        .select(
+          `
+          *,
+          artisans:artisan_id (
+            id,
+            name,
+            location,
+            profile_image_url,
+            bio,
+            email,
+            phone,
+            is_verified,
+            joined_at,
+            updated_at
+          )
+        `
+        )
         .eq("is_available", true)
         .order("created_at", { ascending: false })
         .limit(limit);
@@ -203,7 +346,7 @@ export class CreationsApi {
         throw error;
       }
 
-      return data?.map(transformSupabaseCreation) || [];
+      return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
       console.error("Erreur getRecentCreations:", error);
       return [];
@@ -213,11 +356,29 @@ export class CreationsApi {
   /**
    * Recherche par matériaux
    */
-  static async getCreationsByMaterial(material: string): Promise<Creation[]> {
+  static async getCreationsByMaterial(
+    material: string
+  ): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations_full")
-        .select("*")
+        .from("creations")
+        .select(
+          `
+          *,
+          artisans:artisan_id (
+            id,
+            name,
+            location,
+            profile_image_url,
+            bio,
+            email,
+            phone,
+            is_verified,
+            joined_at,
+            updated_at
+          )
+        `
+        )
         .eq("is_available", true)
         .contains("materials", [material])
         .order("rating", { ascending: false });
@@ -227,7 +388,7 @@ export class CreationsApi {
         throw error;
       }
 
-      return data?.map(transformSupabaseCreation) || [];
+      return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
       console.error("Erreur getCreationsByMaterial:", error);
       return [];
@@ -237,11 +398,27 @@ export class CreationsApi {
   /**
    * Recherche par tags
    */
-  static async getCreationsByTag(tag: string): Promise<Creation[]> {
+  static async getCreationsByTag(tag: string): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations_full")
-        .select("*")
+        .from("creations")
+        .select(
+          `
+          *,
+          artisans:artisan_id (
+            id,
+            name,
+            location,
+            profile_image_url,
+            bio,
+            email,
+            phone,
+            is_verified,
+            joined_at,
+            updated_at
+          )
+        `
+        )
         .eq("is_available", true)
         .contains("tags", [tag])
         .order("rating", { ascending: false });
@@ -251,7 +428,7 @@ export class CreationsApi {
         throw error;
       }
 
-      return data?.map(transformSupabaseCreation) || [];
+      return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
       console.error("Erreur getCreationsByTag:", error);
       return [];
@@ -280,7 +457,6 @@ export class CreationsApi {
       }
 
       // Transformation manuelle pour le comptage
-      // Note: La syntaxe exacte peut varier selon la version de Supabase
       return (
         data?.map((cat) => ({
           id: cat.id,
@@ -299,7 +475,9 @@ export class CreationsApi {
   /**
    * Recherche textuelle avancée avec PostgreSQL
    */
-  static async advancedTextSearch(searchQuery: string): Promise<Creation[]> {
+  static async advancedTextSearch(
+    searchQuery: string
+  ): Promise<CreationWithArtisan[]> {
     try {
       // Utilise la recherche textuelle PostgreSQL pour de meilleurs résultats
       const { data, error } = await supabase.rpc("search_creations_fulltext", {
@@ -312,7 +490,7 @@ export class CreationsApi {
         return this.searchCreations(searchQuery);
       }
 
-      return data?.map(transformSupabaseCreation) || [];
+      return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
       console.error("Erreur advancedTextSearch:", error);
       // Fallback vers la recherche simple
@@ -329,20 +507,38 @@ export class CreationsApi {
     category?: CreationCategory | "all",
     searchQuery?: string
   ): Promise<{
-    creations: Creation[];
+    creations: CreationWithArtisan[];
     totalCount: number;
     hasMore: boolean;
   }> {
     try {
       let query = supabase
         .from("creations_full")
-        .select("*", { count: "exact" })
+        .select(
+          `
+          *,
+          artisans:artisan_id (
+            id,
+            name,
+            location,
+            profile_image_url,
+            bio,
+            email,
+            phone,
+            is_verified,
+            joined_at,
+            updated_at
+          )
+        `,
+          { count: "exact" }
+        )
         .eq("is_available", true);
 
+      // TODO: Décommenté quand la colonne category existe
       // Filtre par catégorie
-      if (category && category !== "all") {
-        query = query.eq("category_id", category);
-      }
+      // if (category && category !== "all") {
+      //   query = query.eq("category", category);
+      // }
 
       // Filtre par recherche
       if (searchQuery?.trim()) {
@@ -360,7 +556,7 @@ export class CreationsApi {
         throw error;
       }
 
-      const creations = data?.map(transformSupabaseCreation) || [];
+      const creations = data?.map(transformSupabaseCreationWithUser) || [];
       const totalCount = count || 0;
       const hasMore = (page + 1) * pageSize < totalCount;
 
@@ -384,26 +580,26 @@ export class CreationsApi {
    */
   static async addToFavorites(creationId: string): Promise<boolean> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        throw new Error('Utilisateur non connecté');
+        throw new Error("Utilisateur non connecté");
       }
 
-      const { error } = await supabase
-        .from('user_favorites')
-        .insert({
-          user_id: user.id,
-          creation_id: creationId
-        });
+      const { error } = await supabase.from("user_favorites").insert({
+        user_id: user.id,
+        creation_id: creationId,
+      });
 
       if (error) {
-        console.error('Erreur lors de l\'ajout aux favoris:', error);
+        console.error("Erreur lors de l'ajout aux favoris:", error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Erreur addToFavorites:', error);
+      console.error("Erreur addToFavorites:", error);
       return false;
     }
   }
@@ -413,25 +609,27 @@ export class CreationsApi {
    */
   static async removeFromFavorites(creationId: string): Promise<boolean> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        throw new Error('Utilisateur non connecté');
+        throw new Error("Utilisateur non connecté");
       }
 
       const { error } = await supabase
-        .from('user_favorites')
+        .from("user_favorites")
         .delete()
-        .eq('user_id', user.id)
-        .eq('creation_id', creationId);
+        .eq("user_id", user.id)
+        .eq("creation_id", creationId);
 
       if (error) {
-        console.error('Erreur lors de la suppression des favoris:', error);
+        console.error("Erreur lors de la suppression des favoris:", error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Erreur removeFromFavorites:', error);
+      console.error("Erreur removeFromFavorites:", error);
       return false;
     }
   }
@@ -441,24 +639,26 @@ export class CreationsApi {
    */
   static async isFavorite(creationId: string): Promise<boolean> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return false;
 
       const { data, error } = await supabase
-        .from('user_favorites')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('creation_id', creationId)
+        .from("user_favorites")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("creation_id", creationId)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Erreur lors de la vérification des favoris:', error);
+      if (error && error.code !== "PGRST116") {
+        console.error("Erreur lors de la vérification des favoris:", error);
         return false;
       }
 
       return !!data;
     } catch (error) {
-      console.error('Erreur isFavorite:', error);
+      console.error("Erreur isFavorite:", error);
       return false;
     }
   }
@@ -466,42 +666,50 @@ export class CreationsApi {
   /**
    * Récupérer les favoris de l'utilisateur connecté
    */
-  static async getUserFavorites(): Promise<Creation[]> {
+  static async getUserFavorites(): Promise<CreationWithArtisan[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return [];
 
       const { data, error } = await supabase
-        .from('user_favorites_full')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('favorited_at', { ascending: false });
+        .from("user_favorites")
+        .select(
+          `
+          creation_id,
+          creations:creation_id (
+            *,
+            artisans:artisan_id (
+              id,
+              name,
+              location,
+              profile_image_url,
+              bio,
+              email,
+              phone,
+              is_verified,
+              joined_at,
+              updated_at
+            )
+          )
+        `
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
       if (error) {
-        console.error('Erreur lors de la récupération des favoris:', error);
+        console.error("Erreur lors de la récupération des favoris:", error);
         return [];
       }
 
-      return data?.map((fav: any) => ({
-        id: fav.creation_id,
-        title: fav.title,
-        description: fav.description,
-        price: fav.price,
-        imageUrl: fav.image_url,
-        category: fav.category_id,
-        artisan: {
-          name: fav.artisan_name,
-          location: fav.artisan_location,
-        },
-        materials: fav.materials || [],
-        isAvailable: fav.is_available,
-        rating: fav.rating,
-        reviewCount: fav.review_count,
-        createdAt: fav.created_at,
-        tags: fav.tags || [],
-      })) || [];
+      return (
+        data
+          ?.map((fav: any) => transformSupabaseCreationWithUser(fav.creations))
+          .filter(Boolean) || []
+      );
     } catch (error) {
-      console.error('Erreur getUserFavorites:', error);
+      console.error("Erreur getUserFavorites:", error);
       return [];
     }
   }
@@ -515,7 +723,7 @@ export class CreationsApi {
  * Hook pour remplacer les données mock dans ExploreScreen
  */
 export const useCreationsData = () => {
-  const [creations, setCreations] = useState<Creation[]>([]);
+  const [creations, setCreations] = useState<CreationWithArtisan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -549,7 +757,7 @@ export const useCreationsData = () => {
  * Hook pour la recherche et le filtrage
  */
 export const useCreationsSearch = () => {
-  const [results, setResults] = useState<Creation[]>([]);
+  const [results, setResults] = useState<CreationWithArtisan[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -582,7 +790,7 @@ export const useCreationsSearch = () => {
  * Hook pour gérer les favoris
  */
 export const useFavorites = () => {
-  const [favorites, setFavorites] = useState<Creation[]>([]);
+  const [favorites, setFavorites] = useState<CreationWithArtisan[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -593,7 +801,7 @@ export const useFavorites = () => {
       const data = await CreationsApi.getUserFavorites();
       setFavorites(data);
     } catch (err) {
-      setError('Erreur lors du chargement des favoris');
+      setError("Erreur lors du chargement des favoris");
       console.error(err);
     } finally {
       setLoading(false);
@@ -608,7 +816,7 @@ export const useFavorites = () => {
       }
       return success;
     } catch (err) {
-      setError('Erreur lors de l\'ajout aux favoris');
+      setError("Erreur lors de l'ajout aux favoris");
       console.error(err);
       return false;
     }
@@ -622,7 +830,7 @@ export const useFavorites = () => {
       }
       return success;
     } catch (err) {
-      setError('Erreur lors de la suppression des favoris');
+      setError("Erreur lors de la suppression des favoris");
       console.error(err);
       return false;
     }
