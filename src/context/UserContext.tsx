@@ -30,17 +30,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   // Fonctions de mise à jour de profil (à implémenter dans useAuth)
   const updateProfile = async (data: UserProfileUpdate) => {
     // TODO: Implémenter la mise à jour du profil via Supabase
-    console.log("Updating profile:", data);
   };
 
   const upgradeToArtisan = async (artisanData: ArtisanProfileUpdate) => {
     // TODO: Implémenter l'upgrade vers artisan via Supabase
-    console.log("Upgrading to artisan:", artisanData);
   };
 
   const updateArtisanProfile = async (data: ArtisanProfileUpdate) => {
     // TODO: Implémenter la mise à jour du profil artisan via Supabase
-    console.log("Updating artisan profile:", data);
   };
 
   return (

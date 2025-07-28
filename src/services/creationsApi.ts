@@ -1,9 +1,5 @@
 import { supabase } from "./supabase";
-import {
-  Creation,
-  CreationCategory,
-  CreationWithArtisan,
-} from "../types/Creation";
+import { CreationCategory, CreationWithArtisan } from "../types/Creation";
 import { useState, useEffect } from "react";
 
 // =============================================
@@ -16,7 +12,7 @@ interface SupabaseCreationWithUser {
   description: string;
   price: number;
   image_url: string;
-  category: CreationCategory;
+  category_id: CreationCategory;
   artisan_id: string;
   materials: string[];
   is_available: boolean;
@@ -91,7 +87,7 @@ const transformSupabaseCreationWithUser = (
     description: supabaseCreation.description,
     price: supabaseCreation.price,
     imageUrl: supabaseCreation.image_url,
-    category: supabaseCreation.category,
+    category: supabaseCreation.category_id || CreationCategory.OTHER,
     artisanId: supabaseCreation.artisan_id,
     materials: supabaseCreation.materials || [],
     isAvailable: supabaseCreation.is_available,
@@ -131,32 +127,30 @@ export class CreationsApi {
         .from("creations_full")
         .select(
           `
-          *,
-          artisans:artisan_id (
-            id,
-            name,
-            location,
-            profile_image_url,
-            bio,
-            email,
-            phone,
-            is_verified,
-            joined_at,
-            updated_at
-          )
-        `
+            *,
+            artisans:artisan_id (
+              id,
+              name,
+              location,
+              profile_image_url,
+              bio,
+              email,
+              phone,
+              is_verified,
+              joined_at,
+              updated_at
+            )
+          `
         )
         .eq("is_available", true)
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Erreur lors de la récupération des créations:", error);
         throw error;
       }
 
       return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
-      console.error("Erreur getAllCreations:", error);
       return [];
     }
   }
@@ -190,11 +184,10 @@ export class CreationsApi {
         )
         .eq("is_available", true);
 
-      // TODO: Décommenté quand la colonne category existe
       // Filtre par catégorie si spécifié et différent de 'all'
-      // if (category && category !== "all") {
-      //   query = query.eq("category", category);
-      // }
+      if (category && category !== "all") {
+        query = query.eq("category_id", category);
+      }
 
       // Filtre par terme de recherche si fourni
       if (searchQuery.trim()) {
@@ -208,13 +201,11 @@ export class CreationsApi {
       });
 
       if (error) {
-        console.error("Erreur lors de la recherche:", error);
         throw error;
       }
 
       return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
-      console.error("Erreur searchCreations:", error);
       return [];
     }
   }
@@ -245,18 +236,15 @@ export class CreationsApi {
           )
         `
         )
-        .eq("is_available", true);
-      // TODO: Décommenté quand la colonne category existe
-      // .eq("category", category)
+        .eq("is_available", true)
+        .eq("category_id", category);
 
       if (error) {
-        console.error("Erreur lors du filtrage par catégorie:", error);
         throw error;
       }
 
       return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
-      console.error("Erreur getCreationsByCategory:", error);
       return [];
     }
   }
@@ -294,16 +282,11 @@ export class CreationsApi {
         .limit(limit);
 
       if (error) {
-        console.error(
-          "Erreur lors de la récupération des top créations:",
-          error
-        );
         throw error;
       }
 
       return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
-      console.error("Erreur getTopRatedCreations:", error);
       return [];
     }
   }
@@ -339,16 +322,11 @@ export class CreationsApi {
         .limit(limit);
 
       if (error) {
-        console.error(
-          "Erreur lors de la récupération des créations récentes:",
-          error
-        );
         throw error;
       }
 
       return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
-      console.error("Erreur getRecentCreations:", error);
       return [];
     }
   }
@@ -384,13 +362,11 @@ export class CreationsApi {
         .order("rating", { ascending: false });
 
       if (error) {
-        console.error("Erreur lors de la recherche par matériau:", error);
         throw error;
       }
 
       return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
-      console.error("Erreur getCreationsByMaterial:", error);
       return [];
     }
   }
@@ -424,13 +400,11 @@ export class CreationsApi {
         .order("rating", { ascending: false });
 
       if (error) {
-        console.error("Erreur lors de la recherche par tag:", error);
         throw error;
       }
 
       return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
-      console.error("Erreur getCreationsByTag:", error);
       return [];
     }
   }
@@ -452,7 +426,6 @@ export class CreationsApi {
         .eq("creations.is_available", true);
 
       if (error) {
-        console.error("Erreur lors de la récupération des catégories:", error);
         throw error;
       }
 
@@ -467,7 +440,6 @@ export class CreationsApi {
         })) || []
       );
     } catch (error) {
-      console.error("Erreur getCategoriesWithCount:", error);
       return [];
     }
   }
@@ -485,14 +457,12 @@ export class CreationsApi {
       });
 
       if (error) {
-        console.error("Erreur lors de la recherche textuelle:", error);
         // Fallback vers la recherche simple
         return this.searchCreations(searchQuery);
       }
 
       return data?.map(transformSupabaseCreationWithUser) || [];
     } catch (error) {
-      console.error("Erreur advancedTextSearch:", error);
       // Fallback vers la recherche simple
       return this.searchCreations(searchQuery);
     }
@@ -534,11 +504,10 @@ export class CreationsApi {
         )
         .eq("is_available", true);
 
-      // TODO: Décommenté quand la colonne category existe
       // Filtre par catégorie
-      // if (category && category !== "all") {
-      //   query = query.eq("category", category);
-      // }
+      if (category && category !== "all") {
+        query = query.eq("category_id", category);
+      }
 
       // Filtre par recherche
       if (searchQuery?.trim()) {
@@ -552,7 +521,6 @@ export class CreationsApi {
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (error) {
-        console.error("Erreur lors de la pagination:", error);
         throw error;
       }
 
@@ -566,7 +534,6 @@ export class CreationsApi {
         hasMore,
       };
     } catch (error) {
-      console.error("Erreur getCreationsWithPagination:", error);
       return {
         creations: [],
         totalCount: 0,
@@ -593,13 +560,11 @@ export class CreationsApi {
       });
 
       if (error) {
-        console.error("Erreur lors de l'ajout aux favoris:", error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error("Erreur addToFavorites:", error);
       return false;
     }
   }
@@ -623,13 +588,11 @@ export class CreationsApi {
         .eq("creation_id", creationId);
 
       if (error) {
-        console.error("Erreur lors de la suppression des favoris:", error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error("Erreur removeFromFavorites:", error);
       return false;
     }
   }
@@ -652,13 +615,11 @@ export class CreationsApi {
         .single();
 
       if (error && error.code !== "PGRST116") {
-        console.error("Erreur lors de la vérification des favoris:", error);
         return false;
       }
 
       return !!data;
     } catch (error) {
-      console.error("Erreur isFavorite:", error);
       return false;
     }
   }
@@ -699,7 +660,6 @@ export class CreationsApi {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Erreur lors de la récupération des favoris:", error);
         return [];
       }
 
@@ -709,7 +669,6 @@ export class CreationsApi {
           .filter(Boolean) || []
       );
     } catch (error) {
-      console.error("Erreur getUserFavorites:", error);
       return [];
     }
   }
@@ -718,73 +677,6 @@ export class CreationsApi {
 // =============================================
 // HOOKS PERSONNALISÉS POUR REACT
 // =============================================
-
-/**
- * Hook pour remplacer les données mock dans ExploreScreen
- */
-export const useCreationsData = () => {
-  const [creations, setCreations] = useState<CreationWithArtisan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadCreations = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await CreationsApi.getAllCreations();
-      setCreations(data);
-    } catch (err) {
-      setError("Erreur lors du chargement des créations");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadCreations();
-  }, []);
-
-  return {
-    creations,
-    loading,
-    error,
-    refetch: loadCreations,
-  };
-};
-
-/**
- * Hook pour la recherche et le filtrage
- */
-export const useCreationsSearch = () => {
-  const [results, setResults] = useState<CreationWithArtisan[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const search = async (
-    searchQuery: string,
-    category: CreationCategory | "all" = "all"
-  ) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await CreationsApi.searchCreations(searchQuery, category);
-      setResults(data);
-    } catch (err) {
-      setError("Erreur lors de la recherche");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return {
-    results,
-    loading,
-    error,
-    search,
-  };
-};
 
 /**
  * Hook pour gérer les favoris
@@ -802,7 +694,6 @@ export const useFavorites = () => {
       setFavorites(data);
     } catch (err) {
       setError("Erreur lors du chargement des favoris");
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -817,7 +708,6 @@ export const useFavorites = () => {
       return success;
     } catch (err) {
       setError("Erreur lors de l'ajout aux favoris");
-      console.error(err);
       return false;
     }
   };
@@ -831,7 +721,6 @@ export const useFavorites = () => {
       return success;
     } catch (err) {
       setError("Erreur lors de la suppression des favoris");
-      console.error(err);
       return false;
     }
   };

@@ -65,23 +65,18 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - **Expo** ~53.0.17
 - **Supabase** ^2.45.4 (Authentification et Backend)
 - **React Navigation** ^7.1.14
-- **TanStack Query** ^5.82.0
 - **Zustand** ^5.0.6
-- **Axios** ^1.10.0
 
 ## 📁 Structure du projet
 
 ```
 src/
 ├── components/       # Composants réutilisables
-│   └── MyButton.tsx
 ├── context/         # Contextes React
 │   └── UserContext.tsx        # Gestion état utilisateur avec auth
 ├── hooks/           # Hooks personnalisés
-│   ├── useUser.ts
 │   └── useAuth.ts             # Hook d'authentification Supabase
-├── navigation/      # Configuration de navigation
-│   └── RootNavigator.tsx      # Navigation conditionnelle auth/non-auth
+
 ├── screens/         # Écrans de l'application
 │   ├── HomeScreen.tsx         # Écran d'accueil adaptatif
 │   ├── LoginScreen.tsx        # Écran de connexion/inscription
@@ -90,7 +85,6 @@ src/
 │   ├── EmailConfirmationScreen.tsx  # Attente de confirmation email
 │   └── EmailConfirmedScreen.tsx     # Confirmation réussie
 ├── services/        # Services API
-│   ├── api.ts
 │   ├── supabase.ts            # Configuration et services Supabase
 │   ├── authService.ts         # Service d'authentification avancé
 │   └── creationsApi.ts        # API complète pour les créations
@@ -99,9 +93,9 @@ src/
 │   ├── Creation.ts            # Types créations et catégories
 │   └── Navigation.ts          # Types de navigation
 └── utils/          # Utilitaires
-    ├── formatDate.ts
     ├── userUtils.ts           # Utilitaires pour profils utilisateur
-    └── emailConfirmationHandler.ts
+    ├── emailConfirmationHandler.ts  # Gestion confirmation email
+    └── accessibilityConfig.ts       # Configuration accessibilité
 ```
 
 ## 🔧 Installation

@@ -67,9 +67,9 @@ export const EmailConfirmationScreen = ({
           await Linking.openURL(url);
           break;
         }
-      } catch (error) {
-        console.log("Erreur lors de l'ouverture de l'app email:", error);
-      }
+          } catch (error) {
+      // Gestion silencieuse de l'erreur
+    }
     }
   };
 

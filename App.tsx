@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { Linking } from "react-native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { NavigationContainer, LinkingOptions } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { UserProvider } from "./src/context/UserContext";
@@ -19,16 +19,6 @@ import {
 import { RootStackParamList } from "./src/types/Navigation";
 
 import { supabase } from "./src/services/supabase";
-
-// Créer une instance de QueryClient
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  },
-});
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -53,7 +43,6 @@ const linking: LinkingOptions<RootStackParamList> = {
   subscribe(listener) {
     // Écouter les liens profonds pendant que l'app est active
     const onReceiveURL = ({ url }: { url: string }) => {
-      console.log("Lien reçu:", url);
       listener(url);
     };
 
@@ -117,12 +106,7 @@ const NavigationHandler = () => {
 // Composant NavigationContainer principal
 const RootNavigator = () => {
   return (
-    <NavigationContainer
-      linking={linking}
-      onStateChange={(state) => {
-        console.log("Navigation state changed:", state);
-      }}
-    >
+    <NavigationContainer linking={linking} onStateChange={(state) => {}}>
       <NavigationHandler />
     </NavigationContainer>
   );
@@ -139,17 +123,13 @@ export default function App() {
     supabase
       .from("categories")
       .select("count")
-      .then(({ data, error }) => {
-        console.log(data ? "✅ Supabase connecté!" : "❌ Erreur:", error);
-      });
+      .then(({ data, error }) => {});
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <RootNavigator />
-        <StatusBar style="auto" />
-      </UserProvider>
-    </QueryClientProvider>
+    <UserProvider>
+      <RootNavigator />
+      <StatusBar style="auto" />
+    </UserProvider>
   );
 }

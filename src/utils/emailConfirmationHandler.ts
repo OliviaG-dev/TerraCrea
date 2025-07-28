@@ -10,17 +10,13 @@ export const useEmailConfirmationHandler = () => {
     // Écouter les changements d'état d'authentification
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth event:", event, "Session:", session?.user?.email);
-
         if (event === "SIGNED_IN" && session?.user?.email_confirmed_at) {
           // L'utilisateur vient de confirmer son email
-          console.log("Email confirmé, redirection vers EmailConfirmed");
           navigation.navigate("EmailConfirmed" as any);
         }
 
         if (event === "TOKEN_REFRESHED" && session?.user?.email_confirmed_at) {
           // Confirmation détectée lors du refresh du token
-          console.log("Confirmation détectée lors du refresh");
           navigation.navigate("EmailConfirmed" as any);
         }
       }
@@ -40,14 +36,12 @@ export const checkAndRedirectIfConfirmed = async (navigation: any) => {
     } = await supabase.auth.getUser();
 
     if (user && user.email_confirmed_at) {
-      console.log("Utilisateur confirmé trouvé, redirection...");
       navigation.navigate("EmailConfirmed");
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error("Erreur lors de la vérification de confirmation:", error);
     return false;
   }
 };
@@ -71,12 +65,10 @@ export const handleEmailConfirmationLink = async (
       });
 
       if (error) {
-        console.error("Erreur lors de la confirmation:", error);
         return false;
       }
 
       if (data.user && data.user.email_confirmed_at) {
-        console.log("Email confirmé avec succès");
         navigation.navigate("EmailConfirmed");
         return true;
       }
@@ -84,7 +76,6 @@ export const handleEmailConfirmationLink = async (
 
     return false;
   } catch (error) {
-    console.error("Erreur lors du traitement du lien de confirmation:", error);
     return false;
   }
 };

@@ -16,7 +16,6 @@ export class AccessibilityConfig {
     try {
       return await AccessibilityInfo.isScreenReaderEnabled();
     } catch (error) {
-      console.warn("Erreur lors de la vérification du lecteur d'écran:", error);
       return false;
     }
   }
