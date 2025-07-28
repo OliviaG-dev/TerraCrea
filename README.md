@@ -4,13 +4,14 @@ Une plateforme React Native pour découvrir et acheter des créations artisanale
 
 ## 📋 Vue d'ensemble
 
-TerraCréa est une application React Native moderne qui connecte les créateurs locaux avec les amateurs d'artisanat. L'application propose un système d'authentification flexible permettant aux utilisateurs de découvrir les créations en tant que visiteur ou de s'inscrire pour une expérience complète.
+TerraCréa est une application React Native moderne qui connecte les créateurs locaux avec les amateurs d'artisanat. L'application propose un système d'authentification flexible permettant aux utilisateurs de découvrir les créations en tant que visiteur ou de s'inscrire pour une expérience complète avec profils artisan, favoris et messagerie.
 
 ## ✨ Fonctionnalités principales
 
 ### 🔐 **Authentification avec Supabase**
 
 - ✅ **Connexion/Inscription** avec email et mot de passe
+- ✅ **Confirmation par email** avec écrans dédiés et renvoi possible
 - ✅ **Gestion des sessions** automatique et persistante
 - ✅ **Navigation conditionnelle** selon l'état d'authentification
 - ✅ **Mode visiteur** pour explorer sans compte
@@ -20,9 +21,31 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 
 - ✅ **Écran d'accueil adaptatif** selon l'état de connexion
 - ✅ **Écran de connexion modal** avec design élégant
+- ✅ **Écran d'exploration** des créations avec recherche et filtres
+- ✅ **Écran de profil** utilisateur et artisan complet
 - ✅ **Navigation fluide** avec React Navigation
 - ✅ **Design cohérent** avec palette de couleurs terre
 - ✅ **Responsive design** pour toutes les tailles d'écran
+
+### 🛍️ **Exploration et découverte**
+
+- ✅ **Catalogue de créations** avec affichage en grille
+- ✅ **Recherche textuelle** dans titres et descriptions
+- ✅ **Filtres par catégorie** (Bijoux, Poterie, Décoration, Textiles, Bois, Métal)
+- ✅ **Système de favoris** pour les créations préférées
+- ✅ **Informations artisan** intégrées à chaque création
+- ✅ **Pagination** pour optimiser les performances
+- ✅ **Dates de création** et statut de disponibilité
+
+### 👥 **Profils et communauté**
+
+- ✅ **Profils utilisateur** personnalisables (nom, bio, photo)
+- ✅ **Profils artisan** avec informations métier
+- ✅ **Système dual** : Acheteur et/ou Artisan
+- ✅ **Spécialités artisan** par catégories
+- ✅ **Informations business** (nom, localisation, année création)
+- ✅ **Validation de profil** avec vérification
+- ✅ **Upgrade vers artisan** depuis le profil utilisateur
 
 ### 🏗️ **Architecture technique**
 
@@ -30,7 +53,9 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Hooks personnalisés** pour la gestion d'état
 - ✅ **Context API** pour l'état global utilisateur
 - ✅ **Services centralisés** pour l'API Supabase
+- ✅ **API de créations** complète avec CRUD operations
 - ✅ **Composants réutilisables** et modulaires
+- ✅ **Gestion d'erreurs** centralisée et user-friendly
 
 ## 🚀 Technologies utilisées
 
@@ -51,22 +76,32 @@ src/
 ├── components/       # Composants réutilisables
 │   └── MyButton.tsx
 ├── context/         # Contextes React
-│   └── UserContext.tsx    # Gestion état utilisateur avec auth
+│   └── UserContext.tsx        # Gestion état utilisateur avec auth
 ├── hooks/           # Hooks personnalisés
 │   ├── useUser.ts
-│   └── useAuth.ts         # Hook d'authentification Supabase
+│   └── useAuth.ts             # Hook d'authentification Supabase
 ├── navigation/      # Configuration de navigation
-│   └── RootNavigator.tsx  # Navigation conditionnelle auth/non-auth
+│   └── RootNavigator.tsx      # Navigation conditionnelle auth/non-auth
 ├── screens/         # Écrans de l'application
-│   ├── HomeScreen.tsx     # Écran d'accueil adaptatif
-│   └── LoginScreen.tsx    # Écran de connexion/inscription
+│   ├── HomeScreen.tsx         # Écran d'accueil adaptatif
+│   ├── LoginScreen.tsx        # Écran de connexion/inscription
+│   ├── ExploreScreen.tsx      # Écran d'exploration des créations
+│   ├── ProfilScreen.tsx       # Écran de profil utilisateur/artisan
+│   ├── EmailConfirmationScreen.tsx  # Attente de confirmation email
+│   └── EmailConfirmedScreen.tsx     # Confirmation réussie
 ├── services/        # Services API
 │   ├── api.ts
-│   └── supabase.ts        # Configuration et services Supabase
+│   ├── supabase.ts            # Configuration et services Supabase
+│   ├── authService.ts         # Service d'authentification avancé
+│   └── creationsApi.ts        # API complète pour les créations
 ├── types/          # Types TypeScript
-│   └── User.ts            # Types utilisateur compatibles Supabase
+│   ├── User.ts                # Types utilisateur et artisan
+│   ├── Creation.ts            # Types créations et catégories
+│   └── Navigation.ts          # Types de navigation
 └── utils/          # Utilitaires
-    └── formatDate.ts
+    ├── formatDate.ts
+    ├── userUtils.ts           # Utilitaires pour profils utilisateur
+    └── emailConfirmationHandler.ts
 ```
 
 ## 🔧 Installation
@@ -144,26 +179,51 @@ npm run check-node # Vérifier la version Node.js
 - **Visiteurs non connectés** :
 
   - Boutons "Se connecter" et "S'inscrire" en en-tête
-  - Bouton "Continuer" principal (vers nouveau screen)
-  - Interface d'exploration libre
+  - Bouton "Continuer" principal vers l'exploration
+  - Interface d'exploration libre accessible
 
 - **Utilisateurs connectés** :
   - Message de bienvenue personnalisé avec email
   - Bouton "Explorez" pour accéder aux fonctionnalités complètes
+  - Accès direct au profil depuis l'en-tête
   - Bouton de déconnexion discret
 
-### 🔐 **Authentification**
+### 🔍 **Exploration des créations**
+
+- **Catalogue complet** avec affichage en grille responsive
+- **Barre de recherche** pour rechercher par nom ou description
+- **Filtres par catégorie** : Tout, Bijoux, Poterie, Décoration, etc.
+- **Cartes de création** avec image, prix, artisan et favoris
+- **Informations artisan** intégrées (nom, localisation, vérification)
+- **Système de favoris** pour utilisateurs connectés
+- **Pagination automatique** pour de meilleures performances
+
+### 👤 **Profils utilisateur**
+
+- **Profil personnel** : nom, prénom, bio, nom d'utilisateur
+- **Profil artisan** (optionnel) :
+  - Nom d'entreprise et localisation
+  - Spécialités par catégories
+  - Description et année de création
+  - Statut de vérification
+- **Upgrade artisan** depuis le profil utilisateur
+- **Validation des données** avant sauvegarde
+
+### 🔐 **Authentification complète**
 
 - **Modal de connexion/inscription** accessible depuis l'accueil
-- **Basculement facile** entre connexion et inscription
+- **Confirmation par email** obligatoire avec écrans dédiés
+- **Renvoi d'email** en cas de non-réception
+- **Écrans de confirmation** avec animations et redirections
 - **Retour automatique** à l'accueil après connexion
-- **Fermeture possible** pour rester en mode visiteur
+- **Mode visiteur** toujours accessible
 
 ### 🔄 **Gestion des sessions**
 
 - **Sessions persistantes** - L'utilisateur reste connecté
 - **Vérification automatique** de la session au démarrage
 - **Écoute des changements** d'état d'authentification
+- **Gestion des profils** artisan et acheteur séparément
 - **Déconnexion sécurisée** avec confirmation
 
 ## 🎨 Design et UX
@@ -189,17 +249,6 @@ npm run check-node # Vérifier la version Node.js
 - **Navigation protégée** selon l'état d'authentification
 - **Gestion d'erreurs** appropriée sans exposer de données sensibles
 
-## 🧪 Fonctionnalités à venir
-
-- [ ] **Écran d'exploration** des créations
-- [ ] **Profils créateurs** avec portfolios
-- [ ] **Système de favoris** et collections
-- [ ] **Messagerie** créateur-acheteur
-- [ ] **Géolocalisation** des créateurs locaux
-- [ ] **Notifications push** pour nouveautés
-- [ ] **Reset de mot de passe** par email
-- [ ] **Authentification sociale** (Google, Apple)
-
 ## 🏗️ Architecture
 
 ### 🔗 **Flux d'authentification**
@@ -213,18 +262,49 @@ npm run check-node # Vérifier la version Node.js
     ├── 👤 Non connecté → Boutons Auth + Exploration libre
     │   ↓
     │   🔐 LoginScreen (modal)
-    │   ├── ✅ Connexion → Retour HomeScreen (connecté)
-    │   ├── ✅ Inscription → Confirmation email
-    │   └── ❌ Fermer → Mode visiteur
+    │   ├── ✅ Connexion → Vérification email → HomeScreen (connecté)
+    │   ├── ✅ Inscription → EmailConfirmationScreen → EmailConfirmedScreen
+    │   └── ❌ Fermer → Mode visiteur (ExploreScreen)
     │
-    └── ✅ Connecté → Interface personnalisée + Fonctionnalités complètes
+    └── ✅ Connecté → Interface personnalisée + Profil + Favoris
+        ↓
+        🔍 ExploreScreen (Recherche + Filtres + Favoris)
+        ↓
+        👤 ProfilScreen (Utilisateur ↔️ Artisan)
 ```
 
-### 🎯 **Hooks et Context**
+### 🎯 **Services et API**
 
-- **`useAuth`** : Gestion complète de l'authentification
-- **`UserContext`** : État global utilisateur partagé
-- **`useUserContext`** : Hook pour accéder au contexte utilisateur
+- **`AuthService`** : Authentification avec confirmation email
+- **`CreationsApi`** : CRUD complet pour les créations
+  - Récupération avec pagination
+  - Recherche et filtrage
+  - Gestion des favoris
+  - Transformations de données Supabase
+- **`useAuth`** : Hook de gestion complète de l'authentification
+- **`UserContext`** : État global utilisateur avec profils artisan
+- **`useFavorites`** : Hook pour la gestion des favoris
+
+### 📊 **Modèles de données**
+
+- **`User`** : Profil utilisateur avec capacités artisan/acheteur
+- **`ArtisanProfile`** : Profil métier spécialisé
+- **`Creation`** : Créations avec catégories et métadonnées
+- **`CreationWithArtisan`** : Créations enrichies avec données artisan
+- **`CreationCategory`** : Enum des catégories disponibles
+
+## 🧪 Fonctionnalités à venir
+
+- [ ] **Messagerie** créateur-acheteur
+- [ ] **Géolocalisation** des créateurs locaux
+- [ ] **Notifications push** pour nouveautés et favoris
+- [ ] **Reset de mot de passe** par email
+- [ ] **Authentification sociale** (Google, Apple)
+- [ ] **Système de commandes** et panier
+- [ ] **Évaluations et commentaires** sur les créations
+- [ ] **Photos multiples** par création
+- [ ] **Gestion de stock** pour les artisans
+- [ ] **Tableau de bord artisan** avec statistiques
 
 ## 🤝 Contribution
 
