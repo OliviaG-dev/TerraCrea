@@ -22,14 +22,22 @@ const HORIZONTAL_PADDING = 16;
 
 type LoginScreenNavigationProp = ScreenNavigationProp<"Login">;
 
-const LoginScreen: React.FC = () => {
+type LoginScreenProps = {
+  route: {
+    params?: {
+      mode?: string;
+    };
+  };
+};
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(route.params?.mode === "signup");
   const [loading, setLoading] = useState(false);
 
   const toggleMode = () => {
@@ -138,32 +146,59 @@ const LoginScreen: React.FC = () => {
         <View style={styles.formContainer}>
           {isSignUp && (
             <>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Prénom *</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  placeholder="Votre prénom"
-                  autoComplete="given-name"
-                />
+              <View style={styles.sectionTitle}>
+                <Text style={styles.sectionTitleText}>
+                  Informations personnelles
+                </Text>
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Nom *</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={lastName}
-                  onChangeText={setLastName}
-                  placeholder="Votre nom"
-                  autoComplete="family-name"
-                />
+              <View style={styles.nameRow}>
+                <View style={[styles.inputContainer, styles.halfWidth]}>
+                  <Text style={styles.inputLabel}>
+                    Prénom <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    placeholder="Votre prénom"
+                    autoComplete="given-name"
+                    accessibilityLabel="Champ prénom requis"
+                  />
+                </View>
+
+                <View style={[styles.inputContainer, styles.halfWidth]}>
+                  <Text style={styles.inputLabel}>
+                    Nom <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={lastName}
+                    onChangeText={setLastName}
+                    placeholder="Votre nom"
+                    autoComplete="family-name"
+                    accessibilityLabel="Champ nom requis"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.sectionTitle}>
+                <Text style={styles.sectionTitleText}>
+                  Informations de connexion
+                </Text>
               </View>
             </>
           )}
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Email *</Text>
+          <View
+            style={[
+              styles.inputContainer,
+              isSignUp && styles.inputContainerSignUp,
+            ]}
+          >
+            <Text style={styles.inputLabel}>
+              Email <Text style={styles.required}>*</Text>
+            </Text>
             <TextInput
               style={styles.textInput}
               value={email}
@@ -172,11 +207,19 @@ const LoginScreen: React.FC = () => {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
+              accessibilityLabel="Champ email requis"
             />
           </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Mot de passe *</Text>
+          <View
+            style={[
+              styles.inputContainer,
+              isSignUp && styles.inputContainerSignUp,
+            ]}
+          >
+            <Text style={styles.inputLabel}>
+              Mot de passe <Text style={styles.required}>*</Text>
+            </Text>
             <TextInput
               style={styles.textInput}
               value={password}
@@ -184,6 +227,7 @@ const LoginScreen: React.FC = () => {
               placeholder="••••••••"
               secureTextEntry
               autoComplete="password"
+              accessibilityLabel="Champ mot de passe requis"
             />
           </View>
 
@@ -194,6 +238,8 @@ const LoginScreen: React.FC = () => {
             ]}
             onPress={handleSubmit}
             disabled={loading}
+            accessibilityLabel={isSignUp ? "Créer le compte" : "Se connecter"}
+            accessibilityRole="button"
           >
             <Text style={styles.submitButtonText}>
               {loading
@@ -237,71 +283,80 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "space-between",
     paddingHorizontal: HORIZONTAL_PADDING,
+    paddingVertical: 16,
   },
   headerSection: {
-    flex: 0.3,
+    flex: 0.25,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 40,
-    minHeight: screenHeight * 0.25,
+    paddingTop: 50,
+    paddingBottom: 30,
+    minHeight: screenHeight * 0.2,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "300",
+    fontSize: 32,
+    fontWeight: "700",
     color: "#4a5c4a",
     textAlign: "center",
-    marginBottom: 15,
-    letterSpacing: 1,
+    marginBottom: 16,
+    letterSpacing: -0.5,
     fontFamily: "System",
   },
   subtitle: {
-    fontSize: 14,
-    fontWeight: "300",
+    fontSize: 15,
+    fontWeight: "400",
     color: "#7a8a7a",
     textAlign: "center",
-    lineHeight: 20,
-    letterSpacing: 0.3,
+    lineHeight: 22,
+    letterSpacing: 0.2,
     marginBottom: 25,
+    paddingHorizontal: 30,
     fontFamily: "System",
   },
   formContainer: {
     width: "100%",
-    maxWidth: Math.min(400, screenWidth - (HORIZONTAL_PADDING + 10) * 2),
+    maxWidth: Math.min(380, screenWidth - (HORIZONTAL_PADDING + 10) * 2),
+    paddingVertical: 15,
   },
   inputContainer: {
-    marginBottom: 15,
+    marginBottom: 24,
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: "400",
+    fontWeight: "600",
     color: "#4a5c4a",
     marginBottom: 8,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     fontFamily: "System",
   },
   textInput: {
-    height: 50,
+    height: 52,
     borderWidth: 1,
     borderColor: "#e0e0e0",
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: 15,
     color: "#4a5c4a",
     backgroundColor: "#ffffff",
     fontFamily: "System",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   submitButton: {
     backgroundColor: "#4a5c4a",
     paddingVertical: 16,
-    borderRadius: 8,
-    marginTop: 15,
+    borderRadius: 10,
+    marginTop: 32,
     alignItems: "center",
     justifyContent: "center",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
   },
   submitButtonDisabled: {
     backgroundColor: "#a0a0a0",
@@ -309,40 +364,67 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: "#fafaf9",
     fontSize: 16,
-    fontWeight: "500",
-    letterSpacing: 0.5,
+    fontWeight: "600",
+    letterSpacing: 0.3,
     fontFamily: "System",
   },
   footerSection: {
     height: screenHeight * 0.12,
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 15,
+    paddingBottom: 20,
+    paddingTop: 15,
   },
   switchText: {
     fontSize: 14,
     color: "#7a8a7a",
-    marginBottom: 8,
+    marginBottom: 10,
     fontFamily: "System",
   },
   switchButtonText: {
     fontSize: 14,
     color: "#4a5c4a",
-    fontWeight: "500",
-    letterSpacing: 0.3,
+    fontWeight: "600",
+    letterSpacing: 0.2,
     textDecorationLine: "underline",
     fontFamily: "System",
   },
   backToHomeButton: {
-    marginTop: 10,
+    marginTop: 18,
   },
   backToHomeText: {
     fontSize: 14,
     color: "#4a5c4a",
     fontWeight: "500",
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     textDecorationLine: "underline",
     fontFamily: "System",
+  },
+  sectionTitle: {
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  sectionTitleText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#4a5c4a",
+    letterSpacing: 0.2,
+    fontFamily: "System",
+  },
+  nameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  halfWidth: {
+    width: "48%",
+  },
+  inputContainerSignUp: {
+    marginBottom: 20,
+  },
+  required: {
+    color: "#e74c3c",
+    fontWeight: "bold",
   },
 });
 

@@ -1,6 +1,6 @@
 export type RootStackParamList = {
   Home: undefined;
-  Login: undefined;
+  Login: { mode?: string };
   Explore: undefined;
   Profil: undefined;
   EmailConfirmation: { email: string };

@@ -276,19 +276,15 @@ const ExploreScreen: React.FC = () => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.navigate("Home")}
-        accessible={true}
-        accessibilityRole="button"
-        accessibilityLabel="Retour à l'accueil"
-      >
-        <Text style={styles.backButtonText}>←</Text>
-      </TouchableOpacity>
       <Text style={styles.headerTitle}>Explorer les créations</Text>
       {!loading && !error && (
         <View style={styles.favoritesIndicator}>
-          <Text style={styles.favoritesCount}>❤️ {favorites.length}</Text>
+          <View style={styles.heartContainer}>
+            <View style={styles.heartLeft} />
+            <View style={styles.heartRight} />
+            <View style={styles.heartBottom} />
+          </View>
+          <Text style={styles.favoritesCount}>{favorites.length}</Text>
         </View>
       )}
       {(loading || error) && <View style={styles.placeholder} />}
@@ -455,9 +451,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: HORIZONTAL_PADDING,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    paddingVertical: 16,
     height: 60, // Hauteur fixe pour le header
   },
   scrollableContent: {
@@ -487,32 +481,75 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: "500",
+    fontSize: 20,
+    fontWeight: "600",
     color: "#4a5c4a",
     fontFamily: "System",
     flex: 1,
     textAlign: "center",
-    marginHorizontal: 8,
+    letterSpacing: 0.3,
   },
   placeholder: {
     width: 40,
   },
   favoritesIndicator: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    backgroundColor: "#4a5c4a",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#4a5c4a",
     elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   favoritesCount: {
-    fontSize: 12,
-    color: "#4a5c4a",
-    fontWeight: "500",
+    fontSize: 14,
+    color: "#fafaf9",
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    marginLeft: 4,
+    lineHeight: 14,
+    textAlignVertical: "center",
+  },
+  heartContainer: {
+    width: 16,
+    height: 14,
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  heartLeft: {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    backgroundColor: "#fafaf9",
+    borderRadius: 4,
+    top: 0,
+    left: 0,
+  },
+  heartRight: {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    backgroundColor: "#fafaf9",
+    borderRadius: 4,
+    top: 0,
+    right: 0,
+  },
+  heartBottom: {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    backgroundColor: "#fafaf9",
+    transform: [{ rotate: "45deg" }],
+    top: 4,
+    left: 4,
   },
   searchContainer: {
     paddingHorizontal: HORIZONTAL_PADDING,
