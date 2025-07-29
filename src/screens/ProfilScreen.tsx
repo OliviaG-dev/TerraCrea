@@ -136,7 +136,7 @@ export const ProfilScreen = () => {
         </Text>
         <TouchableOpacity
           style={styles.loginButton}
-          onPress={() => navigation.navigate("Login")}
+          onPress={() => (navigation as any).navigate("Login")}
         >
           <Text style={styles.loginButtonText}>Se connecter</Text>
         </TouchableOpacity>

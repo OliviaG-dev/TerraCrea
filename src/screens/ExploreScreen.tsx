@@ -20,6 +20,7 @@ import {
 } from "../types/Creation";
 import { CreationsApi, useFavorites } from "../services/creationsApi";
 import { ScreenNavigationProp } from "../types/Navigation";
+import { useUserContext } from "../context/UserContext";
 
 const { width } = Dimensions.get("window");
 const HORIZONTAL_PADDING = 16;
@@ -30,6 +31,7 @@ type ExploreScreenNavigationProp = ScreenNavigationProp<"Explore">;
 
 const ExploreScreen: React.FC = () => {
   const navigation = useNavigation<ExploreScreenNavigationProp>();
+  const { isAuthenticated } = useUserContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<
     CreationCategory | "all"
@@ -116,29 +118,31 @@ const ExploreScreen: React.FC = () => {
           accessibilityLabel={`Image de ${item.title}`}
         />
 
-        {/* Cœur favoris - Haut gauche */}
-        <TouchableOpacity
-          style={[
-            styles.favoriteOverlay,
-            favorites.some((fav) => fav.id === item.id) &&
-              styles.favoriteOverlayActive,
-          ]}
-          onPress={() => handleToggleFavorite(item.id)}
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel="Ajouter aux favoris"
-          accessibilityHint="Double-tap pour ajouter ou retirer des favoris"
-        >
-          <Text
+        {/* Cœur favoris - Haut gauche (visible seulement si connecté) */}
+        {isAuthenticated && (
+          <TouchableOpacity
             style={[
-              styles.favoriteOverlayIcon,
+              styles.favoriteOverlay,
               favorites.some((fav) => fav.id === item.id) &&
-                styles.favoriteOverlayIconActive,
+                styles.favoriteOverlayActive,
             ]}
+            onPress={() => handleToggleFavorite(item.id)}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Ajouter aux favoris"
+            accessibilityHint="Double-tap pour ajouter ou retirer des favoris"
           >
-            {favorites.some((fav) => fav.id === item.id) ? "♥" : "♡"}
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.favoriteOverlayIcon,
+                favorites.some((fav) => fav.id === item.id) &&
+                  styles.favoriteOverlayIconActive,
+              ]}
+            >
+              {favorites.some((fav) => fav.id === item.id) ? "♥" : "♡"}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Prix - Haut droite */}
         <View style={styles.priceOverlay}>
@@ -276,8 +280,17 @@ const ExploreScreen: React.FC = () => {
 
   const renderHeader = () => (
     <View style={styles.header}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.navigate("Home")}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel="Retour à l'accueil"
+      >
+        <Text style={styles.backButtonText}>←</Text>
+      </TouchableOpacity>
       <Text style={styles.headerTitle}>Explorer les créations</Text>
-      {!loading && !error && (
+      {!loading && !error && isAuthenticated && (
         <View style={styles.favoritesIndicator}>
           <View style={styles.heartContainer}>
             <View style={styles.heartLeft} />
@@ -422,6 +435,10 @@ const ExploreScreen: React.FC = () => {
         showsVerticalScrollIndicator={true}
         accessible={false}
         importantForAccessibility="no-hide-descendants"
+        ref={(scrollViewRef) => {
+          // @ts-ignore
+          global.scrollViewRef = scrollViewRef;
+        }}
       >
         {allCreations.length === 0 ? (
           renderEmptyState()
@@ -433,6 +450,22 @@ const ExploreScreen: React.FC = () => {
                   {renderCreationCard(item)}
                 </View>
               ))}
+            </View>
+
+            {/* Bouton retour en haut */}
+            <View style={styles.scrollToTopContainer}>
+              <TouchableOpacity
+                style={styles.scrollToTopButton}
+                onPress={() => {
+                  // @ts-ignore
+                  global.scrollViewRef?.scrollTo({ y: 0, animated: true });
+                }}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Retour en haut de la liste"
+              >
+                <Text style={styles.scrollToTopButtonText}>↑</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -488,6 +521,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
     letterSpacing: 0.3,
+    marginHorizontal: 8,
   },
   placeholder: {
     width: 40,
@@ -554,6 +588,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: HORIZONTAL_PADDING,
     paddingVertical: 8,
+    alignItems: "center",
   },
   searchInput: {
     height: 38,
@@ -569,7 +604,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
-    width: "100%",
+    width: "90%",
+    maxWidth: 400,
   },
   filtersSection: {
     paddingVertical: 6,
@@ -642,6 +678,7 @@ const styles = StyleSheet.create({
   cardWrapper: {
     width: CARD_WIDTH,
     marginBottom: 20,
+    alignItems: "center",
   },
   creationCard: {
     width: CARD_WIDTH,
@@ -980,17 +1017,17 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     paddingHorizontal: HORIZONTAL_PADDING,
     paddingVertical: 8,
-    backgroundColor: "#f5f6f5",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e8e9e8",
+    backgroundColor: "#fafaf9",
+    alignItems: "center",
   },
   // Grille des filtres sur 2 lignes
   categoriesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     width: "100%",
+    maxWidth: 600,
   },
   categoryText: {
     fontSize: 11,
@@ -1077,13 +1114,17 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: HORIZONTAL_PADDING,
+    paddingTop: 8,
     paddingBottom: 20,
+    alignItems: "center",
   },
   gridContent: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
+    width: "100%",
+    maxWidth: 800,
   },
   titleRow: {
     flexDirection: "row",
@@ -1140,6 +1181,23 @@ const styles = StyleSheet.create({
   },
   availabilityText: {
     fontSize: 12,
+    fontWeight: "500",
+    fontFamily: "System",
+  },
+  scrollToTopContainer: {
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingBottom: 15,
+  },
+  scrollToTopButton: {
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scrollToTopButtonText: {
+    fontSize: 18,
+    color: "#4a5c4a",
     fontWeight: "500",
     fontFamily: "System",
   },

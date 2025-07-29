@@ -14,6 +14,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { ScreenNavigationProp } from "../types/Navigation";
+import { useUserContext } from "../context/UserContext";
 
 const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
 
@@ -33,6 +34,7 @@ type LoginScreenProps = {
 const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { signIn, signUp } = useAuth();
+  const { user, isAuthenticated } = useUserContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -102,14 +104,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
             "Veuillez confirmer votre email avant de vous connecter.",
             [{ text: "OK" }]
           );
+        } else if (result?.needsOtp) {
+          Alert.alert(
+            "Lien de connexion envoyé",
+            "Un lien de connexion a été envoyé à votre email. Vérifiez votre boîte de réception et cliquez sur le lien pour vous connecter.",
+            [{ text: "OK" }]
+          );
         } else if (result?.success) {
-          Alert.alert("Connexion réussie !", "Bienvenue sur TerraCréa", [
-            { text: "OK", onPress: () => navigation.navigate("Home") },
-          ]);
+          // Navigation directe vers le profil
+          (navigation as any).navigate("Profil");
         } else {
           Alert.alert(
             "Erreur de connexion",
-            result?.error || "Une erreur est survenue"
+            result?.error || "Email ou mot de passe incorrect"
           );
         }
       }

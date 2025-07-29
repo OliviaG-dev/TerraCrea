@@ -4,7 +4,7 @@ import { supabase } from "../services/supabase";
 import { ScreenNavigationProp } from "../types/Navigation";
 
 export const useEmailConfirmationHandler = () => {
-  const navigation = useNavigation<ScreenNavigationProp<keyof any>>();
+  const navigation = useNavigation<any>();
 
   useEffect(() => {
     // Écouter les changements d'état d'authentification
