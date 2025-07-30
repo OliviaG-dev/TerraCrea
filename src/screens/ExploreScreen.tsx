@@ -290,17 +290,14 @@ const ExploreScreen: React.FC = () => {
         <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Explorer les créations</Text>
-      {!loading && !error && isAuthenticated && (
+      {!loading && !error && isAuthenticated ? (
         <View style={styles.favoritesIndicator}>
-          <View style={styles.heartContainer}>
-            <View style={styles.heartLeft} />
-            <View style={styles.heartRight} />
-            <View style={styles.heartBottom} />
-          </View>
+          <Text style={styles.heartIcon}>♥</Text>
           <Text style={styles.favoritesCount}>{favorites.length}</Text>
         </View>
+      ) : (
+        <View style={styles.placeholder} />
       )}
-      {(loading || error) && <View style={styles.placeholder} />}
     </View>
   );
 
@@ -500,6 +497,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f4",
     borderWidth: 1,
     borderColor: "#e8e9e8",
+    width: 40,
+    alignItems: "center",
   },
   backButtonText: {
     fontSize: 18,
@@ -512,47 +511,19 @@ const styles = StyleSheet.create({
     color: "#4a5c4a",
     fontFamily: "System",
     letterSpacing: 0.3,
+    flex: 1,
+    textAlign: "center",
   },
   favoritesIndicator: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
-  heartContainer: {
-    position: "relative",
-    width: 16,
-    height: 14,
+  heartIcon: {
+    fontSize: 24,
+    color: "#4a5c4a",
   },
-  heartLeft: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    width: 8,
-    height: 8,
-    backgroundColor: "#dc3545",
-    borderRadius: 4,
-    transform: [{ rotate: "-45deg" }],
-  },
-  heartRight: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    width: 8,
-    height: 8,
-    backgroundColor: "#dc3545",
-    borderRadius: 4,
-    transform: [{ rotate: "45deg" }],
-  },
-  heartBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 4,
-    width: 8,
-    height: 8,
-    backgroundColor: "#dc3545",
-    borderRadius: 4,
-    transform: [{ rotate: "45deg" }],
-  },
+
   favoritesCount: {
     fontSize: 12,
     color: "#4a5c4a",
@@ -561,6 +532,7 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 40,
+    alignItems: "center",
   },
   searchContainer: {
     paddingHorizontal: HORIZONTAL_PADDING,
@@ -693,11 +665,11 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   favoriteOverlayActive: {
-    backgroundColor: "rgba(220, 53, 69, 0.9)",
+    backgroundColor: "rgba(74, 92, 74, 0.9)",
   },
   favoriteOverlayIcon: {
     fontSize: 16,
-    color: "#dc3545",
+    color: "#4a5c4a",
   },
   favoriteOverlayIconActive: {
     color: "#fff",
