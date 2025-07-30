@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   Switch,
+  SafeAreaView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
@@ -114,346 +115,367 @@ export const ProfilScreen = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    Alert.alert("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?", [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: "Déconnexion",
-        style: "destructive",
-        onPress: async () => {
-          await signOut();
-          navigation.navigate("Home");
-        },
-      },
-    ]);
-  };
-
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>
-          Vous devez être connecté pour accéder à votre profil.
-        </Text>
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => (navigation as any).navigate("Login")}
-        >
-          <Text style={styles.loginButtonText}>Se connecter</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            Vous devez être connecté pour accéder à votre profil.
+          </Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => (navigation as any).navigate("Login")}
+          >
+            <Text style={styles.loginButtonText}>Se connecter</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Mon Profil</Text>
-        <Text style={styles.welcomeText}>
-          Bonjour {getUserDisplayName(user)} !
-        </Text>
-
-        {capabilities.isVerified && (
-          <View style={styles.verifiedBadge}>
-            <Text style={styles.verifiedText}>✓ Artisan Vérifié</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "profil" && styles.activeTab]}
-          onPress={() => setActiveTab("profil")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "profil" && styles.activeTabText,
-            ]}
-          >
-            Profil Personnel
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "artisan" && styles.activeTab]}
-          onPress={() => setActiveTab("artisan")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "artisan" && styles.activeTabText,
-            ]}
-          >
-            {capabilities.canCreateProducts
-              ? "Profil Artisan"
-              : "Devenir Artisan"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Contenu selon l'onglet actif */}
-      {activeTab === "profil" ? (
-        <View style={styles.tabContent}>
-          <Text style={styles.sectionTitle}>Informations personnelles</Text>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nom d'utilisateur</Text>
-            <TextInput
-              style={styles.input}
-              value={userForm.username}
-              onChangeText={(text) =>
-                setUserForm((prev) => ({ ...prev, username: text }))
-              }
-              placeholder="Votre nom d'utilisateur"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Prénom</Text>
-            <TextInput
-              style={styles.input}
-              value={userForm.firstName}
-              onChangeText={(text) =>
-                setUserForm((prev) => ({ ...prev, firstName: text }))
-              }
-              placeholder="Votre prénom"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nom</Text>
-            <TextInput
-              style={styles.input}
-              value={userForm.lastName}
-              onChangeText={(text) =>
-                setUserForm((prev) => ({ ...prev, lastName: text }))
-              }
-              placeholder="Votre nom"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Bio</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={userForm.bio}
-              onChangeText={(text) =>
-                setUserForm((prev) => ({ ...prev, bio: text }))
-              }
-              placeholder="Parlez-nous de vous..."
-              multiline
-              numberOfLines={3}
-            />
-          </View>
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleUpdateProfile}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "Mise à jour..." : "Mettre à jour le profil"}
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeText}>
+              Bonjour {getUserDisplayName(user)} !
             </Text>
+
+            {capabilities.isVerified && (
+              <View style={styles.verifiedBadge}>
+                <Text style={styles.verifiedText}>✓ Artisan Vérifié</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Bouton retour à l'accueil */}
+          <TouchableOpacity
+            style={styles.backToHomeButton}
+            onPress={() => navigation.navigate("Home")}
+          >
+            <Text style={styles.backToHomeText}>← Retour à l'accueil</Text>
           </TouchableOpacity>
 
-          {/* Section compte */}
-          <View style={styles.accountSection}>
-            <Text style={styles.sectionTitle}>Gestion du compte</Text>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email :</Text>
-              <Text style={styles.infoValue}>{user.email}</Text>
-            </View>
+          {/* Tabs */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === "profil" && styles.activeTab]}
+              onPress={() => setActiveTab("profil")}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "profil" && styles.activeTabText,
+                ]}
+              >
+                Profil Personnel
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.signOutButton}
-              onPress={handleSignOut}
+              style={[styles.tab, activeTab === "artisan" && styles.activeTab]}
+              onPress={() => setActiveTab("artisan")}
             >
-              <Text style={styles.signOutText}>Se déconnecter</Text>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "artisan" && styles.activeTabText,
+                ]}
+              >
+                {capabilities.canCreateProducts
+                  ? "Profil Artisan"
+                  : "Devenir Artisan"}
+              </Text>
             </TouchableOpacity>
           </View>
-        </View>
-      ) : (
-        <View style={styles.tabContent}>
-          {!capabilities.canCreateProducts ? (
-            // Section "Devenir Artisan"
-            <>
-              <Text style={styles.sectionTitle}>Devenir Artisan</Text>
-              <Text style={styles.sectionDescription}>
-                Créez votre profil artisan pour commencer à vendre vos créations
-                sur TerraCréa
-              </Text>
-            </>
-          ) : (
-            // Section "Profil Artisan"
-            <>
-              <Text style={styles.sectionTitle}>Votre Profil Artisan</Text>
-              <View style={styles.statsRow}>
-                <View style={styles.statCard}>
-                  <Text style={styles.statNumber}>
-                    {user.artisanProfile?.totalSales || 0}
-                  </Text>
-                  <Text style={styles.statLabel}>Ventes</Text>
-                </View>
-                <View style={styles.statCard}>
-                  <Text style={styles.statNumber}>
-                    {user.artisanProfile?.rating || 0}⭐
-                  </Text>
-                  <Text style={styles.statLabel}>Note</Text>
+
+          {/* Contenu selon l'onglet actif */}
+          {activeTab === "profil" ? (
+            <View style={styles.tabContent}>
+              <Text style={styles.sectionTitle}>Informations personnelles</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Nom d'utilisateur</Text>
+                <TextInput
+                  style={styles.input}
+                  value={userForm.username}
+                  onChangeText={(text) =>
+                    setUserForm((prev) => ({ ...prev, username: text }))
+                  }
+                  placeholder="Votre nom d'utilisateur"
+                  placeholderTextColor="#8a9a8a"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Prénom</Text>
+                <TextInput
+                  style={styles.input}
+                  value={userForm.firstName}
+                  onChangeText={(text) =>
+                    setUserForm((prev) => ({ ...prev, firstName: text }))
+                  }
+                  placeholder="Votre prénom"
+                  placeholderTextColor="#8a9a8a"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Nom</Text>
+                <TextInput
+                  style={styles.input}
+                  value={userForm.lastName}
+                  onChangeText={(text) =>
+                    setUserForm((prev) => ({ ...prev, lastName: text }))
+                  }
+                  placeholder="Votre nom"
+                  placeholderTextColor="#8a9a8a"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Bio</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={userForm.bio}
+                  onChangeText={(text) =>
+                    setUserForm((prev) => ({ ...prev, bio: text }))
+                  }
+                  placeholder="Parlez-nous de vous..."
+                  placeholderTextColor="#8a9a8a"
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.primaryButton, loading && styles.buttonDisabled]}
+                onPress={handleUpdateProfile}
+                disabled={loading}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {loading ? "Mise à jour..." : "Mettre à jour le profil"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Section compte */}
+              <View style={styles.accountSection}>
+                <Text style={styles.sectionTitle}>Gestion du compte</Text>
+
+                <View style={styles.infoCard}>
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Email :</Text>
+                    <Text style={styles.infoValue}>{user.email}</Text>
+                  </View>
                 </View>
               </View>
-            </>
-          )}
-
-          {/* Formulaire artisan */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nom de votre entreprise/atelier *</Text>
-            <TextInput
-              style={styles.input}
-              value={artisanForm.businessName}
-              onChangeText={(text) =>
-                setArtisanForm((prev) => ({ ...prev, businessName: text }))
-              }
-              placeholder="Ex: Atelier du Bois"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Localisation *</Text>
-            <TextInput
-              style={styles.input}
-              value={artisanForm.location}
-              onChangeText={(text) =>
-                setArtisanForm((prev) => ({ ...prev, location: text }))
-              }
-              placeholder="Ex: Lyon, France"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description de votre activité *</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={artisanForm.description}
-              onChangeText={(text) =>
-                setArtisanForm((prev) => ({ ...prev, description: text }))
-              }
-              placeholder="Décrivez votre passion, votre savoir-faire, votre histoire..."
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Année de création</Text>
-            <TextInput
-              style={styles.input}
-              value={artisanForm.establishedYear.toString()}
-              onChangeText={(text) =>
-                setArtisanForm((prev) => ({
-                  ...prev,
-                  establishedYear: parseInt(text) || new Date().getFullYear(),
-                }))
-              }
-              placeholder="2024"
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Vos spécialités * (sélectionnez au moins une)
-            </Text>
-            <View style={styles.specialtiesGrid}>
-              {Object.entries(CATEGORY_LABELS).map(([category, label]) => (
-                <TouchableOpacity
-                  key={category}
-                  style={[
-                    styles.specialtyChip,
-                    artisanForm.specialties.includes(category) &&
-                      styles.specialtyChipSelected,
-                  ]}
-                  onPress={() =>
-                    handleSpecialtyToggle(category as CreationCategory)
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.specialtyText,
-                      artisanForm.specialties.includes(category) &&
-                        styles.specialtyTextSelected,
-                    ]}
-                  >
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
             </View>
-          </View>
+          ) : (
+            <View style={styles.tabContent}>
+              {!capabilities.canCreateProducts ? (
+                // Section "Devenir Artisan"
+                <>
+                  <Text style={styles.sectionTitle}>Devenir Artisan</Text>
+                  <Text style={styles.sectionDescription}>
+                    Créez votre profil artisan pour commencer à vendre vos
+                    créations sur TerraCréa
+                  </Text>
+                </>
+              ) : (
+                // Section "Profil Artisan"
+                <>
+                  <Text style={styles.sectionTitle}>Votre Profil Artisan</Text>
+                  <View style={styles.statsRow}>
+                    <View style={styles.statCard}>
+                      <Text style={styles.statNumber}>
+                        {user.artisanProfile?.totalSales || 0}
+                      </Text>
+                      <Text style={styles.statLabel}>Ventes</Text>
+                    </View>
+                    <View style={styles.statCard}>
+                      <Text style={styles.statNumber}>
+                        {user.artisanProfile?.rating || 0}⭐
+                      </Text>
+                      <Text style={styles.statLabel}>Note</Text>
+                    </View>
+                  </View>
+                </>
+              )}
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={
-              capabilities.canCreateProducts
-                ? handleUpdateArtisanProfile
-                : handleUpgradeToArtisan
-            }
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading
-                ? "Enregistrement..."
-                : capabilities.canCreateProducts
-                ? "Mettre à jour le profil artisan"
-                : "Devenir Artisan"}
-            </Text>
-          </TouchableOpacity>
+              {/* Formulaire artisan */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>
+                  Nom de votre entreprise/atelier *
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={artisanForm.businessName}
+                  onChangeText={(text) =>
+                    setArtisanForm((prev) => ({ ...prev, businessName: text }))
+                  }
+                  placeholder="Ex: Atelier du Bois"
+                  placeholderTextColor="#8a9a8a"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Localisation *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={artisanForm.location}
+                  onChangeText={(text) =>
+                    setArtisanForm((prev) => ({ ...prev, location: text }))
+                  }
+                  placeholder="Ex: Lyon, France"
+                  placeholderTextColor="#8a9a8a"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>
+                  Description de votre activité *
+                </Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={artisanForm.description}
+                  onChangeText={(text) =>
+                    setArtisanForm((prev) => ({ ...prev, description: text }))
+                  }
+                  placeholder="Décrivez votre passion, votre savoir-faire, votre histoire..."
+                  placeholderTextColor="#8a9a8a"
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Année de création</Text>
+                <TextInput
+                  style={styles.input}
+                  value={artisanForm.establishedYear.toString()}
+                  onChangeText={(text) =>
+                    setArtisanForm((prev) => ({
+                      ...prev,
+                      establishedYear:
+                        parseInt(text) || new Date().getFullYear(),
+                    }))
+                  }
+                  placeholder="2024"
+                  placeholderTextColor="#8a9a8a"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>
+                  Vos spécialités * (sélectionnez au moins une)
+                </Text>
+                <View style={styles.specialtiesGrid}>
+                  {Object.entries(CATEGORY_LABELS).map(([category, label]) => (
+                    <TouchableOpacity
+                      key={category}
+                      style={[
+                        styles.specialtyChip,
+                        artisanForm.specialties.includes(category) &&
+                          styles.specialtyChipSelected,
+                      ]}
+                      onPress={() =>
+                        handleSpecialtyToggle(category as CreationCategory)
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.specialtyText,
+                          artisanForm.specialties.includes(category) &&
+                            styles.specialtyTextSelected,
+                        ]}
+                      >
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.primaryButton, loading && styles.buttonDisabled]}
+                onPress={
+                  capabilities.canCreateProducts
+                    ? handleUpdateArtisanProfile
+                    : handleUpgradeToArtisan
+                }
+                disabled={loading}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {loading
+                    ? "Enregistrement..."
+                    : capabilities.canCreateProducts
+                    ? "Mettre à jour le profil artisan"
+                    : "Devenir Artisan"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-      )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#fafaf9",
   },
-  header: {
+  scrollView: {
+    flex: 1,
+  },
+  content: {
     padding: 20,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 8,
+  welcomeSection: {
+    marginBottom: 20,
   },
   welcomeText: {
     fontSize: 16,
-    color: "#6c757d",
+    color: "#7a8a7a",
+    fontFamily: "System",
+    letterSpacing: 0.3,
   },
   verifiedBadge: {
-    backgroundColor: "#28a745",
+    backgroundColor: "#d4a574",
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     alignSelf: "flex-start",
-    marginTop: 8,
+    marginTop: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
   },
   verifiedText: {
     color: "#fff",
     fontSize: 12,
     fontWeight: "600",
+    fontFamily: "System",
+    letterSpacing: 0.3,
   },
   tabContainer: {
     flexDirection: "row",
     backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
+    borderBottomColor: "#e8e9e8",
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   tab: {
     flex: 1,
@@ -463,31 +485,37 @@ const styles = StyleSheet.create({
     borderBottomColor: "transparent",
   },
   activeTab: {
-    borderBottomColor: "#007bff",
+    borderBottomColor: "#4a5c4a",
   },
   tabText: {
     fontSize: 14,
-    color: "#6c757d",
+    color: "#8a9a8a",
     fontWeight: "500",
+    fontFamily: "System",
+    letterSpacing: 0.3,
   },
   activeTabText: {
-    color: "#007bff",
+    color: "#4a5c4a",
     fontWeight: "600",
   },
   tabContent: {
     padding: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#4a5c4a",
+    marginBottom: 16,
+    fontFamily: "System",
+    letterSpacing: 0.3,
   },
   sectionDescription: {
     fontSize: 14,
-    color: "#6c757d",
-    marginBottom: 20,
+    color: "#7a8a7a",
+    marginBottom: 24,
     lineHeight: 20,
+    fontFamily: "System",
+    letterSpacing: 0.2,
   },
   inputGroup: {
     marginBottom: 20,
@@ -495,35 +523,55 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2c3e50",
+    color: "#4a5c4a",
     marginBottom: 8,
+    fontFamily: "System",
+    letterSpacing: 0.2,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#dee2e6",
-    borderRadius: 8,
-    padding: 12,
+    borderWidth: 1.5,
+    borderColor: "#e8e9e8",
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
     backgroundColor: "#fff",
+    color: "#4a5c4a",
+    fontFamily: "System",
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   textArea: {
     height: 100,
     textAlignVertical: "top",
   },
-  button: {
-    backgroundColor: "#007bff",
+  primaryButton: {
+    backgroundColor: "#4a5c4a",
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
     marginTop: 10,
+    elevation: 3,
+    shadowColor: "rgba(74, 92, 74, 0.25)",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: "#3d4f3d",
   },
   buttonDisabled: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#8a9a8a",
+    elevation: 1,
+    shadowOpacity: 0.1,
   },
-  buttonText: {
-    color: "#fff",
+  primaryButtonText: {
+    color: "#fafaf9",
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: "System",
+    letterSpacing: 0.3,
   },
   specialtiesGrid: {
     flexDirection: "row",
@@ -532,98 +580,160 @@ const styles = StyleSheet.create({
   },
   specialtyChip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#dee2e6",
+    borderWidth: 1.5,
+    borderColor: "#e8e9e8",
     backgroundColor: "#fff",
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   specialtyChipSelected: {
-    backgroundColor: "#007bff",
-    borderColor: "#007bff",
+    backgroundColor: "#4a5c4a",
+    borderColor: "#4a5c4a",
   },
   specialtyText: {
     fontSize: 14,
-    color: "#6c757d",
+    color: "#7a8a7a",
+    fontFamily: "System",
+    letterSpacing: 0.2,
   },
   specialtyTextSelected: {
-    color: "#fff",
+    color: "#fafaf9",
   },
   accountSection: {
     marginTop: 30,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: "#e9ecef",
+    borderTopColor: "#e8e9e8",
+  },
+  infoCard: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    borderWidth: 1,
+    borderColor: "#e8e9e8",
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
   },
   infoLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#6c757d",
+    color: "#7a8a7a",
     width: 80,
+    fontFamily: "System",
+    letterSpacing: 0.2,
   },
   infoValue: {
     fontSize: 14,
-    color: "#2c3e50",
+    color: "#4a5c4a",
     flex: 1,
+    fontFamily: "System",
+    letterSpacing: 0.2,
   },
-  signOutButton: {
-    backgroundColor: "#dc3545",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  signOutText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
+
   statsRow: {
     flexDirection: "row",
     gap: 15,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   statCard: {
     flex: 1,
     backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 8,
+    padding: 20,
+    borderRadius: 12,
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
     borderWidth: 1,
-    borderColor: "#e9ecef",
+    borderColor: "#e8e9e8",
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#2c3e50",
+    color: "#4a5c4a",
     marginBottom: 4,
+    fontFamily: "System",
+    letterSpacing: 0.3,
   },
   statLabel: {
     fontSize: 12,
-    color: "#6c757d",
+    color: "#7a8a7a",
     textTransform: "uppercase",
+    fontFamily: "System",
+    letterSpacing: 0.5,
+    fontWeight: "500",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
   errorText: {
     fontSize: 16,
-    color: "#dc3545",
+    color: "#7a8a7a",
     textAlign: "center",
     padding: 20,
+    fontFamily: "System",
+    letterSpacing: 0.3,
+    lineHeight: 24,
   },
   loginButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#4a5c4a",
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
     marginHorizontal: 20,
+    elevation: 3,
+    shadowColor: "rgba(74, 92, 74, 0.25)",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: "#3d4f3d",
   },
   loginButtonText: {
-    color: "#fff",
+    color: "#fafaf9",
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: "System",
+    letterSpacing: 0.3,
+  },
+  backToHomeButton: {
+    backgroundColor: "transparent",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4a5c4a",
+    alignSelf: "flex-start",
+    marginBottom: 20,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  backToHomeText: {
+    color: "#4a5c4a",
+    fontSize: 14,
+    fontWeight: "500",
+    fontFamily: "System",
+    letterSpacing: 0.2,
   },
 });

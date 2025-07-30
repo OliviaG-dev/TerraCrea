@@ -17,6 +17,7 @@ import {
   handleEmailConfirmationLink,
 } from "./src/utils/emailConfirmationHandler";
 import { RootStackParamList } from "./src/types/Navigation";
+import { AuthNavigator } from "./src/components/AuthNavigator";
 
 import { supabase } from "./src/services/supabase";
 
@@ -56,51 +57,7 @@ const linking: LinkingOptions<RootStackParamList> = {
 
 // Composant wrapper pour les écrans avec gestion des confirmations email
 const NavigationHandler = () => {
-  useEmailConfirmationHandler(); // Maintenant à l'intérieur du NavigationContainer
-
-  return (
-    <Stack.Navigator initialRouteName="Home">
-      <Stack.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ title: "TerraCréa" }}
-      />
-      <Stack.Screen
-        name="Login"
-        component={LoginScreen}
-        options={{ title: "Connexion" }}
-      />
-      <Stack.Screen
-        name="Explore"
-        component={ExploreScreen}
-        options={{ title: "Explorer" }}
-      />
-      <Stack.Screen
-        name="Profil"
-        component={ProfilScreen}
-        options={{
-          title: "Mon Profil",
-          headerBackTitle: "Retour",
-        }}
-      />
-      <Stack.Screen
-        name="EmailConfirmation"
-        component={EmailConfirmationScreen}
-        options={{
-          title: "Confirmation Email",
-          headerBackTitle: "Retour",
-        }}
-      />
-      <Stack.Screen
-        name="EmailConfirmed"
-        component={EmailConfirmedScreen}
-        options={{
-          title: "Email Confirmé",
-          headerLeft: () => null, // Empêche le retour
-        }}
-      />
-    </Stack.Navigator>
-  );
+  return <AuthNavigator />;
 };
 
 // Composant NavigationContainer principal

@@ -10,15 +10,22 @@ export const useEmailConfirmationHandler = () => {
     // Écouter les changements d'état d'authentification
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Ne rediriger vers EmailConfirmed que si on vient spécifiquement d'une confirmation
+        // et non pas lors d'un simple refresh ou redémarrage de l'app
         if (event === "SIGNED_IN" && session?.user?.email_confirmed_at) {
-          // L'utilisateur vient de confirmer son email
-          navigation.navigate("EmailConfirmed" as any);
+          // Vérifier si c'est une vraie confirmation récente
+          const now = new Date();
+          const confirmedAt = new Date(session.user.email_confirmed_at);
+          const timeDiff = now.getTime() - confirmedAt.getTime();
+
+          // Si la confirmation date de moins de 5 minutes, rediriger
+          if (timeDiff < 5 * 60 * 1000) {
+            navigation.navigate("EmailConfirmed" as any);
+          }
         }
 
-        if (event === "TOKEN_REFRESHED" && session?.user?.email_confirmed_at) {
-          // Confirmation détectée lors du refresh du token
-          navigation.navigate("EmailConfirmed" as any);
-        }
+        // Supprimer la redirection automatique sur TOKEN_REFRESHED
+        // car cela peut se déclencher lors du redémarrage de l'app
       }
     );
 
@@ -36,8 +43,15 @@ export const checkAndRedirectIfConfirmed = async (navigation: any) => {
     } = await supabase.auth.getUser();
 
     if (user && user.email_confirmed_at) {
-      navigation.navigate("EmailConfirmed");
-      return true;
+      // Ne rediriger que si c'est une confirmation récente (moins de 5 minutes)
+      const now = new Date();
+      const confirmedAt = new Date(user.email_confirmed_at);
+      const timeDiff = now.getTime() - confirmedAt.getTime();
+
+      if (timeDiff < 5 * 60 * 1000) {
+        navigation.navigate("EmailConfirmed");
+        return true;
+      }
     }
 
     return false;
@@ -69,6 +83,7 @@ export const handleEmailConfirmationLink = async (
       }
 
       if (data.user && data.user.email_confirmed_at) {
+        // Rediriger vers EmailConfirmed seulement si c'est une vraie confirmation
         navigation.navigate("EmailConfirmed");
         return true;
       }

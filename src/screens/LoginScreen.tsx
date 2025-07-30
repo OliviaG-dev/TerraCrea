@@ -15,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
+import { useEmailConfirmationHandler } from "../utils/emailConfirmationHandler";
 
 const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
 
@@ -35,6 +36,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { signIn, signUp } = useAuth();
   const { user, isAuthenticated } = useUserContext();
+
+  // Utiliser le handler de confirmation d'email seulement sur cet écran
+  useEmailConfirmationHandler();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -100,28 +104,22 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
           // Rediriger vers l'écran de confirmation
           navigation.navigate("EmailConfirmation", { email });
           Alert.alert(
-            "Confirmation requise",
+            "Email requis !",
             "Veuillez confirmer votre email avant de vous connecter.",
             [{ text: "OK" }]
           );
-        } else if (result?.needsOtp) {
-          Alert.alert(
-            "Lien de connexion envoyé",
-            "Un lien de connexion a été envoyé à votre email. Vérifiez votre boîte de réception et cliquez sur le lien pour vous connecter.",
-            [{ text: "OK" }]
-          );
+        } else if (result?.error) {
+          Alert.alert("Erreur de connexion", result.error);
         } else if (result?.success) {
-          // Navigation directe vers le profil
-          (navigation as any).navigate("Profil");
-        } else {
-          Alert.alert(
-            "Erreur de connexion",
-            result?.error || "Email ou mot de passe incorrect"
-          );
+          // Connexion réussie - redirection directe
+          navigation.navigate("Home");
         }
       }
     } catch (error) {
-      Alert.alert("Erreur", "Une erreur inattendue s'est produite");
+      Alert.alert(
+        "Erreur",
+        "Une erreur inattendue s'est produite. Veuillez réessayer."
+      );
     } finally {
       setLoading(false);
     }
@@ -296,29 +294,31 @@ const styles = StyleSheet.create({
     flex: 0.25,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 50,
-    paddingBottom: 30,
-    minHeight: screenHeight * 0.2,
+    width: "100%",
+    paddingTop: 40,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 32,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#4a5c4a",
     textAlign: "center",
-    marginBottom: 16,
-    letterSpacing: -0.5,
+    lineHeight: 38,
+    letterSpacing: 0.5,
+    paddingHorizontal: HORIZONTAL_PADDING + 10,
     fontFamily: "System",
+    marginBottom: 15,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "400",
     color: "#7a8a7a",
     textAlign: "center",
-    lineHeight: 22,
-    letterSpacing: 0.2,
-    marginBottom: 25,
-    paddingHorizontal: 30,
+    lineHeight: 24,
+    letterSpacing: 0.3,
+    paddingHorizontal: HORIZONTAL_PADDING + 20,
     fontFamily: "System",
+    marginBottom: 20,
   },
   formContainer: {
     width: "100%",
@@ -333,37 +333,38 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#4a5c4a",
     marginBottom: 8,
-    letterSpacing: 0.2,
     fontFamily: "System",
+    letterSpacing: 0.2,
   },
   textInput: {
     height: 52,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
+    borderColor: "#e8e9e8",
+    borderRadius: 12,
     paddingHorizontal: 16,
-    fontSize: 15,
+    fontSize: 16,
+    backgroundColor: "#fff",
     color: "#4a5c4a",
-    backgroundColor: "#ffffff",
     fontFamily: "System",
+    elevation: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   submitButton: {
     backgroundColor: "#4a5c4a",
-    paddingVertical: 16,
-    borderRadius: 10,
-    marginTop: 32,
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
-    justifyContent: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    marginTop: 10,
+    elevation: 3,
+    shadowColor: "rgba(74, 92, 74, 0.25)",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
     shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: "#3d4f3d",
   },
   submitButtonDisabled: {
     backgroundColor: "#a0a0a0",
@@ -372,8 +373,8 @@ const styles = StyleSheet.create({
     color: "#fafaf9",
     fontSize: 16,
     fontWeight: "600",
-    letterSpacing: 0.3,
     fontFamily: "System",
+    letterSpacing: 0.3,
   },
   footerSection: {
     height: screenHeight * 0.12,
@@ -391,7 +392,7 @@ const styles = StyleSheet.create({
   switchButtonText: {
     fontSize: 14,
     color: "#4a5c4a",
-    fontWeight: "600",
+    fontWeight: "500",
     letterSpacing: 0.2,
     textDecorationLine: "underline",
     fontFamily: "System",
@@ -431,7 +432,6 @@ const styles = StyleSheet.create({
   },
   required: {
     color: "#e74c3c",
-    fontWeight: "bold",
   },
 });
 

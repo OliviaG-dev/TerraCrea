@@ -10,6 +10,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { AuthService } from "../services/authService";
 import { ScreenNavigationProp } from "../types/Navigation";
+import { useEmailConfirmationHandler } from "../utils/emailConfirmationHandler";
 
 type EmailConfirmationScreenProps = {
   route: {
@@ -24,6 +25,9 @@ export const EmailConfirmationScreen = ({
 }: EmailConfirmationScreenProps) => {
   const navigation = useNavigation<ScreenNavigationProp<"EmailConfirmation">>();
   const { email } = route.params;
+
+  // Utiliser le handler de confirmation d'email sur cet écran
+  useEmailConfirmationHandler();
   const [canResend, setCanResend] = useState(false);
   const [countdown, setCountdown] = useState(60);
 
@@ -67,9 +71,9 @@ export const EmailConfirmationScreen = ({
           await Linking.openURL(url);
           break;
         }
-          } catch (error) {
-      // Gestion silencieuse de l'erreur
-    }
+      } catch (error) {
+        // Gestion silencieuse de l'erreur
+      }
     }
   };
 

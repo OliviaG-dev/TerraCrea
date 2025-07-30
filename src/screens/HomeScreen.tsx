@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
-  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
@@ -28,22 +27,6 @@ export const HomeScreen: React.FC = () => {
     navigation.navigate("Explore");
   };
 
-  const handleSignOut = async () => {
-    Alert.alert("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?", [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: "Déconnexion",
-        style: "destructive",
-        onPress: async () => {
-          const result = await signOut();
-          if (!result?.success) {
-            Alert.alert("Erreur", "Impossible de se déconnecter");
-          }
-        },
-      },
-    ]);
-  };
-
   const handleLogin = () => {
     (navigation as any).navigate("Login");
   };
@@ -59,23 +42,6 @@ export const HomeScreen: React.FC = () => {
   // Interface pour utilisateur connecté
   const renderAuthenticatedHeader = () => (
     <View style={styles.headerSection}>
-      <View style={styles.userInfo}>
-        <Text style={styles.welcomeText}>Bonjour,</Text>
-        <Text style={styles.userEmail}>{user?.email}</Text>
-      </View>
-
-      <View style={styles.headerButtons}>
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() => navigation.navigate("Profil" as any)}
-        >
-          <Text style={styles.profileButtonText}>Profil</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>Déconnexion</Text>
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.logoContainer}>
         <Image
           source={require("../../assets/logo.png")}
@@ -196,76 +162,7 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 20,
   },
-  // Styles pour utilisateur connecté
-  userInfo: {
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  welcomeText: {
-    fontSize: 18,
-    fontWeight: "400",
-    color: "#7a8a7a",
-    fontFamily: "System",
-    letterSpacing: 0.3,
-  },
-  userEmail: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#4a5c4a",
-    marginTop: 6,
-    fontFamily: "System",
-    letterSpacing: 0.2,
-  },
-  signOutButton: {
-    position: "absolute",
-    top: 25,
-    right: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: "#e0e0e0",
-    backgroundColor: "#ffffff",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  headerButtons: {
-    position: "absolute",
-    top: 25,
-    right: 20,
-    flexDirection: "row",
-    gap: 12,
-  },
-  profileButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: "#4a5c4a",
-    backgroundColor: "#4a5c4a",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-  },
-  profileButtonText: {
-    fontSize: 14,
-    color: "#fff",
-    fontWeight: "500",
-    fontFamily: "System",
-    letterSpacing: 0.3,
-  },
-  signOutText: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
-    fontFamily: "System",
-    letterSpacing: 0.3,
-  },
+
   // Styles pour visiteur
   authButtons: {
     flexDirection: "row",
