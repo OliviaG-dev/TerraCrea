@@ -13,26 +13,15 @@ export const NavigationHeader: React.FC = () => {
   const { user, signOut, isAuthenticated } = useUserContext();
 
   const handleSignOut = async () => {
-    console.log("🔍 Tentative de déconnexion...");
     try {
-      console.log("🔄 Tentative de déconnexion via contexte...");
       const result = await signOut();
-      console.log("📊 Résultat signOut:", result);
 
-      if (result?.success) {
-        console.log("✅ Déconnexion réussie via contexte");
-      } else {
-        console.log("❌ Échec via contexte, tentative directe Supabase...");
+      if (!result?.success) {
         // Essayer directement avec Supabase
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.log("❌ Échec déconnexion directe:", error);
-        } else {
-          console.log("✅ Déconnexion réussie via Supabase direct");
-        }
+        await supabase.auth.signOut();
       }
     } catch (error) {
-      console.log("💥 Erreur lors de la déconnexion:", error);
+      // Gestion silencieuse des erreurs
     }
   };
 

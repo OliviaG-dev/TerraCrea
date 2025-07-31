@@ -69,19 +69,50 @@ export const validateArtisanProfile = (
   const errors: string[] = [];
 
   if (!profile.businessName?.trim()) {
-    errors.push("Le nom d'entreprise est requis");
+    errors.push("• Le nom de votre entreprise/atelier est obligatoire");
   }
 
   if (!profile.location?.trim()) {
-    errors.push("La localisation est requise");
+    errors.push("• Votre localisation est obligatoire (ex: Lyon, France)");
   }
 
   if (!profile.specialties || profile.specialties.length === 0) {
-    errors.push("Au moins une spécialité est requise");
+    errors.push("• Veuillez sélectionner au moins une spécialité");
   }
 
   if (!profile.description?.trim()) {
-    errors.push("Une description est requise");
+    errors.push("• Une description de votre activité est obligatoire");
+  }
+
+  // Validation supplémentaire pour la description
+  if (profile.description?.trim() && profile.description.trim().length < 20) {
+    errors.push("• La description doit contenir au moins 20 caractères");
+  }
+
+  return errors;
+};
+
+// Validation des données utilisateur standard
+export const validateUserProfile = (profile: Partial<User>): string[] => {
+  const errors: string[] = [];
+
+  if (!profile.username?.trim()) {
+    errors.push("• Le nom d'utilisateur est obligatoire");
+  } else if (profile.username.trim().length < 3) {
+    errors.push("• Le nom d'utilisateur doit contenir au moins 3 caractères");
+  }
+
+  if (!profile.firstName?.trim()) {
+    errors.push("• Le prénom est obligatoire");
+  }
+
+  if (!profile.lastName?.trim()) {
+    errors.push("• Le nom de famille est obligatoire");
+  }
+
+  // Validation optionnelle pour la bio
+  if (profile.bio?.trim() && profile.bio.trim().length > 500) {
+    errors.push("• La bio ne peut pas dépasser 500 caractères");
   }
 
   return errors;

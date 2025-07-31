@@ -12,7 +12,11 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
-import { validateArtisanProfile, getUserDisplayName } from "../utils/userUtils";
+import {
+  validateArtisanProfile,
+  validateUserProfile,
+  getUserDisplayName,
+} from "../utils/userUtils";
 import { CATEGORY_LABELS, CreationCategory } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 
@@ -60,12 +64,34 @@ export const ProfilScreen = () => {
   };
 
   const handleUpdateProfile = async () => {
+    // Validation des données avant envoi
+    const errors = validateUserProfile(userForm);
+    if (errors.length > 0) {
+      Alert.alert("⚠️ Erreurs de validation", errors.join("\n"), [
+        { text: "Corriger", style: "default" },
+      ]);
+      return;
+    }
+
     setLoading(true);
     try {
       await updateProfile(userForm);
-      Alert.alert("Succès", "Profil mis à jour avec succès");
+      Alert.alert(
+        "✅ Profil mis à jour !",
+        "Vos informations personnelles ont été modifiées avec succès.",
+        [{ text: "Parfait", style: "default" }]
+      );
     } catch (error) {
-      Alert.alert("Erreur", "Impossible de mettre à jour le profil");
+      console.error("Erreur mise à jour profil:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Une erreur inconnue est survenue";
+      Alert.alert(
+        "❌ Erreur de mise à jour",
+        `Impossible de mettre à jour votre profil : ${errorMessage}`,
+        [{ text: "Réessayer", style: "default" }]
+      );
     } finally {
       setLoading(false);
     }
@@ -74,7 +100,9 @@ export const ProfilScreen = () => {
   const handleUpgradeToArtisan = async () => {
     const errors = validateArtisanProfile(artisanForm);
     if (errors.length > 0) {
-      Alert.alert("Erreurs de validation", errors.join("\n"));
+      Alert.alert("⚠️ Erreurs de validation", errors.join("\n"), [
+        { text: "Corriger", style: "default" },
+      ]);
       return;
     }
 
@@ -82,15 +110,21 @@ export const ProfilScreen = () => {
     try {
       await upgradeToArtisan(artisanForm);
       Alert.alert(
-        "Félicitations !",
-        "Votre compte artisan a été créé avec succès.",
-        [{ text: "OK" }]
+        "🎉 Félicitations !",
+        "Votre compte artisan a été créé avec succès. Vous pouvez maintenant commencer à vendre vos créations !",
+        [{ text: "Super !", style: "default" }]
       );
       setActiveTab("artisan");
     } catch (error) {
+      console.error("Erreur création profil artisan:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Une erreur inconnue est survenue";
       Alert.alert(
-        "Erreur",
-        "Une erreur est survenue lors de la création de votre profil artisan."
+        "❌ Erreur de création",
+        `Impossible de créer votre profil artisan : ${errorMessage}`,
+        [{ text: "Réessayer", style: "default" }]
       );
     } finally {
       setLoading(false);
@@ -100,16 +134,31 @@ export const ProfilScreen = () => {
   const handleUpdateArtisanProfile = async () => {
     const errors = validateArtisanProfile(artisanForm);
     if (errors.length > 0) {
-      Alert.alert("Erreurs de validation", errors.join("\n"));
+      Alert.alert("⚠️ Erreurs de validation", errors.join("\n"), [
+        { text: "Corriger", style: "default" },
+      ]);
       return;
     }
 
     setLoading(true);
     try {
       await updateArtisanProfile(artisanForm);
-      Alert.alert("Succès", "Profil artisan mis à jour avec succès");
+      Alert.alert(
+        "✅ Profil artisan mis à jour !",
+        "Vos informations d'artisan ont été modifiées avec succès.",
+        [{ text: "Parfait", style: "default" }]
+      );
     } catch (error) {
-      Alert.alert("Erreur", "Impossible de mettre à jour le profil artisan");
+      console.error("Erreur mise à jour profil artisan:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Une erreur inconnue est survenue";
+      Alert.alert(
+        "❌ Erreur de mise à jour",
+        `Impossible de mettre à jour votre profil artisan : ${errorMessage}`,
+        [{ text: "Réessayer", style: "default" }]
+      );
     } finally {
       setLoading(false);
     }
@@ -249,7 +298,11 @@ export const ProfilScreen = () => {
                   placeholderTextColor="#8a9a8a"
                   multiline
                   numberOfLines={3}
+                  maxLength={500}
                 />
+                <Text style={styles.charCount}>
+                  {userForm.bio.length}/500 caractères
+                </Text>
               </View>
 
               <TouchableOpacity
@@ -349,7 +402,11 @@ export const ProfilScreen = () => {
                   placeholderTextColor="#8a9a8a"
                   multiline
                   numberOfLines={4}
+                  maxLength={1000}
                 />
+                <Text style={styles.charCount}>
+                  {artisanForm.description.length}/1000 caractères
+                </Text>
               </View>
 
               <View style={styles.inputGroup}>
@@ -733,6 +790,14 @@ const styles = StyleSheet.create({
     color: "#4a5c4a",
     fontSize: 14,
     fontWeight: "500",
+    fontFamily: "System",
+    letterSpacing: 0.2,
+  },
+  charCount: {
+    fontSize: 12,
+    color: "#8a9a8a",
+    textAlign: "right",
+    marginTop: 4,
     fontFamily: "System",
     letterSpacing: 0.2,
   },
