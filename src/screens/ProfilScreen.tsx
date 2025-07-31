@@ -10,6 +10,7 @@ import {
   Switch,
   SafeAreaView,
 } from "react-native";
+import { NotificationToast } from "../components/NotificationToast";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
 import {
@@ -34,6 +35,17 @@ export const ProfilScreen = () => {
   } = useUserContext();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"profil" | "artisan">("profil");
+  const [notification, setNotification] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "warning" | "info";
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
   // État pour le profil utilisateur
   const [userForm, setUserForm] = useState({
@@ -67,31 +79,35 @@ export const ProfilScreen = () => {
     // Validation des données avant envoi
     const errors = validateUserProfile(userForm);
     if (errors.length > 0) {
-      Alert.alert("⚠️ Erreurs de validation", errors.join("\n"), [
-        { text: "Corriger", style: "default" },
-      ]);
+      setNotification({
+        visible: true,
+        title: "⚠️ Erreurs de validation",
+        message: errors.join("\n"),
+        type: "warning",
+      });
       return;
     }
 
     setLoading(true);
     try {
       await updateProfile(userForm);
-      Alert.alert(
-        "✅ Profil mis à jour !",
-        "Vos informations personnelles ont été modifiées avec succès.",
-        [{ text: "Parfait", style: "default" }]
-      );
+      setNotification({
+        visible: true,
+        title: "✅ Profil mis à jour !",
+        message: "Vos informations personnelles ont été modifiées avec succès.",
+        type: "success",
+      });
     } catch (error) {
-      console.error("Erreur mise à jour profil:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
           : "Une erreur inconnue est survenue";
-      Alert.alert(
-        "❌ Erreur de mise à jour",
-        `Impossible de mettre à jour votre profil : ${errorMessage}`,
-        [{ text: "Réessayer", style: "default" }]
-      );
+      setNotification({
+        visible: true,
+        title: "❌ Erreur de mise à jour",
+        message: `Impossible de mettre à jour votre profil : ${errorMessage}`,
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -100,32 +116,37 @@ export const ProfilScreen = () => {
   const handleUpgradeToArtisan = async () => {
     const errors = validateArtisanProfile(artisanForm);
     if (errors.length > 0) {
-      Alert.alert("⚠️ Erreurs de validation", errors.join("\n"), [
-        { text: "Corriger", style: "default" },
-      ]);
+      setNotification({
+        visible: true,
+        title: "⚠️ Erreurs de validation",
+        message: errors.join("\n"),
+        type: "warning",
+      });
       return;
     }
 
     setLoading(true);
     try {
       await upgradeToArtisan(artisanForm);
-      Alert.alert(
-        "🎉 Félicitations !",
-        "Votre compte artisan a été créé avec succès. Vous pouvez maintenant commencer à vendre vos créations !",
-        [{ text: "Super !", style: "default" }]
-      );
+      setNotification({
+        visible: true,
+        title: "🎉 Félicitations !",
+        message:
+          "Votre compte artisan a été créé avec succès. Vous pouvez maintenant commencer à vendre vos créations !",
+        type: "success",
+      });
       setActiveTab("artisan");
     } catch (error) {
-      console.error("Erreur création profil artisan:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
           : "Une erreur inconnue est survenue";
-      Alert.alert(
-        "❌ Erreur de création",
-        `Impossible de créer votre profil artisan : ${errorMessage}`,
-        [{ text: "Réessayer", style: "default" }]
-      );
+      setNotification({
+        visible: true,
+        title: "❌ Erreur de création",
+        message: `Impossible de créer votre profil artisan : ${errorMessage}`,
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -134,31 +155,35 @@ export const ProfilScreen = () => {
   const handleUpdateArtisanProfile = async () => {
     const errors = validateArtisanProfile(artisanForm);
     if (errors.length > 0) {
-      Alert.alert("⚠️ Erreurs de validation", errors.join("\n"), [
-        { text: "Corriger", style: "default" },
-      ]);
+      setNotification({
+        visible: true,
+        title: "⚠️ Erreurs de validation",
+        message: errors.join("\n"),
+        type: "warning",
+      });
       return;
     }
 
     setLoading(true);
     try {
       await updateArtisanProfile(artisanForm);
-      Alert.alert(
-        "✅ Profil artisan mis à jour !",
-        "Vos informations d'artisan ont été modifiées avec succès.",
-        [{ text: "Parfait", style: "default" }]
-      );
+      setNotification({
+        visible: true,
+        title: "✅ Profil artisan mis à jour !",
+        message: "Vos informations d'artisan ont été modifiées avec succès.",
+        type: "success",
+      });
     } catch (error) {
-      console.error("Erreur mise à jour profil artisan:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
           : "Une erreur inconnue est survenue";
-      Alert.alert(
-        "❌ Erreur de mise à jour",
-        `Impossible de mettre à jour votre profil artisan : ${errorMessage}`,
-        [{ text: "Réessayer", style: "default" }]
-      );
+      setNotification({
+        visible: true,
+        title: "❌ Erreur de mise à jour",
+        message: `Impossible de mettre à jour votre profil artisan : ${errorMessage}`,
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -184,6 +209,14 @@ export const ProfilScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <NotificationToast
+        visible={notification.visible}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+        onClose={() => setNotification((prev) => ({ ...prev, visible: false }))}
+        duration={4000}
+      />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}

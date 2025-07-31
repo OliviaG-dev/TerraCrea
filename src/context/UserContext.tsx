@@ -99,6 +99,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { error: profileError } = await supabase.from("users").upsert({
           id: auth.user.id,
+          email: auth.user.email || "", // Inclure l'email pour éviter l'erreur de contrainte
           username: data.username,
           full_name: `${data.firstName} ${data.lastName}`.trim(),
           updated_at: new Date().toISOString(),
@@ -109,8 +110,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             "Erreur lors de la mise à jour de la table 'users':",
             profileError.message
           );
-        } else {
-          console.log("✅ Profil utilisateur mis à jour dans la table 'users'");
         }
       } catch (tableError) {
         console.warn(
@@ -164,6 +163,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { error: profileError } = await supabase.from("users").upsert({
           id: auth.user.id,
+          email: auth.user.email || "", // Inclure l'email pour éviter l'erreur de contrainte
           is_artisan: true,
           updated_at: new Date().toISOString(),
         });
@@ -200,10 +200,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           console.warn(
             "Erreur lors de la création du profil artisan dans la table 'artisan_profiles':",
             artisanError.message
-          );
-        } else {
-          console.log(
-            "✅ Profil artisan créé dans la table 'artisan_profiles'"
           );
         }
       } catch (tableError) {
@@ -256,10 +252,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           console.warn(
             "Erreur lors de la mise à jour du profil artisan dans la table 'artisan_profiles':",
             error.message
-          );
-        } else {
-          console.log(
-            "✅ Profil artisan mis à jour dans la table 'artisan_profiles'"
           );
         }
       } catch (tableError) {
