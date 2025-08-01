@@ -5,6 +5,8 @@ export type RootStackParamList = {
   Profil: undefined;
   EmailConfirmation: { email: string };
   EmailConfirmed: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: undefined;
 };
 
 // Type utilitaire pour la navigation

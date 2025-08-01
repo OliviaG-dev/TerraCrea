@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { isTimeSyncError, getTimeSyncHelpMessage } from "../utils/timeUtils";
 
 export interface SignUpData {
   email: string;
@@ -53,6 +54,131 @@ export class AuthService {
       data: { user },
     } = await supabase.auth.getUser();
     return user?.email_confirmed_at ? true : false;
+  }
+
+  // Envoyer un email de réinitialisation de mot de passe
+  static async resetPassword(email: string) {
+    try {
+      // Vérification des données avant envoi
+      if (!email) {
+        return {
+          success: false,
+          error: { message: "Email requis" },
+        };
+      }
+
+      // Vérification du format email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return {
+          success: false,
+          error: { message: "Format d'email invalide" },
+        };
+      }
+
+      const { data, error } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        {
+          redirectTo: `${
+            process.env.EXPO_PUBLIC_APP_URL || "http://localhost:8081"
+          }/reset-password`,
+        }
+      );
+
+      if (error) {
+        let errorMessage =
+          "Erreur lors de l'envoi de l'email de réinitialisation";
+
+        if (error.message.includes("User not found")) {
+          errorMessage = "Aucun compte trouvé avec cet email";
+        } else if (error.message.includes("Too many requests")) {
+          errorMessage = "Trop de tentatives. Veuillez réessayer plus tard";
+        } else if (isTimeSyncError(error)) {
+          errorMessage = getTimeSyncHelpMessage();
+        } else {
+          errorMessage = error.message;
+        }
+
+        return {
+          success: false,
+          error: { ...error, message: errorMessage },
+        };
+      }
+
+      return {
+        success: true,
+        data,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: { message: "Erreur inattendue lors de l'envoi de l'email" },
+      };
+    }
+  }
+
+  // Mettre à jour le mot de passe (après réinitialisation)
+  static async updatePassword(newPassword: string) {
+    try {
+      // Vérification des données avant envoi
+      if (!newPassword) {
+        return {
+          success: false,
+          error: { message: "Nouveau mot de passe requis" },
+        };
+      }
+
+      // Vérification de la force du mot de passe
+      if (newPassword.length < 6) {
+        return {
+          success: false,
+          error: {
+            message: "Le mot de passe doit contenir au moins 6 caractères",
+          },
+        };
+      }
+
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        let errorMessage = "Erreur lors de la mise à jour du mot de passe";
+
+        if (error.message.includes("Password should be at least")) {
+          errorMessage = "Le mot de passe doit contenir au moins 6 caractères";
+        } else if (error.message.includes("Invalid password")) {
+          errorMessage =
+            "Le mot de passe ne respecte pas les critères de sécurité";
+        } else if (
+          error.message.includes("New password should be different from the old password")
+        ) {
+          errorMessage =
+            "Le nouveau mot de passe ne peut pas être identique à l'ancien";
+        } else {
+          errorMessage = error.message;
+        }
+
+        return {
+          success: false,
+          error: { ...error, message: errorMessage },
+        };
+      }
+
+      return {
+        success: true,
+        data,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          message: "Erreur inattendue lors de la mise à jour du mot de passe",
+        },
+      };
+    }
   }
 
   // Connexion sans vérification de confirmation obligatoire
@@ -144,6 +270,8 @@ export class AuthService {
           };
         } else if (error.message.includes("Too many requests")) {
           errorMessage = "Trop de tentatives. Veuillez réessayer plus tard";
+        } else if (isTimeSyncError(error)) {
+          errorMessage = getTimeSyncHelpMessage();
         } else if (error.status === 400) {
           // Gestion spécifique de l'erreur 400
           if (error.message.includes("Email not confirmed")) {

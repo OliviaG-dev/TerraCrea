@@ -166,6 +166,74 @@ export const useAuth = () => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await AuthService.resetPassword(email);
+
+      if (!result.success) {
+        setError(result.error?.message || "Erreur lors de l'envoi de l'email");
+        return {
+          success: false,
+          error: result.error?.message || "Erreur lors de l'envoi de l'email",
+        };
+      }
+
+      return {
+        success: true,
+        data: result.data,
+      };
+    } catch (error) {
+      const errorMessage =
+        "Erreur lors de l'envoi de l'email de réinitialisation";
+      setError(errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await AuthService.updatePassword(newPassword);
+
+      if (!result.success) {
+        setError(
+          result.error?.message ||
+            "Erreur lors de la mise à jour du mot de passe"
+        );
+        return {
+          success: false,
+          error:
+            result.error?.message ||
+            "Erreur lors de la mise à jour du mot de passe",
+        };
+      }
+
+      return {
+        success: true,
+        data: result.data,
+      };
+    } catch (error) {
+      const errorMessage = "Erreur lors de la mise à jour du mot de passe";
+      setError(errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     user,
     loading,
@@ -175,6 +243,8 @@ export const useAuth = () => {
     signOut,
     resendConfirmation,
     checkEmailConfirmed,
+    resetPassword,
+    updatePassword,
     isAuthenticated: !!user,
   };
 };

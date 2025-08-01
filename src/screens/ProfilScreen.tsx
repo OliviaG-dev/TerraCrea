@@ -229,17 +229,8 @@ export const ProfilScreen = () => {
 
   // Initialiser les formulaires avec les données utilisateur existantes
   useEffect(() => {
-    console.log("useEffect triggered, user:", user);
     if (user && user.id) {
       // Vérifier que l'utilisateur est complètement chargé
-      console.log("User data:", {
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        bio: user.bio,
-        artisanProfile: user.artisanProfile,
-      });
-
       // Initialiser le formulaire utilisateur
       const newUserForm = {
         username: user.username || "",
@@ -247,7 +238,6 @@ export const ProfilScreen = () => {
         lastName: user.lastName || "",
         bio: user.bio || "",
       };
-      console.log("Setting userForm:", newUserForm);
       setUserForm(newUserForm);
 
       // Initialiser le formulaire artisan si l'utilisateur a un profil artisan
@@ -260,7 +250,6 @@ export const ProfilScreen = () => {
             user.artisanProfile.establishedYear || new Date().getFullYear(),
           specialties: user.artisanProfile.specialties || [],
         };
-        console.log("Setting artisanForm:", newArtisanForm);
         setArtisanForm(newArtisanForm);
       }
 
@@ -424,10 +413,6 @@ export const ProfilScreen = () => {
     }
   };
 
-  // Debug: afficher les valeurs actuelles des formulaires
-  console.log("Current userForm:", userForm);
-  console.log("Current artisanForm:", artisanForm);
-
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
@@ -474,12 +459,14 @@ export const ProfilScreen = () => {
           </View>
 
           {/* Bouton retour à l'accueil */}
-          <TouchableOpacity
-            style={styles.backToHomeButton}
-            onPress={() => navigation.navigate("Home")}
-          >
-            <Text style={styles.backToHomeText}>← Retour à l'accueil</Text>
-          </TouchableOpacity>
+          <View style={styles.backToHomeContainer}>
+            <TouchableOpacity
+              style={styles.backToHomeButton}
+              onPress={() => navigation.navigate("Home")}
+            >
+              <Text style={styles.backToHomeText}>← Retour à l'accueil</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Tabs */}
           <View style={styles.tabContainer}>
@@ -823,12 +810,14 @@ const styles = StyleSheet.create({
   },
   welcomeSection: {
     marginBottom: 20,
+    alignItems: "center",
   },
   welcomeText: {
     fontSize: 16,
     color: "#7a8a7a",
     fontFamily: "System",
     letterSpacing: 0.3,
+    textAlign: "center",
   },
   verifiedBadge: {
     backgroundColor: "#d4a574",
@@ -1101,6 +1090,10 @@ const styles = StyleSheet.create({
     fontFamily: "System",
     letterSpacing: 0.3,
   },
+  backToHomeContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
   backToHomeButton: {
     backgroundColor: "transparent",
     paddingVertical: 12,
@@ -1108,8 +1101,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#4a5c4a",
-    alignSelf: "flex-start",
-    marginBottom: 20,
     elevation: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },

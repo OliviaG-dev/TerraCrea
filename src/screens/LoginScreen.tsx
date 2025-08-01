@@ -234,6 +234,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
               autoComplete="password"
               accessibilityLabel="Champ mot de passe requis"
             />
+            {!isSignUp && (
+              <TouchableOpacity
+                style={styles.forgotPasswordLink}
+                onPress={() => navigation.navigate("ForgotPassword")}
+              >
+                <Text style={styles.forgotPasswordText}>
+                  Mot de passe oublié ?
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <TouchableOpacity
@@ -432,6 +442,19 @@ const styles = StyleSheet.create({
   },
   required: {
     color: "#e74c3c",
+  },
+  forgotPasswordLink: {
+    alignSelf: "flex-end",
+    marginTop: 8,
+    paddingVertical: 4,
+  },
+  forgotPasswordText: {
+    color: "#4a5c4a",
+    fontSize: 14,
+    fontWeight: "500",
+    textDecorationLine: "underline",
+    fontFamily: "System",
+    letterSpacing: 0.2,
   },
 });
 

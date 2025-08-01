@@ -16,6 +16,10 @@ import {
   useEmailConfirmationHandler,
   handleEmailConfirmationLink,
 } from "./src/utils/emailConfirmationHandler";
+import {
+  usePasswordResetHandler,
+  handlePasswordResetLink,
+} from "./src/utils/passwordResetHandler";
 import { RootStackParamList } from "./src/types/Navigation";
 import { AuthNavigator } from "./src/components/AuthNavigator";
 
@@ -34,6 +38,8 @@ const linking: LinkingOptions<RootStackParamList> = {
       Profil: "profil",
       EmailConfirmation: "email-confirmation",
       EmailConfirmed: "email-confirmed",
+      ForgotPassword: "forgot-password",
+      ResetPassword: "reset-password",
     },
   },
   async getInitialURL() {
@@ -55,15 +61,36 @@ const linking: LinkingOptions<RootStackParamList> = {
   },
 };
 
-// Composant wrapper pour les écrans avec gestion des confirmations email
+// Composant wrapper pour les écrans avec gestion des confirmations email et réinitialisation de mot de passe
 const NavigationHandler = () => {
+  // Utiliser les handlers pour les liens profonds
+  useEmailConfirmationHandler();
+  usePasswordResetHandler();
+
   return <AuthNavigator />;
 };
 
 // Composant NavigationContainer principal
 const RootNavigator = () => {
   return (
-    <NavigationContainer linking={linking} onStateChange={(state) => {}}>
+    <NavigationContainer
+      linking={linking}
+      onStateChange={(state) => {}}
+      onReady={() => {
+        // Gérer les liens profonds au démarrage de l'app
+        Linking.getInitialURL().then((url) => {
+          if (url) {
+            console.log("Lien profond détecté au démarrage:", url);
+            // Traiter le lien selon son type
+            if (url.includes("reset-password")) {
+              handlePasswordResetLink(url, {} as any);
+            } else if (url.includes("email-confirmed")) {
+              handleEmailConfirmationLink(url, {} as any);
+            }
+          }
+        });
+      }}
+    >
       <NavigationHandler />
     </NavigationContainer>
   );

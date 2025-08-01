@@ -18,6 +18,10 @@ interface UserContextProps {
   updateProfile: (data: UserProfileUpdate) => Promise<void>;
   upgradeToArtisan: (artisanData: ArtisanProfileUpdate) => Promise<void>;
   updateArtisanProfile: (data: ArtisanProfileUpdate) => Promise<void>;
+
+  // Fonctionnalités de mot de passe oublié
+  resetPassword: (email: string) => Promise<any>;
+  updatePassword: (newPassword: string) => Promise<any>;
 }
 
 const UserContext = createContext<UserContextProps | undefined>(undefined);
@@ -78,10 +82,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     // Récupérer les métadonnées utilisateur
     const userMetadata = authUser.user_metadata || {};
     const appMetadata = authUser.app_metadata || {};
-
-    console.log("Auth user:", authUser);
-    console.log("User metadata:", userMetadata);
-    console.log("App metadata:", appMetadata);
 
     // Construire l'objet utilisateur avec les métadonnées
     const user: User = {
@@ -341,6 +341,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         updateProfile,
         upgradeToArtisan,
         updateArtisanProfile,
+        resetPassword: auth.resetPassword,
+        updatePassword: auth.updatePassword,
       }}
     >
       {children}
