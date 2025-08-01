@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -192,10 +192,10 @@ export const ProfilScreen = () => {
 
   // État pour le profil utilisateur
   const [userForm, setUserForm] = useState({
-    username: user?.username || "",
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    bio: user?.bio || "",
+    username: "",
+    firstName: "",
+    lastName: "",
+    bio: "",
   });
 
   // État pour les erreurs du profil utilisateur
@@ -208,12 +208,11 @@ export const ProfilScreen = () => {
 
   // État pour le profil artisan
   const [artisanForm, setArtisanForm] = useState({
-    businessName: user?.artisanProfile?.businessName || "",
-    location: user?.artisanProfile?.location || "",
-    description: user?.artisanProfile?.description || "",
-    establishedYear:
-      user?.artisanProfile?.establishedYear || new Date().getFullYear(),
-    specialties: user?.artisanProfile?.specialties || ([] as string[]),
+    businessName: "",
+    location: "",
+    description: "",
+    establishedYear: new Date().getFullYear(),
+    specialties: [] as string[],
   });
 
   // État pour les erreurs du profil artisan
@@ -224,6 +223,51 @@ export const ProfilScreen = () => {
     establishedYear: "",
     specialties: "",
   });
+
+  // Clé pour forcer le re-rendu des formulaires
+  const [formKey, setFormKey] = useState(0);
+
+  // Initialiser les formulaires avec les données utilisateur existantes
+  useEffect(() => {
+    console.log("useEffect triggered, user:", user);
+    if (user && user.id) {
+      // Vérifier que l'utilisateur est complètement chargé
+      console.log("User data:", {
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        bio: user.bio,
+        artisanProfile: user.artisanProfile,
+      });
+
+      // Initialiser le formulaire utilisateur
+      const newUserForm = {
+        username: user.username || "",
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        bio: user.bio || "",
+      };
+      console.log("Setting userForm:", newUserForm);
+      setUserForm(newUserForm);
+
+      // Initialiser le formulaire artisan si l'utilisateur a un profil artisan
+      if (user.artisanProfile) {
+        const newArtisanForm = {
+          businessName: user.artisanProfile.businessName || "",
+          location: user.artisanProfile.location || "",
+          description: user.artisanProfile.description || "",
+          establishedYear:
+            user.artisanProfile.establishedYear || new Date().getFullYear(),
+          specialties: user.artisanProfile.specialties || [],
+        };
+        console.log("Setting artisanForm:", newArtisanForm);
+        setArtisanForm(newArtisanForm);
+      }
+
+      // Forcer le re-rendu des formulaires
+      setFormKey((prev) => prev + 1);
+    }
+  }, [user]);
 
   // Fonction pour mettre à jour le formulaire utilisateur avec validation
   const updateUserForm = (field: string, value: string) => {
@@ -380,6 +424,10 @@ export const ProfilScreen = () => {
     }
   };
 
+  // Debug: afficher les valeurs actuelles des formulaires
+  console.log("Current userForm:", userForm);
+  console.log("Current artisanForm:", artisanForm);
+
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
@@ -474,6 +522,7 @@ export const ProfilScreen = () => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Nom d'utilisateur</Text>
                 <TextInput
+                  key={`username-${formKey}`}
                   style={[
                     styles.input,
                     userErrors.username && styles.inputError,
@@ -491,6 +540,7 @@ export const ProfilScreen = () => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Prénom</Text>
                 <TextInput
+                  key={`firstName-${formKey}`}
                   style={[
                     styles.input,
                     userErrors.firstName && styles.inputError,
@@ -508,6 +558,7 @@ export const ProfilScreen = () => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Nom</Text>
                 <TextInput
+                  key={`lastName-${formKey}`}
                   style={[
                     styles.input,
                     userErrors.lastName && styles.inputError,
@@ -525,6 +576,7 @@ export const ProfilScreen = () => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Bio</Text>
                 <TextInput
+                  key={`bio-${formKey}`}
                   style={[
                     styles.input,
                     styles.textArea,
@@ -606,6 +658,7 @@ export const ProfilScreen = () => {
                   Nom de votre entreprise/atelier *
                 </Text>
                 <TextInput
+                  key={`businessName-${formKey}`}
                   style={[
                     styles.input,
                     artisanErrors.businessName && styles.inputError,
@@ -627,6 +680,7 @@ export const ProfilScreen = () => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Localisation *</Text>
                 <TextInput
+                  key={`location-${formKey}`}
                   style={[
                     styles.input,
                     artisanErrors.location && styles.inputError,
@@ -646,6 +700,7 @@ export const ProfilScreen = () => {
                   Description de votre activité *
                 </Text>
                 <TextInput
+                  key={`description-${formKey}`}
                   style={[
                     styles.input,
                     styles.textArea,
@@ -674,6 +729,7 @@ export const ProfilScreen = () => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Année de création</Text>
                 <TextInput
+                  key={`establishedYear-${formKey}`}
                   style={[
                     styles.input,
                     artisanErrors.establishedYear && styles.inputError,

@@ -71,6 +71,69 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Fonction pour construire l'objet utilisateur avec les métadonnées
+  const buildUserWithMetadata = (authUser: any): User | null => {
+    if (!authUser) return null;
+
+    // Récupérer les métadonnées utilisateur
+    const userMetadata = authUser.user_metadata || {};
+    const appMetadata = authUser.app_metadata || {};
+
+    console.log("Auth user:", authUser);
+    console.log("User metadata:", userMetadata);
+    console.log("App metadata:", appMetadata);
+
+    // Construire l'objet utilisateur avec les métadonnées
+    const user: User = {
+      id: authUser.id,
+      email: authUser.email,
+      phone: authUser.phone,
+      created_at: authUser.created_at,
+      updated_at: authUser.updated_at,
+      email_confirmed_at: authUser.email_confirmed_at,
+      phone_confirmed_at: authUser.phone_confirmed_at,
+      last_sign_in_at: authUser.last_sign_in_at,
+      app_metadata: appMetadata,
+      user_metadata: userMetadata,
+      aud: authUser.aud,
+      confirmation_sent_at: authUser.confirmation_sent_at,
+      recovery_sent_at: authUser.recovery_sent_at,
+      email_change_sent_at: authUser.email_change_sent_at,
+      new_email: authUser.new_email,
+      invited_at: authUser.invited_at,
+      action_link: authUser.action_link,
+      role: authUser.role,
+
+      // Profil général depuis les métadonnées
+      username: userMetadata.username || "",
+      firstName: userMetadata.firstName || "",
+      lastName: userMetadata.lastName || "",
+      profileImage: userMetadata.profileImage || "",
+      bio: userMetadata.bio || "",
+
+      // Capacités utilisateur
+      isArtisan: appMetadata.isArtisan || false,
+      isBuyer: appMetadata.isBuyer !== false, // true par défaut
+
+      // Informations artisan depuis les métadonnées
+      artisanProfile: appMetadata.isArtisan
+        ? {
+            businessName: userMetadata.artisanBusinessName || "",
+            location: userMetadata.artisanLocation || "",
+            description: userMetadata.artisanDescription || "",
+            establishedYear:
+              userMetadata.artisanEstablishedYear || new Date().getFullYear(),
+            specialties: userMetadata.artisanSpecialties || [],
+            verified: appMetadata.verified || false,
+            rating: userMetadata.rating || 0,
+            totalSales: userMetadata.totalSales || 0,
+          }
+        : undefined,
+    };
+
+    return user;
+  };
+
   // Calcul des capacités utilisateur
   const capabilities = getUserCapabilities(auth.user);
 
@@ -266,10 +329,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Construire l'objet utilisateur avec les métadonnées
+  const userWithMetadata = buildUserWithMetadata(auth.user);
+
   return (
     <UserContext.Provider
       value={{
         ...auth,
+        user: userWithMetadata, // Remplacer l'utilisateur par celui avec les métadonnées
         capabilities,
         updateProfile,
         upgradeToArtisan,
