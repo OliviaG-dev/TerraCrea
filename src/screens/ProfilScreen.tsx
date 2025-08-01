@@ -21,6 +21,149 @@ import {
 import { CATEGORY_LABELS, CreationCategory } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 
+// Fonction utilitaire pour gérer les erreurs
+const handleError = (error: unknown, context: string) => {
+  let errorTitle = `❌ Erreur ${context}`;
+  let errorMessage = "Une erreur inconnue est survenue";
+
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+
+    if (message.includes("utilisateur non connecté")) {
+      errorTitle = "🔐 Session expirée";
+      errorMessage = "Votre session a expiré. Veuillez vous reconnecter.";
+    } else if (message.includes("email")) {
+      errorTitle = "📧 Erreur email";
+      errorMessage =
+        "Problème avec votre adresse email. Vérifiez qu'elle est valide.";
+    } else if (
+      message.includes("business_name") ||
+      message.includes("location")
+    ) {
+      errorTitle = "📝 Informations manquantes";
+      errorMessage = "Veuillez remplir tous les champs obligatoires.";
+    } else if (message.includes("specialties")) {
+      errorTitle = "🏷️ Spécialités requises";
+      errorMessage = "Veuillez sélectionner au moins une spécialité.";
+    } else if (message.includes("network") || message.includes("fetch")) {
+      errorTitle = "🌐 Erreur de connexion";
+      errorMessage =
+        "Problème de connexion internet. Vérifiez votre connexion et réessayez.";
+    } else if (message.includes("timeout")) {
+      errorTitle = "⏰ Délai dépassé";
+      errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
+    } else if (
+      message.includes("permission") ||
+      message.includes("unauthorized")
+    ) {
+      errorTitle = "🚫 Accès refusé";
+      errorMessage =
+        "Vous n'avez pas les permissions nécessaires pour cette action.";
+    } else if (
+      message.includes("already exists") ||
+      message.includes("duplicate")
+    ) {
+      errorTitle = "⚠️ Profil existant";
+      errorMessage =
+        "Vous avez déjà un profil artisan. Utilisez l'onglet 'Profil Artisan' pour le modifier.";
+    } else if (
+      message.includes("not found") ||
+      message.includes("doesn't exist")
+    ) {
+      errorTitle = "🔍 Profil introuvable";
+      errorMessage =
+        "Votre profil artisan n'existe pas. Créez d'abord votre profil artisan.";
+    } else {
+      errorMessage = `Erreur technique : ${error.message}`;
+    }
+  }
+
+  return { errorTitle, errorMessage };
+};
+
+// Fonction de validation en temps réel pour le profil utilisateur
+const validateUserField = (field: string, value: string) => {
+  switch (field) {
+    case "username":
+      if (!value.trim()) return "Le nom d'utilisateur est requis";
+      if (value.length < 3)
+        return "Le nom d'utilisateur doit contenir au moins 3 caractères";
+      if (value.length > 20)
+        return "Le nom d'utilisateur ne peut pas dépasser 20 caractères";
+      if (!/^[a-zA-Z0-9_]+$/.test(value))
+        return "Le nom d'utilisateur ne peut contenir que des lettres, chiffres et underscores";
+      return "";
+    case "firstName":
+      if (!value.trim()) return "Le prénom est requis";
+      if (value.length < 2)
+        return "Le prénom doit contenir au moins 2 caractères";
+      if (value.length > 30)
+        return "Le prénom ne peut pas dépasser 30 caractères";
+      if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(value))
+        return "Le prénom ne peut contenir que des lettres";
+      return "";
+    case "lastName":
+      if (!value.trim()) return "Le nom est requis";
+      if (value.length < 2) return "Le nom doit contenir au moins 2 caractères";
+      if (value.length > 30) return "Le nom ne peut pas dépasser 30 caractères";
+      if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(value))
+        return "Le nom ne peut contenir que des lettres";
+      return "";
+    case "bio":
+      if (value.length > 500)
+        return "La bio ne peut pas dépasser 500 caractères";
+      return "";
+    default:
+      return "";
+  }
+};
+
+// Fonction de validation en temps réel pour le profil artisan
+const validateArtisanField = (
+  field: string,
+  value: string | number | string[]
+) => {
+  switch (field) {
+    case "businessName":
+      if (!value || !value.toString().trim())
+        return "Le nom de l'entreprise est requis";
+      if (value.toString().length < 3)
+        return "Le nom de l'entreprise doit contenir au moins 3 caractères";
+      if (value.toString().length > 50)
+        return "Le nom de l'entreprise ne peut pas dépasser 50 caractères";
+      return "";
+    case "location":
+      if (!value || !value.toString().trim())
+        return "La localisation est requise";
+      if (value.toString().length < 3)
+        return "La localisation doit contenir au moins 3 caractères";
+      if (value.toString().length > 100)
+        return "La localisation ne peut pas dépasser 100 caractères";
+      return "";
+    case "description":
+      if (!value || !value.toString().trim())
+        return "La description est requise";
+      if (value.toString().length < 20)
+        return "La description doit contenir au moins 20 caractères";
+      if (value.toString().length > 1000)
+        return "La description ne peut pas dépasser 1000 caractères";
+      return "";
+    case "establishedYear":
+      const year = parseInt(value.toString());
+      const currentYear = new Date().getFullYear();
+      if (isNaN(year)) return "L'année doit être un nombre valide";
+      if (year < 1900) return "L'année ne peut pas être antérieure à 1900";
+      if (year > currentYear) return "L'année ne peut pas être dans le futur";
+      return "";
+    case "specialties":
+      if (!Array.isArray(value) || value.length === 0)
+        return "Veuillez sélectionner au moins une spécialité";
+      return "";
+    default:
+      return "";
+  }
+};
+
 type ProfilScreenNavigationProp = ScreenNavigationProp<"Profil">;
 
 export const ProfilScreen = () => {
@@ -55,6 +198,14 @@ export const ProfilScreen = () => {
     bio: user?.bio || "",
   });
 
+  // État pour les erreurs du profil utilisateur
+  const [userErrors, setUserErrors] = useState({
+    username: "",
+    firstName: "",
+    lastName: "",
+    bio: "",
+  });
+
   // État pour le profil artisan
   const [artisanForm, setArtisanForm] = useState({
     businessName: user?.artisanProfile?.businessName || "",
@@ -65,24 +216,57 @@ export const ProfilScreen = () => {
     specialties: user?.artisanProfile?.specialties || ([] as string[]),
   });
 
+  // État pour les erreurs du profil artisan
+  const [artisanErrors, setArtisanErrors] = useState({
+    businessName: "",
+    location: "",
+    description: "",
+    establishedYear: "",
+    specialties: "",
+  });
+
+  // Fonction pour mettre à jour le formulaire utilisateur avec validation
+  const updateUserForm = (field: string, value: string) => {
+    setUserForm((prev) => ({ ...prev, [field]: value }));
+    const error = validateUserField(field, value);
+    setUserErrors((prev) => ({ ...prev, [field]: error }));
+  };
+
+  // Fonction pour mettre à jour le formulaire artisan avec validation
+  const updateArtisanForm = (
+    field: string,
+    value: string | number | string[]
+  ) => {
+    setArtisanForm((prev) => ({ ...prev, [field]: value }));
+    const error = validateArtisanField(field, value);
+    setArtisanErrors((prev) => ({ ...prev, [field]: error }));
+  };
+
   const handleSpecialtyToggle = (category: CreationCategory) => {
     const categoryValue = category as string;
-    setArtisanForm((prev) => ({
-      ...prev,
-      specialties: prev.specialties.includes(categoryValue)
-        ? prev.specialties.filter((s) => s !== categoryValue)
-        : [...prev.specialties, categoryValue],
-    }));
+    const newSpecialties = artisanForm.specialties.includes(categoryValue)
+      ? artisanForm.specialties.filter((s) => s !== categoryValue)
+      : [...artisanForm.specialties, categoryValue];
+
+    updateArtisanForm("specialties", newSpecialties);
   };
 
   const handleUpdateProfile = async () => {
     // Validation des données avant envoi
     const errors = validateUserProfile(userForm);
     if (errors.length > 0) {
+      const errorMessage =
+        errors.length === 1
+          ? errors[0]
+          : `Veuillez corriger les erreurs suivantes :\n${errors.join("\n")}`;
+
       setNotification({
         visible: true,
-        title: "⚠️ Erreurs de validation",
-        message: errors.join("\n"),
+        title:
+          errors.length === 1
+            ? "⚠️ Erreur de validation"
+            : "⚠️ Erreurs de validation",
+        message: errorMessage,
         type: "warning",
       });
       return;
@@ -98,14 +282,11 @@ export const ProfilScreen = () => {
         type: "success",
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Une erreur inconnue est survenue";
+      const { errorTitle, errorMessage } = handleError(error, "de mise à jour");
       setNotification({
         visible: true,
-        title: "❌ Erreur de mise à jour",
-        message: `Impossible de mettre à jour votre profil : ${errorMessage}`,
+        title: errorTitle,
+        message: errorMessage,
         type: "error",
       });
     } finally {
@@ -116,10 +297,18 @@ export const ProfilScreen = () => {
   const handleUpgradeToArtisan = async () => {
     const errors = validateArtisanProfile(artisanForm);
     if (errors.length > 0) {
+      const errorMessage =
+        errors.length === 1
+          ? errors[0]
+          : `Veuillez corriger les erreurs suivantes :\n${errors.join("\n")}`;
+
       setNotification({
         visible: true,
-        title: "⚠️ Erreurs de validation",
-        message: errors.join("\n"),
+        title:
+          errors.length === 1
+            ? "⚠️ Erreur de validation"
+            : "⚠️ Erreurs de validation",
+        message: errorMessage,
         type: "warning",
       });
       return;
@@ -137,14 +326,11 @@ export const ProfilScreen = () => {
       });
       setActiveTab("artisan");
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Une erreur inconnue est survenue";
+      const { errorTitle, errorMessage } = handleError(error, "de création");
       setNotification({
         visible: true,
-        title: "❌ Erreur de création",
-        message: `Impossible de créer votre profil artisan : ${errorMessage}`,
+        title: errorTitle,
+        message: errorMessage,
         type: "error",
       });
     } finally {
@@ -155,10 +341,18 @@ export const ProfilScreen = () => {
   const handleUpdateArtisanProfile = async () => {
     const errors = validateArtisanProfile(artisanForm);
     if (errors.length > 0) {
+      const errorMessage =
+        errors.length === 1
+          ? errors[0]
+          : `Veuillez corriger les erreurs suivantes :\n${errors.join("\n")}`;
+
       setNotification({
         visible: true,
-        title: "⚠️ Erreurs de validation",
-        message: errors.join("\n"),
+        title:
+          errors.length === 1
+            ? "⚠️ Erreur de validation"
+            : "⚠️ Erreurs de validation",
+        message: errorMessage,
         type: "warning",
       });
       return;
@@ -174,14 +368,11 @@ export const ProfilScreen = () => {
         type: "success",
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Une erreur inconnue est survenue";
+      const { errorTitle, errorMessage } = handleError(error, "de mise à jour");
       setNotification({
         visible: true,
-        title: "❌ Erreur de mise à jour",
-        message: `Impossible de mettre à jour votre profil artisan : ${errorMessage}`,
+        title: errorTitle,
+        message: errorMessage,
         type: "error",
       });
     } finally {
@@ -283,50 +474,64 @@ export const ProfilScreen = () => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Nom d'utilisateur</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    userErrors.username && styles.inputError,
+                  ]}
                   value={userForm.username}
-                  onChangeText={(text) =>
-                    setUserForm((prev) => ({ ...prev, username: text }))
-                  }
+                  onChangeText={(text) => updateUserForm("username", text)}
                   placeholder="Votre nom d'utilisateur"
                   placeholderTextColor="#8a9a8a"
                 />
+                {userErrors.username ? (
+                  <Text style={styles.errorText}>{userErrors.username}</Text>
+                ) : null}
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Prénom</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    userErrors.firstName && styles.inputError,
+                  ]}
                   value={userForm.firstName}
-                  onChangeText={(text) =>
-                    setUserForm((prev) => ({ ...prev, firstName: text }))
-                  }
+                  onChangeText={(text) => updateUserForm("firstName", text)}
                   placeholder="Votre prénom"
                   placeholderTextColor="#8a9a8a"
                 />
+                {userErrors.firstName ? (
+                  <Text style={styles.errorText}>{userErrors.firstName}</Text>
+                ) : null}
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Nom</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    userErrors.lastName && styles.inputError,
+                  ]}
                   value={userForm.lastName}
-                  onChangeText={(text) =>
-                    setUserForm((prev) => ({ ...prev, lastName: text }))
-                  }
+                  onChangeText={(text) => updateUserForm("lastName", text)}
                   placeholder="Votre nom"
                   placeholderTextColor="#8a9a8a"
                 />
+                {userErrors.lastName ? (
+                  <Text style={styles.errorText}>{userErrors.lastName}</Text>
+                ) : null}
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Bio</Text>
                 <TextInput
-                  style={[styles.input, styles.textArea]}
+                  style={[
+                    styles.input,
+                    styles.textArea,
+                    userErrors.bio && styles.inputError,
+                  ]}
                   value={userForm.bio}
-                  onChangeText={(text) =>
-                    setUserForm((prev) => ({ ...prev, bio: text }))
-                  }
+                  onChangeText={(text) => updateUserForm("bio", text)}
                   placeholder="Parlez-nous de vous..."
                   placeholderTextColor="#8a9a8a"
                   multiline
@@ -336,6 +541,9 @@ export const ProfilScreen = () => {
                 <Text style={styles.charCount}>
                   {userForm.bio.length}/500 caractères
                 </Text>
+                {userErrors.bio ? (
+                  <Text style={styles.errorText}>{userErrors.bio}</Text>
+                ) : null}
               </View>
 
               <TouchableOpacity
@@ -398,27 +606,39 @@ export const ProfilScreen = () => {
                   Nom de votre entreprise/atelier *
                 </Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    artisanErrors.businessName && styles.inputError,
+                  ]}
                   value={artisanForm.businessName}
                   onChangeText={(text) =>
-                    setArtisanForm((prev) => ({ ...prev, businessName: text }))
+                    updateArtisanForm("businessName", text)
                   }
                   placeholder="Ex: Atelier du Bois"
                   placeholderTextColor="#8a9a8a"
                 />
+                {artisanErrors.businessName ? (
+                  <Text style={styles.errorText}>
+                    {artisanErrors.businessName}
+                  </Text>
+                ) : null}
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Localisation *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    artisanErrors.location && styles.inputError,
+                  ]}
                   value={artisanForm.location}
-                  onChangeText={(text) =>
-                    setArtisanForm((prev) => ({ ...prev, location: text }))
-                  }
+                  onChangeText={(text) => updateArtisanForm("location", text)}
                   placeholder="Ex: Lyon, France"
                   placeholderTextColor="#8a9a8a"
                 />
+                {artisanErrors.location ? (
+                  <Text style={styles.errorText}>{artisanErrors.location}</Text>
+                ) : null}
               </View>
 
               <View style={styles.inputGroup}>
@@ -426,10 +646,14 @@ export const ProfilScreen = () => {
                   Description de votre activité *
                 </Text>
                 <TextInput
-                  style={[styles.input, styles.textArea]}
+                  style={[
+                    styles.input,
+                    styles.textArea,
+                    artisanErrors.description && styles.inputError,
+                  ]}
                   value={artisanForm.description}
                   onChangeText={(text) =>
-                    setArtisanForm((prev) => ({ ...prev, description: text }))
+                    updateArtisanForm("description", text)
                   }
                   placeholder="Décrivez votre passion, votre savoir-faire, votre histoire..."
                   placeholderTextColor="#8a9a8a"
@@ -440,24 +664,33 @@ export const ProfilScreen = () => {
                 <Text style={styles.charCount}>
                   {artisanForm.description.length}/1000 caractères
                 </Text>
+                {artisanErrors.description ? (
+                  <Text style={styles.errorText}>
+                    {artisanErrors.description}
+                  </Text>
+                ) : null}
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Année de création</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    artisanErrors.establishedYear && styles.inputError,
+                  ]}
                   value={artisanForm.establishedYear.toString()}
                   onChangeText={(text) =>
-                    setArtisanForm((prev) => ({
-                      ...prev,
-                      establishedYear:
-                        parseInt(text) || new Date().getFullYear(),
-                    }))
+                    updateArtisanForm("establishedYear", text)
                   }
                   placeholder="2024"
                   placeholderTextColor="#8a9a8a"
                   keyboardType="numeric"
                 />
+                {artisanErrors.establishedYear ? (
+                  <Text style={styles.errorText}>
+                    {artisanErrors.establishedYear}
+                  </Text>
+                ) : null}
               </View>
 
               <View style={styles.inputGroup}>
@@ -489,6 +722,11 @@ export const ProfilScreen = () => {
                     </TouchableOpacity>
                   ))}
                 </View>
+                {artisanErrors.specialties ? (
+                  <Text style={styles.errorText}>
+                    {artisanErrors.specialties}
+                  </Text>
+                ) : null}
               </View>
 
               <TouchableOpacity
@@ -633,6 +871,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
+  inputError: {
+    borderColor: "#ef4444",
+    backgroundColor: "#fef2f2",
+  },
   textArea: {
     height: 100,
     textAlignVertical: "top",
@@ -775,13 +1017,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   errorText: {
-    fontSize: 16,
-    color: "#7a8a7a",
-    textAlign: "center",
-    padding: 20,
+    fontSize: 12,
+    color: "#ef4444",
+    marginTop: 4,
     fontFamily: "System",
-    letterSpacing: 0.3,
-    lineHeight: 24,
+    letterSpacing: 0.2,
+    lineHeight: 16,
   },
   loginButton: {
     backgroundColor: "#4a5c4a",
