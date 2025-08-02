@@ -244,7 +244,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         );
       }
 
-      // Tentative de création du profil artisan (optionnel)
+      // Tentative de création du profil artisan dans artisan_profiles (optionnel)
       try {
         const { error: artisanError } = await supabase
           .from("artisan_profiles")
@@ -270,6 +270,41 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           "Table 'artisan_profiles' non disponible, utilisation des métadonnées uniquement:",
           tableError
         );
+      }
+
+      // Création de l'artisan dans la table artisans
+      try {
+        const { error: artisansError } = await supabase
+          .from("artisans")
+          .insert({
+            id: auth.user.id, // Utiliser l'ID utilisateur comme ID artisan
+            name:
+              artisanData.businessName ||
+              `${auth.user.user_metadata?.firstName || ""} ${
+                auth.user.user_metadata?.lastName || ""
+              }`.trim() ||
+              auth.user.email?.split("@")[0] ||
+              "Artisan",
+            location: artisanData.location,
+            profile_image_url: auth.user.user_metadata?.profileImage,
+            bio: artisanData.description,
+            email: auth.user.email,
+            phone: auth.user.phone,
+            is_verified: false, // Par défaut non vérifié
+            joined_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+
+        if (artisansError) {
+          console.warn(
+            "Erreur lors de la création de l'artisan dans la table 'artisans':",
+            artisansError.message
+          );
+        } else {
+          console.log("Artisan créé avec succès dans la table 'artisans'");
+        }
+      } catch (tableError) {
+        console.warn("Table 'artisans' non disponible:", tableError);
       }
     } catch (error) {
       console.error("Erreur lors de la création du profil artisan:", error);
@@ -299,7 +334,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(authError.message);
       }
 
-      // Tentative de mise à jour du profil artisan dans la table (optionnel)
+      // Tentative de mise à jour du profil artisan dans artisan_profiles (optionnel)
       try {
         const { error } = await supabase.from("artisan_profiles").upsert({
           user_id: auth.user.id,
@@ -322,6 +357,38 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           "Table 'artisan_profiles' non disponible, utilisation des métadonnées uniquement:",
           tableError
         );
+      }
+
+      // Mise à jour de l'artisan dans la table artisans
+      try {
+        const { error: artisansError } = await supabase
+          .from("artisans")
+          .upsert({
+            id: auth.user.id,
+            name:
+              data.businessName ||
+              `${auth.user.user_metadata?.firstName || ""} ${
+                auth.user.user_metadata?.lastName || ""
+              }`.trim() ||
+              auth.user.email?.split("@")[0] ||
+              "Artisan",
+            location: data.location,
+            bio: data.description,
+            updated_at: new Date().toISOString(),
+          });
+
+        if (artisansError) {
+          console.warn(
+            "Erreur lors de la mise à jour de l'artisan dans la table 'artisans':",
+            artisansError.message
+          );
+        } else {
+          console.log(
+            "Artisan mis à jour avec succès dans la table 'artisans'"
+          );
+        }
+      } catch (tableError) {
+        console.warn("Table 'artisans' non disponible:", tableError);
       }
     } catch (error) {
       console.error("Erreur lors de la mise à jour du profil artisan:", error);

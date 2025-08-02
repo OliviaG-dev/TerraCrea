@@ -60,7 +60,12 @@ export const NavigationHeader: React.FC = () => {
       {isAuthenticated ? (
         <View style={styles.authenticatedContainer}>
           <View style={styles.userInfo}>
-            <View style={styles.userIcon}>
+            <View
+              style={[
+                styles.userIcon,
+                user?.isArtisan && styles.userIconArtisan,
+              ]}
+            >
               <Text style={styles.userIconText}>★</Text>
             </View>
             <Text style={styles.userName} numberOfLines={1}>
@@ -125,6 +130,9 @@ const styles = StyleSheet.create({
   },
   userIconInactive: {
     backgroundColor: "#8a9a8a",
+  },
+  userIconArtisan: {
+    backgroundColor: "#ff6b35", // Couleur orange pour les artisans
   },
   userIconText: {
     fontSize: 14,
