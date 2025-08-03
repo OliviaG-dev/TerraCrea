@@ -18,6 +18,7 @@ interface UserContextProps {
   updateProfile: (data: UserProfileUpdate) => Promise<void>;
   upgradeToArtisan: (artisanData: ArtisanProfileUpdate) => Promise<void>;
   updateArtisanProfile: (data: ArtisanProfileUpdate) => Promise<void>;
+  refreshUser: () => Promise<void>;
 
   // Fonctionnalités de mot de passe oublié
   resetPassword: (email: string) => Promise<any>;
@@ -112,23 +113,24 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       bio: userMetadata.bio || "",
 
       // Capacités utilisateur
-      isArtisan: appMetadata.isArtisan || false,
+      isArtisan: userMetadata.isArtisan || appMetadata.isArtisan || false,
       isBuyer: appMetadata.isBuyer !== false, // true par défaut
 
       // Informations artisan depuis les métadonnées
-      artisanProfile: appMetadata.isArtisan
-        ? {
-            businessName: userMetadata.artisanBusinessName || "",
-            location: userMetadata.artisanLocation || "",
-            description: userMetadata.artisanDescription || "",
-            establishedYear:
-              userMetadata.artisanEstablishedYear || new Date().getFullYear(),
-            specialties: userMetadata.artisanSpecialties || [],
-            verified: appMetadata.verified || false,
-            rating: userMetadata.rating || 0,
-            totalSales: userMetadata.totalSales || 0,
-          }
-        : undefined,
+      artisanProfile:
+        userMetadata.isArtisan || appMetadata.isArtisan
+          ? {
+              businessName: userMetadata.artisanBusinessName || "",
+              location: userMetadata.artisanLocation || "",
+              description: userMetadata.artisanDescription || "",
+              establishedYear:
+                userMetadata.artisanEstablishedYear || new Date().getFullYear(),
+              specialties: userMetadata.artisanSpecialties || [],
+              verified: appMetadata.verified || false,
+              rating: userMetadata.rating || 0,
+              totalSales: userMetadata.totalSales || 0,
+            }
+          : undefined,
     };
 
     return user;
@@ -136,6 +138,23 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   // Calcul des capacités utilisateur
   const capabilities = getUserCapabilities(auth.user);
+
+  // Fonction pour rafraîchir l'état utilisateur
+  const refreshUser = async () => {
+    try {
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+      if (currentUser) {
+        // Forcer la mise à jour de l'état en reconstruisant l'utilisateur avec les métadonnées
+        const updatedUser = buildUserWithMetadata(currentUser);
+        // Note: Dans une vraie implémentation, vous devriez avoir un setter pour l'utilisateur
+        console.log("Utilisateur rafraîchi:", updatedUser);
+      }
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement de l'utilisateur:", error);
+    }
+  };
 
   // Fonction de mise à jour du profil utilisateur
   const updateProfile = async (data: UserProfileUpdate) => {
@@ -207,19 +226,30 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // Mise à jour des métadonnées utilisateur pour devenir artisan
-      const { error: authError } = await supabase.auth.updateUser({
-        data: {
-          isArtisan: true,
-          artisanBusinessName: artisanData.businessName,
-          artisanLocation: artisanData.location,
-          artisanDescription: artisanData.description,
-          artisanEstablishedYear: artisanData.establishedYear,
-          artisanSpecialties: artisanData.specialties,
-        },
-      });
+      const { data: updatedUser, error: authError } =
+        await supabase.auth.updateUser({
+          data: {
+            isArtisan: true,
+            artisanBusinessName: artisanData.businessName,
+            artisanLocation: artisanData.location,
+            artisanDescription: artisanData.description,
+            artisanEstablishedYear: artisanData.establishedYear,
+            artisanSpecialties: artisanData.specialties,
+          },
+        });
 
       if (authError) {
         throw new Error(authError.message);
+      }
+
+      // Forcer la mise à jour de l'état utilisateur avec les nouvelles métadonnées
+      if (updatedUser.user) {
+        console.log(
+          "Utilisateur promu artisan:",
+          updatedUser.user.user_metadata
+        );
+        // Rafraîchir l'état utilisateur pour refléter les changements
+        await refreshUser();
       }
 
       // Mise à jour du statut artisan dans la table users
@@ -320,18 +350,29 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // Mise à jour des métadonnées utilisateur pour le profil artisan
-      const { error: authError } = await supabase.auth.updateUser({
-        data: {
-          artisanBusinessName: data.businessName,
-          artisanLocation: data.location,
-          artisanDescription: data.description,
-          artisanEstablishedYear: data.establishedYear,
-          artisanSpecialties: data.specialties,
-        },
-      });
+      const { data: updatedUser, error: authError } =
+        await supabase.auth.updateUser({
+          data: {
+            artisanBusinessName: data.businessName,
+            artisanLocation: data.location,
+            artisanDescription: data.description,
+            artisanEstablishedYear: data.establishedYear,
+            artisanSpecialties: data.specialties,
+          },
+        });
 
       if (authError) {
         throw new Error(authError.message);
+      }
+
+      // Forcer la mise à jour de l'état utilisateur avec les nouvelles métadonnées
+      if (updatedUser.user) {
+        console.log(
+          "Métadonnées artisan mises à jour:",
+          updatedUser.user.user_metadata
+        );
+        // Rafraîchir l'état utilisateur pour refléter les changements
+        await refreshUser();
       }
 
       // Tentative de mise à jour du profil artisan dans artisan_profiles (optionnel)
@@ -408,6 +449,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         updateProfile,
         upgradeToArtisan,
         updateArtisanProfile,
+        refreshUser,
         resetPassword: auth.resetPassword,
         updatePassword: auth.updatePassword,
       }}

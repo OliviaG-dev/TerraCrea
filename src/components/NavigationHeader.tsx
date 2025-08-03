@@ -63,7 +63,8 @@ export const NavigationHeader: React.FC = () => {
             <View
               style={[
                 styles.userIcon,
-                user?.isArtisan && styles.userIconArtisan,
+                (user?.isArtisan || user?.user_metadata?.isArtisan) &&
+                  styles.userIconArtisan,
               ]}
             >
               <Text style={styles.userIconText}>★</Text>
