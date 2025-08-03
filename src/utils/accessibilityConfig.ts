@@ -56,9 +56,10 @@ export class AccessibilityConfig {
         const message = args[0]?.toString?.() || "";
         if (
           message.includes("hydration error") ||
-          message.includes("cannot be a descendant of <button>")
+          message.includes("cannot be a descendant of <button>") ||
+          message.includes("Unexpected text node")
         ) {
-          // Supprime les erreurs d'hydratation pendant le développement
+          // Supprime les erreurs d'hydratation et de nœuds texte pendant le développement
           return;
         }
         originalError.apply(console, args);

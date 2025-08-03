@@ -10,6 +10,7 @@ import {
   Switch,
   SafeAreaView,
 } from "react-native";
+
 import { NotificationToast } from "../components/NotificationToast";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
@@ -116,6 +117,110 @@ const validateUserField = (field: string, value: string) => {
     default:
       return "";
   }
+};
+
+// Composant pour un champ éditable
+const EditableField = ({
+  label,
+  field,
+  value,
+  placeholder,
+  isEditing,
+  onEdit,
+  onSave,
+  onCancel,
+  error,
+  multiline = false,
+  maxLength,
+}: {
+  label: string;
+  field: string;
+  value: string;
+  placeholder: string;
+  isEditing: boolean;
+  onEdit: () => void;
+  onSave: (value: string) => void;
+  onCancel: () => void;
+  error?: string;
+  multiline?: boolean;
+  maxLength?: number;
+}) => {
+  const [tempValue, setTempValue] = useState(value);
+
+  const handleSave = () => {
+    if (tempValue.trim() !== value) {
+      onSave(tempValue);
+    }
+    onCancel();
+  };
+
+  const handleCancel = () => {
+    setTempValue(value);
+    onCancel();
+  };
+
+  useEffect(() => {
+    setTempValue(value);
+  }, [value]);
+
+  if (isEditing) {
+    return (
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>{label}</Text>
+        <TextInput
+          style={[
+            styles.input,
+            multiline && styles.textArea,
+            error && styles.inputError,
+          ]}
+          value={tempValue}
+          onChangeText={setTempValue}
+          placeholder={placeholder}
+          placeholderTextColor="#8a9a8a"
+          multiline={multiline}
+          numberOfLines={multiline ? 3 : 1}
+          maxLength={maxLength}
+          autoFocus
+          accessible={true}
+          accessibilityLabel={label}
+        />
+        {maxLength && (
+          <Text style={styles.charCount}>
+            {tempValue.length}/{maxLength} caractères
+          </Text>
+        )}
+        {error && <Text style={styles.errorText}>{error}</Text>}
+        <View style={styles.editActions}>
+          <TouchableOpacity
+            style={[styles.editButton, styles.saveButton]}
+            onPress={handleSave}
+          >
+            <Text style={styles.saveButtonText}>✓ Sauvegarder</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.editButton, styles.cancelButton]}
+            onPress={handleCancel}
+          >
+            <Text style={styles.cancelButtonText}>✕ Annuler</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.inputGroup}>
+      <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity
+        style={styles.editableField}
+        onPress={onEdit}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.editableText}>{value || placeholder}</Text>
+        <Text style={styles.editIcon}>✏️</Text>
+      </TouchableOpacity>
+    </View>
+  );
 };
 
 // Fonction de validation en temps réel pour le profil artisan
@@ -227,6 +332,9 @@ export const ProfilScreen = () => {
   // Clé pour forcer le re-rendu des formulaires
   const [formKey, setFormKey] = useState(0);
 
+  // État pour gérer l'édition des champs
+  const [editingField, setEditingField] = useState<string | null>(null);
+
   // Initialiser les formulaires avec les données utilisateur existantes
   useEffect(() => {
     if (user && user.id) {
@@ -282,6 +390,25 @@ export const ProfilScreen = () => {
       : [...artisanForm.specialties, categoryValue];
 
     updateArtisanForm("specialties", newSpecialties);
+  };
+
+  // Fonctions pour gérer l'édition des champs
+  const handleEditField = (field: string) => {
+    setEditingField(field);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingField(null);
+  };
+
+  const handleSaveField = (field: string, value: string) => {
+    updateUserForm(field, value);
+    setEditingField(null);
+  };
+
+  const handleSaveArtisanField = (field: string, value: string | number) => {
+    updateArtisanForm(field, value);
+    setEditingField(null);
   };
 
   const handleUpdateProfile = async () => {
@@ -506,84 +633,55 @@ export const ProfilScreen = () => {
             <View style={styles.tabContent}>
               <Text style={styles.sectionTitle}>Informations personnelles</Text>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nom d'utilisateur</Text>
-                <TextInput
-                  key={`username-${formKey}`}
-                  style={[
-                    styles.input,
-                    userErrors.username && styles.inputError,
-                  ]}
-                  value={userForm.username}
-                  onChangeText={(text) => updateUserForm("username", text)}
-                  placeholder="Votre nom d'utilisateur"
-                  placeholderTextColor="#8a9a8a"
-                />
-                {userErrors.username ? (
-                  <Text style={styles.errorText}>{userErrors.username}</Text>
-                ) : null}
-              </View>
+              <EditableField
+                label="Nom d'utilisateur"
+                field="username"
+                value={userForm.username}
+                placeholder="Votre nom d'utilisateur"
+                isEditing={editingField === "username"}
+                onEdit={() => handleEditField("username")}
+                onSave={(value) => handleSaveField("username", value)}
+                onCancel={handleCancelEdit}
+                error={userErrors.username}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Prénom</Text>
-                <TextInput
-                  key={`firstName-${formKey}`}
-                  style={[
-                    styles.input,
-                    userErrors.firstName && styles.inputError,
-                  ]}
-                  value={userForm.firstName}
-                  onChangeText={(text) => updateUserForm("firstName", text)}
-                  placeholder="Votre prénom"
-                  placeholderTextColor="#8a9a8a"
-                />
-                {userErrors.firstName ? (
-                  <Text style={styles.errorText}>{userErrors.firstName}</Text>
-                ) : null}
-              </View>
+              <EditableField
+                label="Prénom"
+                field="firstName"
+                value={userForm.firstName}
+                placeholder="Votre prénom"
+                isEditing={editingField === "firstName"}
+                onEdit={() => handleEditField("firstName")}
+                onSave={(value) => handleSaveField("firstName", value)}
+                onCancel={handleCancelEdit}
+                error={userErrors.firstName}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nom</Text>
-                <TextInput
-                  key={`lastName-${formKey}`}
-                  style={[
-                    styles.input,
-                    userErrors.lastName && styles.inputError,
-                  ]}
-                  value={userForm.lastName}
-                  onChangeText={(text) => updateUserForm("lastName", text)}
-                  placeholder="Votre nom"
-                  placeholderTextColor="#8a9a8a"
-                />
-                {userErrors.lastName ? (
-                  <Text style={styles.errorText}>{userErrors.lastName}</Text>
-                ) : null}
-              </View>
+              <EditableField
+                label="Nom"
+                field="lastName"
+                value={userForm.lastName}
+                placeholder="Votre nom"
+                isEditing={editingField === "lastName"}
+                onEdit={() => handleEditField("lastName")}
+                onSave={(value) => handleSaveField("lastName", value)}
+                onCancel={handleCancelEdit}
+                error={userErrors.lastName}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Bio</Text>
-                <TextInput
-                  key={`bio-${formKey}`}
-                  style={[
-                    styles.input,
-                    styles.textArea,
-                    userErrors.bio && styles.inputError,
-                  ]}
-                  value={userForm.bio}
-                  onChangeText={(text) => updateUserForm("bio", text)}
-                  placeholder="Parlez-nous de vous..."
-                  placeholderTextColor="#8a9a8a"
-                  multiline
-                  numberOfLines={3}
-                  maxLength={500}
-                />
-                <Text style={styles.charCount}>
-                  {userForm.bio.length}/500 caractères
-                </Text>
-                {userErrors.bio ? (
-                  <Text style={styles.errorText}>{userErrors.bio}</Text>
-                ) : null}
-              </View>
+              <EditableField
+                label="Bio"
+                field="bio"
+                value={userForm.bio}
+                placeholder="Parlez-nous de vous..."
+                isEditing={editingField === "bio"}
+                onEdit={() => handleEditField("bio")}
+                onSave={(value) => handleSaveField("bio", value)}
+                onCancel={handleCancelEdit}
+                error={userErrors.bio}
+                multiline={true}
+                maxLength={500}
+              />
 
               <TouchableOpacity
                 style={[styles.primaryButton, loading && styles.buttonDisabled]}
@@ -640,101 +738,62 @@ export const ProfilScreen = () => {
               )}
 
               {/* Formulaire artisan */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  Nom de votre entreprise/atelier *
-                </Text>
-                <TextInput
-                  key={`businessName-${formKey}`}
-                  style={[
-                    styles.input,
-                    artisanErrors.businessName && styles.inputError,
-                  ]}
-                  value={artisanForm.businessName}
-                  onChangeText={(text) =>
-                    updateArtisanForm("businessName", text)
-                  }
-                  placeholder="Ex: Atelier du Bois"
-                  placeholderTextColor="#8a9a8a"
-                />
-                {artisanErrors.businessName ? (
-                  <Text style={styles.errorText}>
-                    {artisanErrors.businessName}
-                  </Text>
-                ) : null}
-              </View>
+              <EditableField
+                label="Nom de votre entreprise/atelier *"
+                field="businessName"
+                value={artisanForm.businessName}
+                placeholder="Ex: Atelier du Bois"
+                isEditing={editingField === "businessName"}
+                onEdit={() => handleEditField("businessName")}
+                onSave={(value) =>
+                  handleSaveArtisanField("businessName", value)
+                }
+                onCancel={handleCancelEdit}
+                error={artisanErrors.businessName}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Localisation *</Text>
-                <TextInput
-                  key={`location-${formKey}`}
-                  style={[
-                    styles.input,
-                    artisanErrors.location && styles.inputError,
-                  ]}
-                  value={artisanForm.location}
-                  onChangeText={(text) => updateArtisanForm("location", text)}
-                  placeholder="Ex: Lyon, France"
-                  placeholderTextColor="#8a9a8a"
-                />
-                {artisanErrors.location ? (
-                  <Text style={styles.errorText}>{artisanErrors.location}</Text>
-                ) : null}
-              </View>
+              <EditableField
+                label="Localisation *"
+                field="location"
+                value={artisanForm.location}
+                placeholder="Ex: Lyon, France"
+                isEditing={editingField === "location"}
+                onEdit={() => handleEditField("location")}
+                onSave={(value) => handleSaveArtisanField("location", value)}
+                onCancel={handleCancelEdit}
+                error={artisanErrors.location}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  Description de votre activité *
-                </Text>
-                <TextInput
-                  key={`description-${formKey}`}
-                  style={[
-                    styles.input,
-                    styles.textArea,
-                    artisanErrors.description && styles.inputError,
-                  ]}
-                  value={artisanForm.description}
-                  onChangeText={(text) =>
-                    updateArtisanForm("description", text)
-                  }
-                  placeholder="Décrivez votre passion, votre savoir-faire, votre histoire..."
-                  placeholderTextColor="#8a9a8a"
-                  multiline
-                  numberOfLines={4}
-                  maxLength={1000}
-                />
-                <Text style={styles.charCount}>
-                  {artisanForm.description.length}/1000 caractères
-                </Text>
-                {artisanErrors.description ? (
-                  <Text style={styles.errorText}>
-                    {artisanErrors.description}
-                  </Text>
-                ) : null}
-              </View>
+              <EditableField
+                label="Description de votre activité *"
+                field="description"
+                value={artisanForm.description}
+                placeholder="Décrivez votre passion, votre savoir-faire, votre histoire..."
+                isEditing={editingField === "description"}
+                onEdit={() => handleEditField("description")}
+                onSave={(value) => handleSaveArtisanField("description", value)}
+                onCancel={handleCancelEdit}
+                error={artisanErrors.description}
+                multiline={true}
+                maxLength={1000}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Année de création</Text>
-                <TextInput
-                  key={`establishedYear-${formKey}`}
-                  style={[
-                    styles.input,
-                    artisanErrors.establishedYear && styles.inputError,
-                  ]}
-                  value={artisanForm.establishedYear.toString()}
-                  onChangeText={(text) =>
-                    updateArtisanForm("establishedYear", text)
-                  }
-                  placeholder="2024"
-                  placeholderTextColor="#8a9a8a"
-                  keyboardType="numeric"
-                />
-                {artisanErrors.establishedYear ? (
-                  <Text style={styles.errorText}>
-                    {artisanErrors.establishedYear}
-                  </Text>
-                ) : null}
-              </View>
+              <EditableField
+                label="Année de création"
+                field="establishedYear"
+                value={artisanForm.establishedYear.toString()}
+                placeholder="2024"
+                isEditing={editingField === "establishedYear"}
+                onEdit={() => handleEditField("establishedYear")}
+                onSave={(value) =>
+                  handleSaveArtisanField(
+                    "establishedYear",
+                    parseInt(value) || new Date().getFullYear()
+                  )
+                }
+                onCancel={handleCancelEdit}
+                error={artisanErrors.establishedYear}
+              />
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>
@@ -1121,5 +1180,72 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontFamily: "System",
     letterSpacing: 0.2,
+  },
+  editableField: {
+    borderWidth: 1.5,
+    borderColor: "#e8e9e8",
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  editableText: {
+    fontSize: 16,
+    color: "#4a5c4a",
+    fontFamily: "System",
+    flex: 1,
+  },
+  editableContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+  },
+  editIcon: {
+    fontSize: 16,
+    marginLeft: 8,
+  },
+
+  editIconContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  editActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 10,
+  },
+  editButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveButton: {
+    backgroundColor: "#4a5c4a",
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "System",
+  },
+  cancelButton: {
+    backgroundColor: "#f3f4f6",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+  },
+  cancelButtonText: {
+    color: "#6b7280",
+    fontSize: 14,
+    fontWeight: "500",
+    fontFamily: "System",
   },
 });
