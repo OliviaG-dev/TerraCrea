@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
@@ -22,6 +23,7 @@ export const CreationsScreen = () => {
   const { user } = useUserContext();
   const [creations, setCreations] = useState<Creation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const [notification, setNotification] = useState<{
     visible: boolean;
     title: string;
@@ -41,6 +43,13 @@ export const CreationsScreen = () => {
     try {
       const userCreations = await CreationsApi.getUserCreations(user.id);
       setCreations(userCreations);
+
+      // Debug temporaire pour voir les URLs d'images
+      userCreations.forEach((creation) => {
+        console.log(
+          `Création "${creation.title}": imageUrl = "${creation.imageUrl}"`
+        );
+      });
     } catch (error) {
       setNotification({
         visible: true,
@@ -103,40 +112,78 @@ export const CreationsScreen = () => {
     );
   };
 
-  const renderCreationCard = (creation: Creation) => (
-    <View key={creation.id} style={styles.creationCard}>
-      <View style={styles.creationHeader}>
-        <Text style={styles.creationTitle}>{creation.title}</Text>
-        <Text style={styles.creationPrice}>{creation.price}€</Text>
+  const renderCreationCard = (creation: Creation) => {
+    const hasImage = creation.imageUrl && creation.imageUrl.trim() !== "";
+    const imageHasError = imageErrors.has(creation.id);
+
+    return (
+      <View key={creation.id} style={styles.creationCard}>
+        {/* Image de la création */}
+        <View style={styles.imageContainer}>
+          {hasImage && !imageHasError ? (
+            <Image
+              source={{ uri: creation.imageUrl }}
+              style={styles.creationImage}
+              resizeMode="cover"
+              onError={() => {
+                setImageErrors((prev) => new Set(prev).add(creation.id));
+                console.warn(
+                  `Erreur de chargement de l'image: ${creation.imageUrl}`
+                );
+              }}
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Text style={styles.imagePlaceholderText}>📷</Text>
+              <Text style={styles.imagePlaceholderSubtext}>
+                {hasImage ? "Erreur de chargement" : "Aucune image"}
+              </Text>
+              {hasImage && (
+                <Text style={styles.imageDebugText}>
+                  URL: {creation.imageUrl?.substring(0, 50)}...
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.creationContent}>
+          <View style={styles.creationHeader}>
+            <Text style={styles.creationTitle}>{creation.title}</Text>
+            <Text style={styles.creationPrice}>{creation.price}€</Text>
+          </View>
+
+          <Text style={styles.creationDescription} numberOfLines={2}>
+            {creation.description}
+          </Text>
+
+          <View style={styles.creationStats}>
+            <Text style={styles.creationStat}>⭐ {creation.rating}</Text>
+            <Text style={styles.creationStat}>
+              📊 {creation.reviewCount} avis
+            </Text>
+            <Text style={styles.creationCategory}>{creation.category}</Text>
+          </View>
+
+          <View style={styles.creationActions}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={() => handleEditCreation(creation)}
+            >
+              <Text style={styles.editButtonText}>✏️ Modifier</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() => handleDeleteCreation(creation)}
+            >
+              <Text style={styles.deleteButtonText}>🗑️ Supprimer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-
-      <Text style={styles.creationDescription} numberOfLines={2}>
-        {creation.description}
-      </Text>
-
-      <View style={styles.creationStats}>
-        <Text style={styles.creationStat}>⭐ {creation.rating}</Text>
-        <Text style={styles.creationStat}>📊 {creation.reviewCount} avis</Text>
-        <Text style={styles.creationCategory}>{creation.category}</Text>
-      </View>
-
-      <View style={styles.creationActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => handleEditCreation(creation)}
-        >
-          <Text style={styles.editButtonText}>✏️ Modifier</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => handleDeleteCreation(creation)}
-        >
-          <Text style={styles.deleteButtonText}>🗑️ Supprimer</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   if (!user) {
     return (
@@ -321,13 +368,48 @@ const styles = StyleSheet.create({
   creationCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 16,
     marginBottom: 16,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
+    overflow: "hidden",
+  },
+  imageContainer: {
+    width: "100%",
+    height: 200,
+    backgroundColor: "#f5f5f5",
+  },
+  creationImage: {
+    width: "100%",
+    height: "100%",
+  },
+  creationContent: {
+    padding: 16,
+  },
+  imagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+  },
+  imagePlaceholderText: {
+    fontSize: 48,
+    marginBottom: 8,
+  },
+  imagePlaceholderSubtext: {
+    fontSize: 14,
+    color: "#7a8a7a",
+    fontFamily: "System",
+  },
+  imageDebugText: {
+    fontSize: 10,
+    color: "#999",
+    fontFamily: "System",
+    marginTop: 4,
+    textAlign: "center",
   },
   creationHeader: {
     flexDirection: "row",

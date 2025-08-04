@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -57,6 +57,11 @@ export const AddCreationScreen = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showMaterialsModal, setShowMaterialsModal] = useState(false);
   const [showTagsModal, setShowTagsModal] = useState(false);
+
+  // État pour les catégories depuis la base de données
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>(
+    []
+  );
 
   const commonMaterials = [
     "Bois",
@@ -165,6 +170,24 @@ export const AddCreationScreen = () => {
 
   const [materialInput, setMaterialInput] = useState("");
   const [tagInput, setTagInput] = useState("");
+
+  // Charger les catégories depuis la base de données
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoriesData = await CreationsApi.getAllCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des catégories:", error);
+        // Fallback vers les catégories du frontend
+        setCategories(
+          Object.entries(CATEGORY_LABELS).map(([id, label]) => ({ id, label }))
+        );
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const handleAddPhoto = async () => {
     try {
@@ -431,7 +454,8 @@ export const AddCreationScreen = () => {
             onPress={() => setShowCategoryModal(true)}
           >
             <Text style={styles.selectButtonText}>
-              {CATEGORY_LABELS[form.category]}
+              {categories.find((cat) => cat.id === form.category)?.label ||
+                CATEGORY_LABELS[form.category]}
             </Text>
             <Text style={styles.selectArrow}>▼</Text>
           </TouchableOpacity>
@@ -558,18 +582,18 @@ export const AddCreationScreen = () => {
               </TouchableOpacity>
             </View>
             <FlatList
-              data={Object.entries(CATEGORY_LABELS)}
-              keyExtractor={([category]) => category}
-              renderItem={({ item: [category, label] }) => (
+              data={categories}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[
                     styles.modalItem,
-                    form.category === category && styles.modalItemSelected,
+                    form.category === item.id && styles.modalItemSelected,
                   ]}
                   onPress={() => {
                     setForm((prev) => ({
                       ...prev,
-                      category: category as CreationCategory,
+                      category: item.id as CreationCategory,
                     }));
                     setShowCategoryModal(false);
                   }}
@@ -577,11 +601,10 @@ export const AddCreationScreen = () => {
                   <Text
                     style={[
                       styles.modalItemText,
-                      form.category === category &&
-                        styles.modalItemTextSelected,
+                      form.category === item.id && styles.modalItemTextSelected,
                     ]}
                   >
-                    {label}
+                    {item.label}
                   </Text>
                 </TouchableOpacity>
               )}
