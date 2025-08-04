@@ -21,6 +21,7 @@ import {
 import { CreationsApi, useFavorites } from "../services/creationsApi";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
+import { COLORS } from "../utils/colors";
 
 const { width } = Dimensions.get("window");
 const HORIZONTAL_PADDING = 16;
@@ -178,7 +179,7 @@ const ExploreScreen: React.FC = () => {
           <View
             style={[
               styles.availabilityDot,
-              { backgroundColor: item.isAvailable ? "#22c55e" : "#ef4444" },
+              { backgroundColor: item.isAvailable ? "#22c55e" : COLORS.danger },
             ]}
             accessible={true}
             accessibilityLabel={

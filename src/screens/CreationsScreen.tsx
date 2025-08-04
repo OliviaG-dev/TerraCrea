@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Alert,
   Image,
+  Modal,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
@@ -15,6 +16,7 @@ import { NotificationToast } from "../components/NotificationToast";
 import { Creation } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
+import { COLORS } from "../utils/colors";
 
 type CreationsScreenNavigationProp = ScreenNavigationProp<"Creations">;
 
@@ -35,6 +37,13 @@ export const CreationsScreen = () => {
     message: "",
     type: "success",
   });
+  const [deleteModal, setDeleteModal] = useState<{
+    visible: boolean;
+    creation: Creation | null;
+  }>({
+    visible: false,
+    creation: null,
+  });
 
   const loadCreations = async () => {
     if (!user?.id) return;
@@ -43,13 +52,6 @@ export const CreationsScreen = () => {
     try {
       const userCreations = await CreationsApi.getUserCreations(user.id);
       setCreations(userCreations);
-
-      // Debug temporaire pour voir les URLs d'images
-      userCreations.forEach((creation) => {
-        console.log(
-          `Création "${creation.title}": imageUrl = "${creation.imageUrl}"`
-        );
-      });
     } catch (error) {
       setNotification({
         visible: true,
@@ -66,50 +68,83 @@ export const CreationsScreen = () => {
     loadCreations();
   }, [user]);
 
+  // Rafraîchir la liste quand on revient sur cet écran
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (user?.id) {
+        loadCreations();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, user]);
+
   const handleAddCreation = () => {
     navigation.navigate("AddCreation");
   };
 
   const handleEditCreation = (creation: Creation) => {
-    setNotification({
-      visible: true,
-      title: "ℹ️ Fonctionnalité à venir",
-      message: "La modification de créations sera bientôt disponible !",
-      type: "info",
-    });
+    navigation.navigate("EditCreation", { creation });
   };
 
   const handleDeleteCreation = (creation: Creation) => {
-    Alert.alert(
-      "Supprimer la création",
-      `Êtes-vous sûr de vouloir supprimer "${creation.title}" ?`,
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await CreationsApi.deleteCreation(creation.id);
-              setNotification({
-                visible: true,
-                title: "✅ Supprimé",
-                message: "La création a été supprimée avec succès",
-                type: "success",
-              });
-              loadCreations();
-            } catch (error) {
-              setNotification({
-                visible: true,
-                title: "❌ Erreur",
-                message: "Impossible de supprimer la création",
-                type: "error",
-              });
-            }
-          },
-        },
-      ]
+    console.log(
+      "🔄 Tentative de suppression de la création:",
+      creation.id,
+      creation.title
     );
+
+    // Afficher la modal de confirmation
+    setDeleteModal({
+      visible: true,
+      creation: creation,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal.creation) return;
+
+    const creation = deleteModal.creation;
+    console.log("✅ Utilisateur a confirmé la suppression");
+
+    setDeleteModal({ visible: false, creation: null });
+    setLoading(true);
+
+    try {
+      console.log("🔄 Appel de CreationsApi.deleteCreation...");
+      const result = await CreationsApi.deleteCreation(creation.id);
+      console.log("✅ Résultat de la suppression:", result);
+
+      setNotification({
+        visible: true,
+        title: "✅ Supprimé",
+        message: `"${creation.title}" a été supprimée avec succès`,
+        type: "success",
+      });
+
+      // Recharger la liste des créations
+      console.log("🔄 Rechargement de la liste...");
+      await loadCreations();
+      console.log("✅ Liste rechargée");
+    } catch (error) {
+      console.error("❌ Erreur lors de la suppression:", error);
+      setNotification({
+        visible: true,
+        title: "❌ Erreur",
+        message: `Erreur: ${
+          error instanceof Error
+            ? error.message
+            : "Impossible de supprimer la création"
+        }`,
+        type: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModal({ visible: false, creation: null });
   };
 
   const renderCreationCard = (creation: Creation) => {
@@ -127,9 +162,6 @@ export const CreationsScreen = () => {
               resizeMode="cover"
               onError={() => {
                 setImageErrors((prev) => new Set(prev).add(creation.id));
-                console.warn(
-                  `Erreur de chargement de l'image: ${creation.imageUrl}`
-                );
               }}
             />
           ) : (
@@ -138,11 +170,6 @@ export const CreationsScreen = () => {
               <Text style={styles.imagePlaceholderSubtext}>
                 {hasImage ? "Erreur de chargement" : "Aucune image"}
               </Text>
-              {hasImage && (
-                <Text style={styles.imageDebugText}>
-                  URL: {creation.imageUrl?.substring(0, 50)}...
-                </Text>
-              )}
             </View>
           )}
         </View>
@@ -175,7 +202,10 @@ export const CreationsScreen = () => {
 
             <TouchableOpacity
               style={[styles.actionButton, styles.deleteButton]}
-              onPress={() => handleDeleteCreation(creation)}
+              onPress={() => {
+                console.log("🔄 Bouton Supprimer cliqué pour:", creation.title);
+                handleDeleteCreation(creation);
+              }}
             >
               <Text style={styles.deleteButtonText}>🗑️ Supprimer</Text>
             </TouchableOpacity>
@@ -255,6 +285,59 @@ export const CreationsScreen = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Modal de confirmation de suppression */}
+      <Modal
+        visible={deleteModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelDelete}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.deleteModalContent}>
+            <View style={styles.deleteModalHeader}>
+              <Text style={styles.deleteModalTitle}>
+                🗑️ Supprimer la création
+              </Text>
+            </View>
+
+            <View style={styles.deleteModalBody}>
+              <Text style={styles.deleteModalMessage}>
+                Êtes-vous sûr de vouloir supprimer définitivement
+              </Text>
+              <Text
+                style={[
+                  styles.deleteModalMessage,
+                  styles.deleteModalCreationTitle,
+                ]}
+              >
+                "{deleteModal.creation?.title}" ?
+              </Text>
+              <Text style={styles.deleteModalWarning}>
+                Cette action ne peut pas être annulée.
+              </Text>
+            </View>
+
+            <View style={styles.deleteModalActions}>
+              <TouchableOpacity
+                style={[styles.deleteModalButton, styles.cancelButton]}
+                onPress={cancelDelete}
+              >
+                <Text style={styles.cancelButtonText}>Annuler</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.deleteModalButton, styles.confirmDeleteButton]}
+                onPress={confirmDelete}
+              >
+                <Text style={styles.confirmDeleteButtonText}>
+                  Supprimer définitivement
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -404,13 +487,6 @@ const styles = StyleSheet.create({
     color: "#7a8a7a",
     fontFamily: "System",
   },
-  imageDebugText: {
-    fontSize: 10,
-    color: "#999",
-    fontFamily: "System",
-    marginTop: 4,
-    textAlign: "center",
-  },
   creationHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -474,7 +550,7 @@ const styles = StyleSheet.create({
     fontFamily: "System",
   },
   deleteButton: {
-    backgroundColor: "#ef4444",
+    backgroundColor: COLORS.danger,
   },
   deleteButtonText: {
     color: "#fff",
@@ -493,5 +569,96 @@ const styles = StyleSheet.create({
     color: "#7a8a7a",
     textAlign: "center",
     fontFamily: "System",
+  },
+  // Styles pour la modal de suppression
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteModalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 20,
+    maxWidth: 400,
+    width: "100%",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  deleteModalHeader: {
+    marginBottom: 16,
+  },
+  deleteModalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: COLORS.danger,
+    textAlign: "center",
+    fontFamily: "System",
+  },
+  deleteModalBody: {
+    marginBottom: 24,
+    alignItems: "center",
+  },
+  deleteModalMessage: {
+    fontSize: 16,
+    color: "#4a5c4a",
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 8,
+    fontFamily: "System",
+    width: "100%",
+  },
+  deleteModalCreationTitle: {
+    fontWeight: "600",
+    color: COLORS.danger,
+  },
+  deleteModalWarning: {
+    fontSize: 14,
+    color: "#7a8a7a",
+    textAlign: "center",
+    fontStyle: "italic",
+    fontFamily: "System",
+    width: "100%",
+  },
+  deleteModalActions: {
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  deleteModalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+  },
+  cancelButton: {
+    backgroundColor: "#f5f5f5",
+    borderWidth: 1,
+    borderColor: "#e8e9e8",
+  },
+  cancelButtonText: {
+    color: "#4a5c4a",
+    fontSize: 16,
+    fontWeight: "500",
+    fontFamily: "System",
+    textAlign: "center",
+  },
+  confirmDeleteButton: {
+    backgroundColor: COLORS.danger,
+  },
+  confirmDeleteButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "500",
+    fontFamily: "System",
+    textAlign: "center",
   },
 });

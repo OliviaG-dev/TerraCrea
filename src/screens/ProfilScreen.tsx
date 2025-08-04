@@ -22,6 +22,7 @@ import {
 import { CATEGORY_LABELS, CreationCategory } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
+import { COLORS } from "../utils/colors";
 
 // Fonction utilitaire pour gérer les erreurs
 const handleError = (error: unknown, context: string) => {
@@ -1092,7 +1093,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   inputError: {
-    borderColor: "#ef4444",
+    borderColor: COLORS.danger,
     backgroundColor: "#fef2f2",
   },
   textArea: {
@@ -1238,7 +1239,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: "#ef4444",
+    color: COLORS.danger,
     marginTop: 4,
     fontFamily: "System",
     letterSpacing: 0.2,

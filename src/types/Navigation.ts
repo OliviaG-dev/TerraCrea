@@ -5,6 +5,7 @@ export type RootStackParamList = {
   Profil: undefined;
   Creations: undefined;
   AddCreation: undefined;
+  EditCreation: { creation: import("../types/Creation").Creation };
   EmailConfirmation: { email: string };
   EmailConfirmed: undefined;
   ForgotPassword: undefined;
