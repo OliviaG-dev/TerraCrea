@@ -21,19 +21,17 @@ interface SupabaseCreationWithUser {
   created_at: string;
   updated_at?: string;
   tags: string[]; // Tags directement dans creations_full
-  // Données jointes de la table artisans (structure réelle)
-  artisans: {
-    id: string;
-    name: string;
-    location?: string;
-    profile_image_url?: string;
-    bio?: string;
-    email?: string;
-    phone?: string;
-    is_verified: boolean;
-    joined_at: string;
-    updated_at: string;
-  } | null;
+  category_label: string; // Label de la catégorie depuis la jointure
+  // Données artisan depuis la jointure avec la table artisans
+  artisan_name?: string;
+  artisan_location?: string;
+  artisan_profile_image_url?: string;
+  artisan_bio?: string;
+  artisan_email?: string;
+  artisan_phone?: string;
+  artisan_is_verified?: boolean;
+  artisan_joined_at?: string;
+  artisan_updated_at?: string;
 }
 
 interface CategoryWithCount {
@@ -52,25 +50,16 @@ interface CategoryWithCount {
 const transformSupabaseCreationWithUser = (
   supabaseCreation: SupabaseCreationWithUser
 ): CreationWithArtisan => {
-  const artisan = supabaseCreation.artisans || {
-    id: supabaseCreation.artisan_id,
-    name: "Artisan inconnu",
-    location: "",
-    is_verified: false,
-    joined_at: "",
-    updated_at: "",
-  };
-
   // Créer le nom d'affichage de l'artisan avec les données de la table artisans
   const getArtisanDisplayName = () => {
     // Utiliser le nom de l'artisan directement
-    if (artisan.name && artisan.name.trim()) {
-      return artisan.name.trim();
+    if (supabaseCreation.artisan_name && supabaseCreation.artisan_name.trim()) {
+      return supabaseCreation.artisan_name.trim();
     }
 
     // Fallback avec email (première partie) si pas de nom
-    if (artisan.email) {
-      return artisan.email.split("@")[0];
+    if (supabaseCreation.artisan_email) {
+      return supabaseCreation.artisan_email.split("@")[0];
     }
 
     // Dernier recours
@@ -78,7 +67,8 @@ const transformSupabaseCreationWithUser = (
   };
 
   // Séparer le nom en prénom et nom de famille pour compatibilité
-  const [firstName = "", ...lastNameParts] = artisan.name?.split(" ") || [];
+  const [firstName = "", ...lastNameParts] =
+    supabaseCreation.artisan_name?.split(" ") || [];
   const lastName = lastNameParts.join(" ");
 
   return {
@@ -88,6 +78,7 @@ const transformSupabaseCreationWithUser = (
     price: supabaseCreation.price,
     imageUrl: supabaseCreation.image_url,
     category: supabaseCreation.category_id || CreationCategory.OTHER,
+    categoryLabel: supabaseCreation.category_label || "Autre",
     artisanId: supabaseCreation.artisan_id,
     materials: supabaseCreation.materials || [],
     isAvailable: supabaseCreation.is_available,
@@ -97,16 +88,16 @@ const transformSupabaseCreationWithUser = (
     updatedAt: supabaseCreation.updated_at,
     tags: supabaseCreation.tags || [],
     artisan: {
-      id: artisan.id,
-      username: artisan.email?.split("@")[0], // Généré à partir de l'email
+      id: supabaseCreation.artisan_id,
+      username: supabaseCreation.artisan_email?.split("@")[0], // Généré à partir de l'email
       firstName: firstName,
       lastName: lastName,
-      profileImage: artisan.profile_image_url,
+      profileImage: supabaseCreation.artisan_profile_image_url,
       displayName: getArtisanDisplayName(),
       artisanProfile: {
-        businessName: artisan.name, // Le nom peut servir de nom de commerce
-        location: artisan.location,
-        verified: artisan.is_verified,
+        businessName: supabaseCreation.artisan_name, // Le nom peut servir de nom de commerce
+        location: supabaseCreation.artisan_location,
+        verified: supabaseCreation.artisan_is_verified || false,
         rating: supabaseCreation.rating, // Utiliser la note de la création
       },
     },
@@ -125,24 +116,7 @@ export class CreationsApi {
     try {
       const { data, error } = await supabase
         .from("creations_full")
-        .select(
-          `
-            *,
-            artisans:artisan_id (
-              id,
-              name,
-              location,
-              profile_image_url,
-              bio,
-              email,
-              phone,
-              is_verified,
-              joined_at,
-              updated_at
-            )
-          `
-        )
-        .eq("is_available", true)
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -163,26 +137,7 @@ export class CreationsApi {
     category?: CreationCategory | "all"
   ): Promise<CreationWithArtisan[]> {
     try {
-      let query = supabase
-        .from("creations_full")
-        .select(
-          `
-          *,
-          artisans:artisan_id (
-            id,
-            name,
-            location,
-            profile_image_url,
-            bio,
-            email,
-            phone,
-            is_verified,
-            joined_at,
-            updated_at
-          )
-        `
-        )
-        .eq("is_available", true);
+      let query = supabase.from("creations_full").select("*");
 
       // Filtre par catégorie si spécifié et différent de 'all'
       if (category && category !== "all") {
@@ -218,25 +173,8 @@ export class CreationsApi {
   ): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations")
-        .select(
-          `
-          *,
-          artisans:artisan_id (
-            id,
-            name,
-            location,
-            profile_image_url,
-            bio,
-            email,
-            phone,
-            is_verified,
-            joined_at,
-            updated_at
-          )
-        `
-        )
-        .eq("is_available", true)
+        .from("creations_full")
+        .select("*")
         .eq("category_id", category);
 
       if (error) {
@@ -257,25 +195,8 @@ export class CreationsApi {
   ): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations")
-        .select(
-          `
-          *,
-          artisans:artisan_id (
-            id,
-            name,
-            location,
-            profile_image_url,
-            bio,
-            email,
-            phone,
-            is_verified,
-            joined_at,
-            updated_at
-          )
-        `
-        )
-        .eq("is_available", true)
+        .from("creations_full")
+        .select("*")
         .gte("review_count", 5) // Minimum 5 avis
         .order("rating", { ascending: false })
         .order("review_count", { ascending: false })
@@ -299,25 +220,8 @@ export class CreationsApi {
   ): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations")
-        .select(
-          `
-          *,
-          artisans:artisan_id (
-            id,
-            name,
-            location,
-            profile_image_url,
-            bio,
-            email,
-            phone,
-            is_verified,
-            joined_at,
-            updated_at
-          )
-        `
-        )
-        .eq("is_available", true)
+        .from("creations_full")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(limit);
 
@@ -339,25 +243,8 @@ export class CreationsApi {
   ): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations")
-        .select(
-          `
-          *,
-          artisans:artisan_id (
-            id,
-            name,
-            location,
-            profile_image_url,
-            bio,
-            email,
-            phone,
-            is_verified,
-            joined_at,
-            updated_at
-          )
-        `
-        )
-        .eq("is_available", true)
+        .from("creations_full")
+        .select("*")
         .contains("materials", [material])
         .order("rating", { ascending: false });
 
@@ -377,25 +264,8 @@ export class CreationsApi {
   static async getCreationsByTag(tag: string): Promise<CreationWithArtisan[]> {
     try {
       const { data, error } = await supabase
-        .from("creations")
-        .select(
-          `
-          *,
-          artisans:artisan_id (
-            id,
-            name,
-            location,
-            profile_image_url,
-            bio,
-            email,
-            phone,
-            is_verified,
-            joined_at,
-            updated_at
-          )
-        `
-        )
-        .eq("is_available", true)
+        .from("creations_full")
+        .select("*")
         .contains("tags", [tag])
         .order("rating", { ascending: false });
 
@@ -445,6 +315,26 @@ export class CreationsApi {
   }
 
   /**
+   * Récupère toutes les catégories disponibles
+   */
+  static async getAllCategories(): Promise<{ id: string; label: string }[]> {
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, label")
+        .order("label");
+
+      if (error) {
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
    * Recherche textuelle avancée avec PostgreSQL
    */
   static async advancedTextSearch(
@@ -484,25 +374,7 @@ export class CreationsApi {
     try {
       let query = supabase
         .from("creations_full")
-        .select(
-          `
-          *,
-          artisans:artisan_id (
-            id,
-            name,
-            location,
-            profile_image_url,
-            bio,
-            email,
-            phone,
-            is_verified,
-            joined_at,
-            updated_at
-          )
-        `,
-          { count: "exact" }
-        )
-        .eq("is_available", true);
+        .select("*", { count: "exact" });
 
       // Filtre par catégorie
       if (category && category !== "all") {
@@ -639,21 +511,7 @@ export class CreationsApi {
         .select(
           `
           creation_id,
-          creations:creation_id (
-            *,
-            artisans:artisan_id (
-              id,
-              name,
-              location,
-              profile_image_url,
-              bio,
-              email,
-              phone,
-              is_verified,
-              joined_at,
-              updated_at
-            )
-          )
+          creations:creation_id (*)
         `
         )
         .eq("user_id", user.id)
@@ -670,6 +528,371 @@ export class CreationsApi {
       );
     } catch (error) {
       return [];
+    }
+  }
+
+  /**
+   * Récupérer les créations d'un artisan spécifique
+   */
+  static async getUserCreations(
+    artisanId: string
+  ): Promise<CreationWithArtisan[]> {
+    try {
+      const { data, error } = await supabase
+        .from("creations_full")
+        .select("*")
+        .eq("artisan_id", artisanId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.map(transformSupabaseCreationWithUser) || [];
+    } catch (error) {
+      throw new Error("Erreur lors de la récupération des créations");
+    }
+  }
+
+  /**
+   * Créer une nouvelle création
+   */
+  static async createCreation(creationData: {
+    title: string;
+    description: string;
+    price: number;
+    category: CreationCategory;
+    materials: string[];
+    tags: string[];
+    artisanId: string;
+    imageUrl?: string;
+  }): Promise<CreationWithArtisan> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Utilisateur non connecté");
+      }
+
+      // Vérifier que l'utilisateur est bien l'artisan
+      if (user.id !== creationData.artisanId) {
+        throw new Error(
+          "Vous ne pouvez créer des créations que pour votre propre compte"
+        );
+      }
+
+      const { data, error } = await supabase
+        .from("creations")
+        .insert({
+          title: creationData.title,
+          description: creationData.description,
+          price: creationData.price,
+          category_id: creationData.category,
+          artisan_id: creationData.artisanId,
+          materials: creationData.materials,
+          tags: creationData.tags,
+          image_url: creationData.imageUrl || null,
+          is_available: true,
+          rating: 0,
+          review_count: 0,
+        })
+        .select("id")
+        .single();
+
+      if (error) {
+        console.error("Erreur insertion création:", error);
+        throw error;
+      }
+
+      // Récupérer la création complète avec les données artisan
+      const { data: fullCreation, error: fetchError } = await supabase
+        .from("creations_full")
+        .select("*")
+        .eq("id", data.id)
+        .single();
+
+      if (fetchError) {
+        console.error("Erreur récupération création complète:", fetchError);
+        throw fetchError;
+      }
+
+      return transformSupabaseCreationWithUser(fullCreation);
+    } catch (error) {
+      console.error("Erreur complète création:", error);
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error("Erreur lors de la création");
+      }
+    }
+  }
+
+  /**
+   * Test de diagnostic pour vérifier les permissions
+   */
+  static async testPermissions(): Promise<{
+    user: any;
+    artisan: any;
+    categories: any[];
+    canCreate: boolean;
+  }> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Utilisateur non connecté");
+      }
+
+      // Vérifier le profil artisan
+      const { data: artisan, error: artisanError } = await supabase
+        .from("artisans")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      // Vérifier les catégories
+      const { data: categories, error: categoriesError } = await supabase
+        .from("categories")
+        .select("*");
+
+      // Test d'insertion simple
+      const { data: testInsert, error: insertError } = await supabase
+        .from("creations")
+        .insert({
+          title: "Test diagnostic",
+          description: "Test",
+          price: 10,
+          category_id: "CERAMICS",
+          artisan_id: user.id,
+          materials: ["test"],
+          tags: ["test"],
+          is_available: true,
+          rating: 0,
+          review_count: 0,
+        })
+        .select("id")
+        .single();
+
+      // Supprimer le test
+      if (testInsert) {
+        await supabase.from("creations").delete().eq("id", testInsert.id);
+      }
+
+      return {
+        user: { id: user.id, email: user.email },
+        artisan: artisan || null,
+        categories: categories || [],
+        canCreate: !insertError,
+      };
+    } catch (error) {
+      console.error("Erreur test permissions:", error);
+      return {
+        user: null,
+        artisan: null,
+        categories: [],
+        canCreate: false,
+      };
+    }
+  }
+
+  /**
+   * Mettre à jour une création existante
+   */
+  static async updateCreation(
+    creationId: string,
+    updateData: {
+      title?: string;
+      description?: string;
+      price?: number;
+      category?: CreationCategory;
+      materials?: string[];
+      tags?: string[];
+      imageUrl?: string;
+      isAvailable?: boolean;
+    }
+  ): Promise<CreationWithArtisan> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Utilisateur non connecté");
+      }
+
+      // Vérifier que l'utilisateur est propriétaire de la création
+      const { data: existingCreation, error: fetchError } = await supabase
+        .from("creations")
+        .select("artisan_id")
+        .eq("id", creationId)
+        .single();
+
+      if (fetchError || !existingCreation) {
+        throw new Error("Création non trouvée");
+      }
+
+      if (existingCreation.artisan_id !== user.id) {
+        throw new Error("Vous ne pouvez modifier que vos propres créations");
+      }
+
+      const { data, error } = await supabase
+        .from("creations")
+        .update({
+          ...(updateData.title && { title: updateData.title }),
+          ...(updateData.description && {
+            description: updateData.description,
+          }),
+          ...(updateData.price && { price: updateData.price }),
+          ...(updateData.category && { category_id: updateData.category }),
+          ...(updateData.materials && { materials: updateData.materials }),
+          ...(updateData.tags && { tags: updateData.tags }),
+          ...(updateData.imageUrl && { image_url: updateData.imageUrl }),
+          ...(typeof updateData.isAvailable === "boolean" && {
+            is_available: updateData.isAvailable,
+          }),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", creationId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      // Récupérer la création complète avec les données artisan
+      const { data: fullCreation, error: fetchFullError } = await supabase
+        .from("creations_full")
+        .select("*")
+        .eq("id", creationId)
+        .single();
+
+      if (fetchFullError) {
+        throw fetchFullError;
+      }
+
+      return transformSupabaseCreationWithUser(fullCreation);
+    } catch (error) {
+      throw new Error("Erreur lors de la mise à jour");
+    }
+  }
+
+  /**
+   * Supprimer une création
+   */
+  static async deleteCreation(creationId: string): Promise<boolean> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Utilisateur non connecté");
+      }
+
+      // Vérifier que l'utilisateur est propriétaire de la création
+      const { data: existingCreation, error: fetchError } = await supabase
+        .from("creations")
+        .select("artisan_id, image_url")
+        .eq("id", creationId)
+        .single();
+
+      if (fetchError || !existingCreation) {
+        throw new Error("Création non trouvée");
+      }
+
+      if (existingCreation.artisan_id !== user.id) {
+        throw new Error("Vous ne pouvez supprimer que vos propres créations");
+      }
+
+      // Supprimer l'image si elle existe
+      if (existingCreation.image_url) {
+        try {
+          const imagePath = existingCreation.image_url.split("/").pop();
+          if (imagePath) {
+            await supabase.storage.from("creation-images").remove([imagePath]);
+          }
+        } catch (storageError) {
+          console.warn(
+            "Erreur lors de la suppression de l'image:",
+            storageError
+          );
+        }
+      }
+
+      const { error } = await supabase
+        .from("creations")
+        .delete()
+        .eq("id", creationId);
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (error) {
+      throw new Error("Erreur lors de la suppression");
+    }
+  }
+
+  /**
+   * Uploader une image pour une création
+   */
+  static async uploadCreationImage(
+    file: File | Blob | string,
+    fileName: string
+  ): Promise<string> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Utilisateur non connecté");
+      }
+
+      // Générer un nom de fichier unique
+      const timestamp = Date.now();
+      const uniqueFileName = `${user.id}_${timestamp}_${fileName}`;
+
+      let fileToUpload: File | Blob;
+
+      // Si c'est une URI string (React Native), la convertir en Blob
+      if (typeof file === "string") {
+        const response = await fetch(file);
+        fileToUpload = await response.blob();
+      } else {
+        fileToUpload = file;
+      }
+
+      // Upload vers Supabase Storage
+      const { data, error } = await supabase.storage
+        .from("creation-images")
+        .upload(uniqueFileName, fileToUpload, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Obtenir l'URL publique
+      const { data: urlData } = supabase.storage
+        .from("creation-images")
+        .getPublicUrl(uniqueFileName);
+
+      // Vérifier que l'URL est valide
+      if (!urlData.publicUrl) {
+        throw new Error("Impossible de générer l'URL publique de l'image");
+      }
+
+      // Attendre un peu pour s'assurer que l'image est disponible
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      return urlData.publicUrl;
+    } catch (error) {
+      throw new Error("Erreur lors de l'upload de l'image");
     }
   }
 }

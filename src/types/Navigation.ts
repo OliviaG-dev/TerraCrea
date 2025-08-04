@@ -3,6 +3,8 @@ export type RootStackParamList = {
   Login: { mode?: string };
   Explore: undefined;
   Profil: undefined;
+  Creations: undefined;
+  AddCreation: undefined;
   EmailConfirmation: { email: string };
   EmailConfirmed: undefined;
   ForgotPassword: undefined;

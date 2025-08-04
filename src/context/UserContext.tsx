@@ -51,9 +51,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       let artisanData = null;
       if (userData?.is_artisan) {
         const { data: artisanProfile, error: artisanError } = await supabase
-          .from("artisan_profiles")
+          .from("artisans")
           .select("*")
-          .eq("user_id", userId)
+          .eq("id", userId)
           .single();
 
         if (artisanError && artisanError.code !== "PGRST116") {
@@ -149,7 +149,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         // Forcer la mise à jour de l'état en reconstruisant l'utilisateur avec les métadonnées
         const updatedUser = buildUserWithMetadata(currentUser);
         // Note: Dans une vraie implémentation, vous devriez avoir un setter pour l'utilisateur
-        console.log("Utilisateur rafraîchi:", updatedUser);
       }
     } catch (error) {
       console.error("Erreur lors du rafraîchissement de l'utilisateur:", error);
@@ -244,10 +243,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
       // Forcer la mise à jour de l'état utilisateur avec les nouvelles métadonnées
       if (updatedUser.user) {
-        console.log(
-          "Utilisateur promu artisan:",
-          updatedUser.user.user_metadata
-        );
         // Rafraîchir l'état utilisateur pour refléter les changements
         await refreshUser();
       }
@@ -274,68 +269,33 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         );
       }
 
-      // Tentative de création du profil artisan dans artisan_profiles (optionnel)
+      // Création/mise à jour du profil artisan dans la table artisans
       try {
-        const { error: artisanError } = await supabase
-          .from("artisan_profiles")
-          .insert({
-            user_id: auth.user.id,
-            business_name: artisanData.businessName,
-            location: artisanData.location,
-            description: artisanData.description,
-            established_year: artisanData.establishedYear,
-            specialties: artisanData.specialties,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        const { error: artisanError } = await supabase.from("artisans").upsert({
+          id: auth.user.id,
+          name: artisanData.businessName,
+          location: artisanData.location,
+          bio: artisanData.description,
+          email: auth.user.email,
+          established_year: artisanData.establishedYear,
+          specialties: artisanData.specialties,
+          is_verified: false,
+          joined_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
         if (artisanError) {
           console.warn(
-            "Erreur lors de la création du profil artisan dans la table 'artisan_profiles':",
+            "Erreur lors de la création/mise à jour du profil artisan dans la table 'artisans':",
             artisanError.message
           );
         }
       } catch (tableError) {
-        console.warn(
-          "Table 'artisan_profiles' non disponible, utilisation des métadonnées uniquement:",
-          tableError
-        );
-      }
-
-      // Création de l'artisan dans la table artisans
-      try {
-        const { error: artisansError } = await supabase
-          .from("artisans")
-          .insert({
-            id: auth.user.id, // Utiliser l'ID utilisateur comme ID artisan
-            name:
-              artisanData.businessName ||
-              `${auth.user.user_metadata?.firstName || ""} ${
-                auth.user.user_metadata?.lastName || ""
-              }`.trim() ||
-              auth.user.email?.split("@")[0] ||
-              "Artisan",
-            location: artisanData.location,
-            profile_image_url: auth.user.user_metadata?.profileImage,
-            bio: artisanData.description,
-            email: auth.user.email,
-            phone: auth.user.phone,
-            is_verified: false, // Par défaut non vérifié
-            joined_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-        if (artisansError) {
-          console.warn(
-            "Erreur lors de la création de l'artisan dans la table 'artisans':",
-            artisansError.message
-          );
-        } else {
-          console.log("Artisan créé avec succès dans la table 'artisans'");
-        }
-      } catch (tableError) {
         console.warn("Table 'artisans' non disponible:", tableError);
       }
+
+      // Note: Le profil artisan a déjà été créé/mis à jour avec l'appel UPSERT précédent
+      // Pas besoin d'un deuxième appel INSERT qui causerait un conflit
     } catch (error) {
       console.error("Erreur lors de la création du profil artisan:", error);
       throw error;
@@ -367,21 +327,17 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
       // Forcer la mise à jour de l'état utilisateur avec les nouvelles métadonnées
       if (updatedUser.user) {
-        console.log(
-          "Métadonnées artisan mises à jour:",
-          updatedUser.user.user_metadata
-        );
         // Rafraîchir l'état utilisateur pour refléter les changements
         await refreshUser();
       }
 
-      // Tentative de mise à jour du profil artisan dans artisan_profiles (optionnel)
+      // Mise à jour du profil artisan dans la table artisans
       try {
-        const { error } = await supabase.from("artisan_profiles").upsert({
-          user_id: auth.user.id,
-          business_name: data.businessName,
+        const { error } = await supabase.from("artisans").upsert({
+          id: auth.user.id,
+          name: data.businessName,
           location: data.location,
-          description: data.description,
+          bio: data.description,
           established_year: data.establishedYear,
           specialties: data.specialties,
           updated_at: new Date().toISOString(),
@@ -389,15 +345,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
         if (error) {
           console.warn(
-            "Erreur lors de la mise à jour du profil artisan dans la table 'artisan_profiles':",
+            "Erreur lors de la mise à jour du profil artisan dans la table 'artisans':",
             error.message
           );
         }
       } catch (tableError) {
-        console.warn(
-          "Table 'artisan_profiles' non disponible, utilisation des métadonnées uniquement:",
-          tableError
-        );
+        console.warn("Table 'artisans' non disponible:", tableError);
       }
 
       // Mise à jour de l'artisan dans la table artisans
@@ -422,10 +375,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           console.warn(
             "Erreur lors de la mise à jour de l'artisan dans la table 'artisans':",
             artisansError.message
-          );
-        } else {
-          console.log(
-            "Artisan mis à jour avec succès dans la table 'artisans'"
           );
         }
       } catch (tableError) {

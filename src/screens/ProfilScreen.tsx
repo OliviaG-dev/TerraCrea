@@ -21,6 +21,7 @@ import {
 } from "../utils/userUtils";
 import { CATEGORY_LABELS, CreationCategory } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
+import { CreationsApi } from "../services/creationsApi";
 
 // Fonction utilitaire pour gérer les erreurs
 const handleError = (error: unknown, context: string) => {
@@ -335,6 +336,29 @@ export const ProfilScreen = () => {
   // État pour gérer l'édition des champs
   const [editingField, setEditingField] = useState<string | null>(null);
 
+  // État pour les catégories depuis la base de données
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>(
+    []
+  );
+
+  // Charger les catégories depuis la base de données
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoriesData = await CreationsApi.getAllCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des catégories:", error);
+        // Fallback vers les catégories du frontend
+        setCategories(
+          Object.entries(CATEGORY_LABELS).map(([id, label]) => ({ id, label }))
+        );
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   // Initialiser les formulaires avec les données utilisateur existantes
   useEffect(() => {
     if (user && user.id) {
@@ -476,17 +500,49 @@ export const ProfilScreen = () => {
 
     setLoading(true);
     try {
-      await upgradeToArtisan(artisanForm);
-      setNotification({
-        visible: true,
-        title: "🎉 Félicitations !",
-        message:
-          "Votre compte artisan a été créé avec succès. Vous pouvez maintenant commencer à vendre vos créations !",
-        type: "success",
-      });
-      setActiveTab("artisan");
+      // Vérifier si l'utilisateur a déjà un profil artisan
+      const hasArtisanProfile =
+        user?.artisanProfile ||
+        user?.user_metadata?.isArtisan ||
+        user?.isArtisan;
+
+      if (hasArtisanProfile) {
+        // Mise à jour du profil existant
+        await updateArtisanProfile(artisanForm);
+        setNotification({
+          visible: true,
+          title: "✅ Profil artisan mis à jour !",
+          message: "Vos informations d'artisan ont été modifiées avec succès.",
+          type: "success",
+        });
+      } else {
+        // Création d'un nouveau profil
+        await upgradeToArtisan(artisanForm);
+        setNotification({
+          visible: true,
+          title: "🎉 Félicitations !",
+          message:
+            "Votre compte artisan a été créé avec succès. Vous pouvez maintenant commencer à vendre vos créations !",
+          type: "success",
+        });
+        setActiveTab("artisan");
+      }
+
+      // Forcer le rafraîchissement de l'état utilisateur
+      setTimeout(() => {
+        // Recharger la page ou forcer la mise à jour
+        setFormKey((prev) => prev + 1);
+      }, 1000);
     } catch (error) {
-      const { errorTitle, errorMessage } = handleError(error, "de création");
+      // Vérifier à nouveau dans le catch pour l'erreur
+      const hasArtisanProfile =
+        user?.artisanProfile ||
+        user?.user_metadata?.isArtisan ||
+        user?.isArtisan;
+      const { errorTitle, errorMessage } = handleError(
+        error,
+        hasArtisanProfile ? "de mise à jour" : "de création"
+      );
       setNotification({
         visible: true,
         title: errorTitle,
@@ -583,16 +639,35 @@ export const ProfilScreen = () => {
                 <Text style={styles.verifiedText}>✓ Artisan Vérifié</Text>
               </View>
             )}
+            {(capabilities.canCreateProducts ||
+              user?.user_metadata?.isArtisan ||
+              user?.isArtisan) &&
+              !capabilities.isVerified && (
+                <View style={styles.artisanBadge}>
+                  <Text style={styles.artisanBadgeText}>🎨 Artisan</Text>
+                </View>
+              )}
           </View>
 
-          {/* Bouton retour à l'accueil */}
-          <View style={styles.backToHomeContainer}>
+          {/* Boutons de navigation */}
+          <View style={styles.navigationButtonsContainer}>
             <TouchableOpacity
               style={styles.backToHomeButton}
               onPress={() => navigation.navigate("Home")}
             >
               <Text style={styles.backToHomeText}>← Retour à l'accueil</Text>
             </TouchableOpacity>
+
+            {(capabilities.canCreateProducts ||
+              user?.user_metadata?.isArtisan ||
+              user?.isArtisan) && (
+              <TouchableOpacity
+                style={styles.myCreationsButton}
+                onPress={() => navigation.navigate("Creations")}
+              >
+                <Text style={styles.myCreationsText}>🎨 Mes Créations</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Tabs */}
@@ -621,7 +696,9 @@ export const ProfilScreen = () => {
                   activeTab === "artisan" && styles.activeTabText,
                 ]}
               >
-                {capabilities.canCreateProducts
+                {capabilities.canCreateProducts ||
+                user?.user_metadata?.isArtisan ||
+                user?.isArtisan
                   ? "Profil Artisan"
                   : "Devenir Artisan"}
               </Text>
@@ -707,19 +784,30 @@ export const ProfilScreen = () => {
             </View>
           ) : (
             <View style={styles.tabContent}>
-              {!capabilities.canCreateProducts ? (
+              {!(
+                capabilities.canCreateProducts ||
+                user?.user_metadata?.isArtisan ||
+                user?.isArtisan
+              ) ? (
                 // Section "Devenir Artisan"
                 <>
                   <Text style={styles.sectionTitle}>Devenir Artisan</Text>
                   <Text style={styles.sectionDescription}>
-                    Créez votre profil artisan pour commencer à vendre vos
-                    créations sur TerraCréa
+                    Transformez votre passion en activité ! Créez votre profil
+                    artisan pour commencer à vendre vos créations uniques sur
+                    TerraCréa et rejoindre notre communauté d'artisans
+                    talentueux.
                   </Text>
                 </>
               ) : (
                 // Section "Profil Artisan"
                 <>
                   <Text style={styles.sectionTitle}>Votre Profil Artisan</Text>
+                  <Text style={styles.sectionDescription}>
+                    Gérez vos informations d'artisan et vos créations. Modifiez
+                    vos détails pour améliorer votre visibilité auprès des
+                    acheteurs.
+                  </Text>
                   <View style={styles.statsRow}>
                     <View style={styles.statCard}>
                       <Text style={styles.statNumber}>
@@ -732,6 +820,12 @@ export const ProfilScreen = () => {
                         {user.artisanProfile?.rating || 0}⭐
                       </Text>
                       <Text style={styles.statLabel}>Note</Text>
+                    </View>
+                    <View style={styles.statCard}>
+                      <Text style={styles.statNumber}>
+                        {user.artisanProfile?.specialties?.length || 0}
+                      </Text>
+                      <Text style={styles.statLabel}>Spécialités</Text>
                     </View>
                   </View>
                 </>
@@ -800,22 +894,22 @@ export const ProfilScreen = () => {
                   Vos spécialités * (sélectionnez au moins une)
                 </Text>
                 <View style={styles.specialtiesGrid}>
-                  {Object.entries(CATEGORY_LABELS).map(([category, label]) => (
+                  {categories.map(({ id, label }) => (
                     <TouchableOpacity
-                      key={category}
+                      key={id}
                       style={[
                         styles.specialtyChip,
-                        artisanForm.specialties.includes(category) &&
+                        artisanForm.specialties.includes(id) &&
                           styles.specialtyChipSelected,
                       ]}
                       onPress={() =>
-                        handleSpecialtyToggle(category as CreationCategory)
+                        handleSpecialtyToggle(id as CreationCategory)
                       }
                     >
                       <Text
                         style={[
                           styles.specialtyText,
-                          artisanForm.specialties.includes(category) &&
+                          artisanForm.specialties.includes(id) &&
                             styles.specialtyTextSelected,
                         ]}
                       >
@@ -843,7 +937,9 @@ export const ProfilScreen = () => {
                 <Text style={styles.primaryButtonText}>
                   {loading
                     ? "Enregistrement..."
-                    : capabilities.canCreateProducts
+                    : capabilities.canCreateProducts ||
+                      user?.user_metadata?.isArtisan ||
+                      user?.isArtisan
                     ? "Mettre à jour le profil artisan"
                     : "Devenir Artisan"}
                 </Text>
@@ -892,6 +988,26 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   verifiedText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+    fontFamily: "System",
+    letterSpacing: 0.3,
+  },
+  artisanBadge: {
+    backgroundColor: "#ff6b35",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: "center",
+    marginTop: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  artisanBadgeText: {
     color: "#fff",
     fontSize: 12,
     fontWeight: "600",
@@ -1149,9 +1265,12 @@ const styles = StyleSheet.create({
     fontFamily: "System",
     letterSpacing: 0.3,
   },
-  backToHomeContainer: {
+  navigationButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
+    gap: 10,
   },
   backToHomeButton: {
     backgroundColor: "transparent",
@@ -1168,6 +1287,24 @@ const styles = StyleSheet.create({
   },
   backToHomeText: {
     color: "#4a5c4a",
+    fontSize: 14,
+    fontWeight: "500",
+    fontFamily: "System",
+    letterSpacing: 0.2,
+  },
+  myCreationsButton: {
+    backgroundColor: "#ff6b35",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  myCreationsText: {
+    color: "#fff",
     fontSize: 14,
     fontWeight: "500",
     fontFamily: "System",

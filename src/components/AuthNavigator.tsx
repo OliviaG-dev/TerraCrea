@@ -9,6 +9,8 @@ import { EmailConfirmationScreen } from "../screens/EmailConfirmationScreen";
 import { EmailConfirmedScreen } from "../screens/EmailConfirmedScreen";
 import { ForgotPasswordScreen } from "../screens/ForgotPasswordScreen";
 import { ResetPasswordScreen } from "../screens/ResetPasswordScreen";
+import { CreationsScreen } from "../screens/CreationsScreen";
+import { AddCreationScreen } from "../screens/AddCreationScreen";
 import { NavigationHeader } from "./NavigationHeader";
 import { RootStackParamList } from "../types/Navigation";
 import {
@@ -107,6 +109,22 @@ export const AuthNavigator: React.FC = () => {
         component={ResetPasswordScreen}
         options={{
           title: "Nouveau mot de passe",
+          headerRight: () => <NavigationHeader />,
+        }}
+      />
+      <Stack.Screen
+        name="Creations"
+        component={CreationsScreen}
+        options={{
+          title: "Mes Créations",
+          headerRight: () => <NavigationHeader />,
+        }}
+      />
+      <Stack.Screen
+        name="AddCreation"
+        component={AddCreationScreen}
+        options={{
+          title: "Nouvelle Création",
           headerRight: () => <NavigationHeader />,
         }}
       />

@@ -152,7 +152,9 @@ export class AuthService {
           errorMessage =
             "Le mot de passe ne respecte pas les critères de sécurité";
         } else if (
-          error.message.includes("New password should be different from the old password")
+          error.message.includes(
+            "New password should be different from the old password"
+          )
         ) {
           errorMessage =
             "Le nouveau mot de passe ne peut pas être identique à l'ancien";
@@ -211,15 +213,12 @@ export class AuthService {
 
       // Si la connexion par mot de passe échoue, essayer avec OTP
       if (error && (error.status === 400 || error.status === 422)) {
-        console.log("🔄 Tentative de connexion alternative avec OTP...");
-
         const { data: otpData, error: otpError } =
           await supabase.auth.signInWithOtp({
             email: email.trim(),
           });
 
         if (!otpError) {
-          console.log("✅ OTP envoyé, connexion en cours...");
           return {
             data: otpData,
             error: null,
@@ -229,28 +228,15 @@ export class AuthService {
         }
       }
 
-      console.log("🔍 Résultat connexion:", {
-        success: !error,
-        error: error
-          ? {
-              message: error.message,
-              status: error.status,
-              name: error.name,
-            }
-          : null,
-      });
-
       // Si erreur 400 avec "Email not confirmed", essayer une approche alternative
       if (
         error &&
         error.status === 400 &&
         error.message.includes("Email not confirmed")
       ) {
-        console.log("🔄 Tentative de récupération de session...");
         // Essayer de récupérer la session existante
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData.session) {
-          console.log("✅ Session trouvée!");
           return { data: sessionData, error: null, needsConfirmation: false };
         }
       }

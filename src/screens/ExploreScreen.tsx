@@ -225,11 +225,11 @@ const ExploreScreen: React.FC = () => {
                 <View style={styles.tagItem}>
                   <Text style={styles.tagText}>
                     #
-                    {item.category
-                      ? CATEGORY_LABELS[item.category as CreationCategory]
-                        ? item.category.toLowerCase()
-                        : item.category.toLowerCase()
-                      : "artisanal"}
+                    {item.categoryLabel?.toLowerCase() ||
+                      (item.category
+                        ? CATEGORY_LABELS[item.category as CreationCategory] ||
+                          item.category.toLowerCase()
+                        : "artisanal")}
                   </Text>
                 </View>
                 <View style={styles.tagItem}>
@@ -252,12 +252,11 @@ const ExploreScreen: React.FC = () => {
           {/* Catégorie en bas à gauche */}
           <View style={styles.categoryContainer}>
             <Text style={styles.categoryLabel}>
-              {item.category &&
-              CATEGORY_LABELS[item.category as CreationCategory]
-                ? CATEGORY_LABELS[item.category as CreationCategory]
-                : item.category
-                ? item.category.toUpperCase()
-                : "ARTISANAT"}
+              {item.categoryLabel ||
+                (item.category
+                  ? CATEGORY_LABELS[item.category as CreationCategory] ||
+                    item.category.toUpperCase()
+                  : "ARTISANAT")}
             </Text>
           </View>
 

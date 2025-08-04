@@ -17,6 +17,7 @@ export interface Creation {
 
 // Interface pour affichage avec données artisan jointes
 export interface CreationWithArtisan extends Creation {
+  categoryLabel?: string; // Label de la catégorie depuis la base de données
   artisan: {
     id: string;
     username?: string;

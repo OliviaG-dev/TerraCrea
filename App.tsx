@@ -80,7 +80,6 @@ const RootNavigator = () => {
         // Gérer les liens profonds au démarrage de l'app
         Linking.getInitialURL().then((url) => {
           if (url) {
-            console.log("Lien profond détecté au démarrage:", url);
             // Traiter le lien selon son type
             if (url.includes("reset-password")) {
               handlePasswordResetLink(url, {} as any);
