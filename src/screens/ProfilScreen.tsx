@@ -219,7 +219,7 @@ const EditableField = ({
         activeOpacity={0.7}
       >
         <Text style={styles.editableText}>{value || placeholder}</Text>
-        <Text style={styles.editIcon}>✏️</Text>
+        <Text style={styles.editText}>Modifier</Text>
       </TouchableOpacity>
     </View>
   );
@@ -1350,7 +1350,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 8,
   },
-
+  editText: {
+    fontSize: 14,
+    color: "#4a5c4a",
+    fontFamily: "System",
+    fontWeight: "500",
+    opacity: 0.7,
+  },
   editIconContainer: {
     justifyContent: "center",
     alignItems: "center",
