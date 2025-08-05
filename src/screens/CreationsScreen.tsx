@@ -13,10 +13,11 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
 import { NotificationToast } from "../components/NotificationToast";
+import { CommonHeader } from "../components";
 import { Creation } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
-import { COLORS } from "../utils/colors";
+import { COLORS, emptyStyles, loadingStyles, modalStyles } from "../utils";
 
 type CreationsScreenNavigationProp = ScreenNavigationProp<"Creations">;
 
@@ -223,32 +224,26 @@ export const CreationsScreen = () => {
         duration={4000}
       />
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>← Retour</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Mes Créations</Text>
-
-        <TouchableOpacity style={styles.addButton} onPress={handleAddCreation}>
-          <Text style={styles.addButtonText}>+ Ajouter</Text>
-        </TouchableOpacity>
-      </View>
+      <CommonHeader
+        title="Mes Créations"
+        onBack={() => navigation.goBack()}
+        rightButton={{
+          text: "+ Ajouter",
+          onPress: handleAddCreation,
+        }}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>
+          <View style={loadingStyles.container}>
+            <Text style={loadingStyles.text}>
               Chargement de vos créations...
             </Text>
           </View>
         ) : creations.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>Aucune création</Text>
-            <Text style={styles.emptyDescription}>
+          <View style={emptyStyles.container}>
+            <Text style={emptyStyles.title}>Aucune création</Text>
+            <Text style={emptyStyles.description}>
               Vous n'avez pas encore créé de créations. Commencez par en ajouter
               une !
             </Text>
@@ -278,32 +273,19 @@ export const CreationsScreen = () => {
         animationType="fade"
         onRequestClose={cancelDelete}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.deleteModalContent}>
-            <View style={styles.deleteModalHeader}>
-              <Text style={styles.deleteModalTitle}>
-                🗑️ Supprimer la création
-              </Text>
-            </View>
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.content}>
+            <Text style={modalStyles.title}>🗑️ Supprimer la création</Text>
 
-            <View style={styles.deleteModalBody}>
-              <Text style={styles.deleteModalMessage}>
-                Êtes-vous sûr de vouloir supprimer définitivement
-              </Text>
-              <Text
-                style={[
-                  styles.deleteModalMessage,
-                  styles.deleteModalCreationTitle,
-                ]}
-              >
+            <Text style={modalStyles.message}>
+              Êtes-vous sûr de vouloir supprimer définitivement
+              <Text style={{ fontWeight: "bold" }}>
                 "{deleteModal.creation?.title}" ?
               </Text>
-              <Text style={styles.deleteModalWarning}>
-                Cette action ne peut pas être annulée.
-              </Text>
-            </View>
+              {"\n\n"}Cette action ne peut pas être annulée.
+            </Text>
 
-            <View style={styles.deleteModalActions}>
+            <View style={modalStyles.actions}>
               <TouchableOpacity
                 style={[styles.deleteModalButton, styles.cancelButton]}
                 onPress={cancelDelete}
@@ -347,69 +329,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
-  backButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  backButtonText: {
-    color: "#4a5c4a",
-    fontSize: 16,
-    fontWeight: "500",
-    fontFamily: "System",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    fontFamily: "System",
-  },
-  addButton: {
-    backgroundColor: "#4a5c4a",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  addButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-    fontFamily: "System",
-  },
   content: {
     flex: 1,
     padding: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 40,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: "#7a8a7a",
-    fontFamily: "System",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 60,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    marginBottom: 12,
-    fontFamily: "System",
-  },
-  emptyDescription: {
-    fontSize: 16,
-    color: "#7a8a7a",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 24,
-    fontFamily: "System",
   },
   emptyAddButton: {
     backgroundColor: "#4a5c4a",
@@ -555,66 +477,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "System",
   },
-  // Styles pour la modal de suppression
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  deleteModalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 24,
-    marginHorizontal: 20,
-    maxWidth: 400,
-    width: "100%",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  deleteModalHeader: {
-    marginBottom: 16,
-  },
-  deleteModalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: COLORS.danger,
-    textAlign: "center",
-    fontFamily: "System",
-  },
-  deleteModalBody: {
-    marginBottom: 24,
-    alignItems: "center",
-  },
-  deleteModalMessage: {
-    fontSize: 16,
-    color: "#4a5c4a",
-    textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 8,
-    fontFamily: "System",
-    width: "100%",
-  },
-  deleteModalCreationTitle: {
-    fontWeight: "600",
-    color: COLORS.danger,
-  },
-  deleteModalWarning: {
-    fontSize: 14,
-    color: "#7a8a7a",
-    textAlign: "center",
-    fontStyle: "italic",
-    fontFamily: "System",
-    width: "100%",
-  },
-  deleteModalActions: {
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-  },
+  // Styles spécifiques pour les boutons de la modale
   deleteModalButton: {
     flex: 1,
     paddingVertical: 12,

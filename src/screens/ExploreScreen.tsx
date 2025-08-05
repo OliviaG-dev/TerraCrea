@@ -13,6 +13,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { CommonHeader } from "../components";
 import {
   CreationWithArtisan,
   CreationCategory,
@@ -21,7 +22,7 @@ import {
 import { CreationsApi, useFavorites } from "../services/creationsApi";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
-import { COLORS } from "../utils/colors";
+import { COLORS, cardStyles, emptyStyles, loadingStyles } from "../utils";
 
 const { width } = Dimensions.get("window");
 const HORIZONTAL_PADDING = 16;
@@ -109,7 +110,7 @@ const ExploreScreen: React.FC = () => {
   };
 
   const renderCreationCard = (item: CreationWithArtisan) => (
-    <View key={item.id} style={styles.creationCard}>
+    <View key={item.id} style={cardStyles.container}>
       {/* Container d'image avec overlays */}
       <View style={styles.imageContainer}>
         <Image
@@ -279,31 +280,25 @@ const ExploreScreen: React.FC = () => {
   );
 
   const renderHeader = () => (
-    <View style={styles.header}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.navigate("Home")}
-        accessible={true}
-        accessibilityRole="button"
-        accessibilityLabel="Retour à l'accueil"
-      >
-        <Text style={styles.backButtonText}>←</Text>
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Explorer les créations</Text>
-      {!loading && !error && isAuthenticated ? (
-        <View style={styles.favoritesIndicator}>
-          <Text style={styles.heartIcon}>♥</Text>
-          <Text style={styles.favoritesCount}>{favorites.length}</Text>
-        </View>
-      ) : (
-        <View style={styles.placeholder} />
-      )}
-    </View>
+    <CommonHeader
+      title="Explorer les créations"
+      onBack={() => navigation.navigate("Home")}
+      backLabel="Retour à l'accueil"
+      rightButton={
+        !loading && !error && isAuthenticated
+          ? {
+              text: `♥ ${favorites.length}`,
+              onPress: () => {}, // Pas d'action pour l'instant
+              disabled: true,
+            }
+          : undefined
+      }
+    />
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
+    <View style={emptyStyles.container}>
+      <Text style={emptyStyles.title}>
         {searchQuery || selectedCategory !== "all"
           ? "Aucune création trouvée 🔍"
           : "Aucune création disponible 😊"}
@@ -329,7 +324,7 @@ const ExploreScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         {renderHeader()}
-        <View style={styles.loadingContainer} importantForAccessibility="yes">
+        <View style={loadingStyles.container} importantForAccessibility="yes">
           <ActivityIndicator
             size="large"
             color="#4a5c4a"
@@ -337,7 +332,7 @@ const ExploreScreen: React.FC = () => {
             accessibilityLabel="Chargement des créations en cours"
           />
           <Text
-            style={styles.loadingText}
+            style={loadingStyles.text}
             accessible={true}
             accessibilityLiveRegion="polite"
           >
@@ -476,64 +471,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fafaf9",
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: HORIZONTAL_PADDING,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e8e9e8",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  backButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "#f5f5f4",
-    borderWidth: 1,
-    borderColor: "#e8e9e8",
-    width: 40,
-    alignItems: "center",
-  },
-  backButtonText: {
-    fontSize: 18,
-    color: "#4a5c4a",
-    fontWeight: "600",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    fontFamily: "System",
-    letterSpacing: 0.3,
-    flex: 1,
-    textAlign: "center",
-  },
-  favoritesIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  heartIcon: {
-    fontSize: 24,
-    color: "#4a5c4a",
-  },
 
-  favoritesCount: {
-    fontSize: 12,
-    color: "#4a5c4a",
-    fontWeight: "600",
-    fontFamily: "System",
-  },
-  placeholder: {
-    width: 40,
-    alignItems: "center",
-  },
   searchContainer: {
     paddingHorizontal: HORIZONTAL_PADDING,
     paddingVertical: 12,
@@ -626,18 +564,7 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     marginBottom: 16,
   },
-  creationCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    overflow: "hidden",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    borderWidth: 1,
-    borderColor: "#e8e9e8",
-  },
+
   imageContainer: {
     position: "relative",
     height: CARD_HEIGHT * 0.6,
@@ -878,18 +805,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: "System",
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: HORIZONTAL_PADDING,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: "#7a8a7a",
-    fontFamily: "System",
-  },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
@@ -913,19 +828,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "500",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: HORIZONTAL_PADDING,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 24,
   },
   clearFiltersButton: {
     backgroundColor: "#f0f5f0",

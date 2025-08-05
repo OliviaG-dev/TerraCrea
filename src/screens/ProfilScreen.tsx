@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { NotificationToast } from "../components/NotificationToast";
+import { CommonInput, CommonButton } from "../components";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
 import {
@@ -22,7 +23,7 @@ import {
 import { CATEGORY_LABELS, CreationCategory } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
-import { COLORS } from "../utils/colors";
+import { COLORS, inputStyles, buttonStyles } from "../utils";
 
 // Fonction utilitaire pour gérer les erreurs
 const handleError = (error: unknown, context: string) => {
@@ -167,52 +168,44 @@ const EditableField = ({
 
   if (isEditing) {
     return (
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>{label}</Text>
-        <TextInput
-          style={[
-            styles.input,
-            multiline && styles.textArea,
-            error && styles.inputError,
-          ]}
+      <View style={inputStyles.container}>
+        <CommonInput
+          label={label}
           value={tempValue}
           onChangeText={setTempValue}
           placeholder={placeholder}
-          placeholderTextColor="#8a9a8a"
           multiline={multiline}
           numberOfLines={multiline ? 3 : 1}
           maxLength={maxLength}
-          autoFocus
-          accessible={true}
-          accessibilityLabel={label}
+          error={error}
+          charCount={
+            maxLength
+              ? { current: tempValue.length, max: maxLength }
+              : undefined
+          }
+          style={multiline ? inputStyles.textArea : undefined}
         />
-        {maxLength && (
-          <Text style={styles.charCount}>
-            {tempValue.length}/{maxLength} caractères
-          </Text>
-        )}
-        {error && <Text style={styles.errorText}>{error}</Text>}
         <View style={styles.editActions}>
-          <TouchableOpacity
-            style={[styles.editButton, styles.saveButton]}
+          <CommonButton
+            title="Sauvegarder"
+            variant="primary"
             onPress={handleSave}
-          >
-            <Text style={styles.saveButtonText}>✓ Sauvegarder</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.editButton, styles.cancelButton]}
+            style={styles.editButton}
+          />
+          <CommonButton
+            title="Annuler"
+            variant="secondary"
             onPress={handleCancel}
-          >
-            <Text style={styles.cancelButtonText}>✕ Annuler</Text>
-          </TouchableOpacity>
+            style={styles.editButton}
+          />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={inputStyles.container}>
+      <Text style={inputStyles.label}>{label}</Text>
       <TouchableOpacity
         style={styles.editableField}
         onPress={onEdit}
@@ -761,15 +754,14 @@ export const ProfilScreen = () => {
                 maxLength={500}
               />
 
-              <TouchableOpacity
-                style={[styles.primaryButton, loading && styles.buttonDisabled]}
+              <CommonButton
+                title={loading ? "Mise à jour..." : "Mettre à jour le profil"}
+                variant="primary"
                 onPress={handleUpdateProfile}
+                loading={loading}
                 disabled={loading}
-              >
-                <Text style={styles.primaryButtonText}>
-                  {loading ? "Mise à jour..." : "Mettre à jour le profil"}
-                </Text>
-              </TouchableOpacity>
+                style={styles.primaryButton}
+              />
 
               {/* Section compte */}
               <View style={styles.accountSection}>
@@ -890,8 +882,8 @@ export const ProfilScreen = () => {
                 error={artisanErrors.establishedYear}
               />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
+              <View style={inputStyles.container}>
+                <Text style={inputStyles.label}>
                   Vos spécialités * (sélectionnez au moins une)
                 </Text>
                 <View style={styles.specialtiesGrid}>
@@ -926,25 +918,26 @@ export const ProfilScreen = () => {
                 ) : null}
               </View>
 
-              <TouchableOpacity
-                style={[styles.primaryButton, loading && styles.buttonDisabled]}
-                onPress={
-                  capabilities.canCreateProducts
-                    ? handleUpdateArtisanProfile
-                    : handleUpgradeToArtisan
-                }
-                disabled={loading}
-              >
-                <Text style={styles.primaryButtonText}>
-                  {loading
+              <CommonButton
+                title={
+                  loading
                     ? "Enregistrement..."
                     : capabilities.canCreateProducts ||
                       user?.user_metadata?.isArtisan ||
                       user?.isArtisan
                     ? "Mettre à jour le profil artisan"
-                    : "Devenir Artisan"}
-                </Text>
-              </TouchableOpacity>
+                    : "Devenir Artisan"
+                }
+                variant="primary"
+                onPress={
+                  capabilities.canCreateProducts
+                    ? handleUpdateArtisanProfile
+                    : handleUpgradeToArtisan
+                }
+                loading={loading}
+                disabled={loading}
+                style={styles.primaryButton}
+              />
             </View>
           )}
         </View>
@@ -1066,65 +1059,8 @@ const styles = StyleSheet.create({
     fontFamily: "System",
     letterSpacing: 0.2,
   },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    marginBottom: 8,
-    fontFamily: "System",
-    letterSpacing: 0.2,
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: "#e8e9e8",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#4a5c4a",
-    fontFamily: "System",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  inputError: {
-    borderColor: COLORS.danger,
-    backgroundColor: "#fef2f2",
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
   primaryButton: {
-    backgroundColor: "#4a5c4a",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
     marginTop: 10,
-    elevation: 3,
-    shadowColor: "rgba(74, 92, 74, 0.25)",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    borderWidth: 1,
-    borderColor: "#3d4f3d",
-  },
-  buttonDisabled: {
-    backgroundColor: "#8a9a8a",
-    elevation: 1,
-    shadowOpacity: 0.1,
-  },
-  primaryButtonText: {
-    color: "#fafaf9",
-    fontSize: 16,
-    fontWeight: "600",
-    fontFamily: "System",
-    letterSpacing: 0.3,
   },
   specialtiesGrid: {
     flexDirection: "row",

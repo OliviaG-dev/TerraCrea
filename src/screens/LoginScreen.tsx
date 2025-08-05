@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { CommonInput, CommonButton } from "../components";
 import { useAuth } from "../hooks/useAuth";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
@@ -158,31 +159,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
               </View>
 
               <View style={styles.nameRow}>
-                <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Text style={styles.inputLabel}>
-                    Prénom <Text style={styles.required}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.textInput}
+                <View style={styles.halfWidth}>
+                  <CommonInput
+                    label="Prénom *"
                     value={firstName}
                     onChangeText={setFirstName}
                     placeholder="Votre prénom"
                     autoComplete="given-name"
-                    accessibilityLabel="Champ prénom requis"
                   />
                 </View>
 
-                <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Text style={styles.inputLabel}>
-                    Nom <Text style={styles.required}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.textInput}
+                <View style={styles.halfWidth}>
+                  <CommonInput
+                    label="Nom *"
                     value={lastName}
                     onChangeText={setLastName}
                     placeholder="Votre nom"
                     autoComplete="family-name"
-                    accessibilityLabel="Champ nom requis"
                   />
                 </View>
               </View>
@@ -195,75 +188,49 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
             </>
           )}
 
-          <View
-            style={[
-              styles.inputContainer,
-              isSignUp && styles.inputContainerSignUp,
-            ]}
-          >
-            <Text style={styles.inputLabel}>
-              Email <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.textInput}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="votre@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              accessibilityLabel="Champ email requis"
-            />
-          </View>
+          <CommonInput
+            label="Email *"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="votre@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+          />
 
-          <View
-            style={[
-              styles.inputContainer,
-              isSignUp && styles.inputContainerSignUp,
-            ]}
-          >
-            <Text style={styles.inputLabel}>
-              Mot de passe <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.textInput}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              secureTextEntry
-              autoComplete="password"
-              accessibilityLabel="Champ mot de passe requis"
-            />
-            {!isSignUp && (
-              <TouchableOpacity
-                style={styles.forgotPasswordLink}
-                onPress={() => navigation.navigate("ForgotPassword")}
-              >
-                <Text style={styles.forgotPasswordText}>
-                  Mot de passe oublié ?
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          <CommonInput
+            label="Mot de passe *"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            secureTextEntry
+            autoComplete="password"
+          />
+          {!isSignUp && (
+            <TouchableOpacity
+              style={styles.forgotPasswordLink}
+              onPress={() => navigation.navigate("ForgotPassword")}
+            >
+              <Text style={styles.forgotPasswordText}>
+                Mot de passe oublié ?
+              </Text>
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              loading && styles.submitButtonDisabled,
-            ]}
-            onPress={handleSubmit}
-            disabled={loading}
-            accessibilityLabel={isSignUp ? "Créer le compte" : "Se connecter"}
-            accessibilityRole="button"
-          >
-            <Text style={styles.submitButtonText}>
-              {loading
+          <CommonButton
+            title={
+              loading
                 ? "Chargement..."
                 : isSignUp
                 ? "Créer le compte"
-                : "Se connecter"}
-            </Text>
-          </TouchableOpacity>
+                : "Se connecter"
+            }
+            variant="primary"
+            onPress={handleSubmit}
+            loading={loading}
+            disabled={loading}
+            style={styles.submitButton}
+          />
         </View>
 
         {/* Footer */}
@@ -335,56 +302,8 @@ const styles = StyleSheet.create({
     maxWidth: Math.min(380, screenWidth - (HORIZONTAL_PADDING + 10) * 2),
     paddingVertical: 15,
   },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    marginBottom: 8,
-    fontFamily: "System",
-    letterSpacing: 0.2,
-  },
-  textInput: {
-    height: 52,
-    borderWidth: 1,
-    borderColor: "#e8e9e8",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#4a5c4a",
-    fontFamily: "System",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
   submitButton: {
-    backgroundColor: "#4a5c4a",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
     marginTop: 10,
-    elevation: 3,
-    shadowColor: "rgba(74, 92, 74, 0.25)",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    borderWidth: 1,
-    borderColor: "#3d4f3d",
-  },
-  submitButtonDisabled: {
-    backgroundColor: "#a0a0a0",
-  },
-  submitButtonText: {
-    color: "#fafaf9",
-    fontSize: 16,
-    fontWeight: "600",
-    fontFamily: "System",
-    letterSpacing: 0.3,
   },
   footerSection: {
     height: screenHeight * 0.12,

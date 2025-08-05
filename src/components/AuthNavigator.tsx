@@ -45,7 +45,8 @@ export const AuthNavigator: React.FC = () => {
           fontFamily: "System",
         },
         headerShadowVisible: true,
-        headerBackTitle: "Retour",
+        headerBackTitle: "", // Supprime le texte "Retour"
+        headerLeft: () => null, // Supprime toutes les flèches de retour
       }}
     >
       <Stack.Screen
@@ -134,6 +135,7 @@ export const AuthNavigator: React.FC = () => {
         component={EditCreationScreen}
         options={{
           title: "Modifier la création",
+          headerLeft: () => null, // Empêche le retour
           headerRight: () => <NavigationHeader />,
         }}
       />

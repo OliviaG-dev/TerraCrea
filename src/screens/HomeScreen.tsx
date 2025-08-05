@@ -8,6 +8,7 @@ import {
   Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { CommonButton } from "../components";
 import { useUserContext } from "../context/UserContext";
 import { ScreenNavigationProp } from "../types/Navigation";
 
@@ -56,12 +57,18 @@ export const HomeScreen: React.FC = () => {
   const renderGuestHeader = () => (
     <View style={styles.headerSection}>
       <View style={styles.authButtons}>
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Se connecter</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.signupButton} onPress={handleSignUp}>
-          <Text style={styles.signupButtonText}>S'inscrire</Text>
-        </TouchableOpacity>
+        <CommonButton
+          title="Se connecter"
+          variant="secondary"
+          onPress={handleLogin}
+          style={styles.loginButton}
+        />
+        <CommonButton
+          title="S'inscrire"
+          variant="primary"
+          onPress={handleSignUp}
+          style={styles.signupButton}
+        />
       </View>
 
       <View style={styles.logoContainer}>
@@ -78,19 +85,22 @@ export const HomeScreen: React.FC = () => {
   const renderFooterButtons = () => {
     if (isAuthenticated) {
       return (
-        <TouchableOpacity
-          style={styles.getStartedButton}
+        <CommonButton
+          title="Explorez"
+          variant="primary"
           onPress={handleGetStarted}
-        >
-          <Text style={styles.getStartedText}>Explorez</Text>
-        </TouchableOpacity>
+          style={styles.getStartedButton}
+        />
       );
     }
 
     return (
-      <TouchableOpacity style={styles.primaryButton} onPress={handleContinue}>
-        <Text style={styles.primaryButtonText}>Continuer</Text>
-      </TouchableOpacity>
+      <CommonButton
+        title="Continuer"
+        variant="primary"
+        onPress={handleContinue}
+        style={styles.primaryButton}
+      />
     );
   };
 
@@ -172,42 +182,10 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   loginButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: "#4a5c4a",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  loginButtonText: {
-    color: "#4a5c4a",
-    fontSize: 15,
-    fontWeight: "500",
-    fontFamily: "System",
-    letterSpacing: 0.3,
+    width: 120,
   },
   signupButton: {
-    backgroundColor: "#4a5c4a",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-  },
-  signupButtonText: {
-    color: "#fafaf9",
-    fontSize: 15,
-    fontWeight: "500",
-    fontFamily: "System",
-    letterSpacing: 0.3,
+    width: 120,
   },
   contentSection: {
     flex: 0.56,
@@ -369,45 +347,11 @@ const styles = StyleSheet.create({
   },
   // Footer buttons
   getStartedButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: "#4a5c4a",
     width: 200,
     alignSelf: "center",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  getStartedText: {
-    color: "#4a5c4a",
-    fontSize: 15,
-    fontWeight: "500",
-    textAlign: "center",
-    letterSpacing: 0.5,
-    fontFamily: "System",
   },
   primaryButton: {
-    backgroundColor: "#4a5c4a",
-    paddingVertical: 16,
-    paddingHorizontal: 60,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-  },
-  primaryButtonText: {
-    color: "#fafaf9",
-    fontSize: 17,
-    fontWeight: "600",
-    textAlign: "center",
-    letterSpacing: 0.5,
-    fontFamily: "System",
+    width: 200,
+    alignSelf: "center",
   },
 });

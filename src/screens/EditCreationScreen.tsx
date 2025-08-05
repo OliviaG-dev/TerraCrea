@@ -17,10 +17,11 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { ImagePicker } from "expo-image-picker";
 import { Platform } from "react-native";
 import { NotificationToast } from "../components/NotificationToast";
+import { CommonHeader, CommonInput } from "../components";
 import { Creation, CreationCategory, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
-import { COLORS } from "../utils/colors";
+import { COLORS, inputStyles } from "../utils";
 
 type EditCreationScreenNavigationProp = ScreenNavigationProp<"EditCreation">;
 
@@ -351,28 +352,17 @@ export const EditCreationScreen = () => {
         duration={4000}
       />
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>← Annuler</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Modifier la création</Text>
-
-        <TouchableOpacity
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.saveButtonText}>Enregistrer</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <CommonHeader
+        title="Modifier la création"
+        onBack={() => navigation.goBack()}
+        backLabel="Annuler"
+        rightButton={{
+          text: "Enregistrer",
+          onPress: handleSubmit,
+          loading: loading,
+          disabled: loading,
+        }}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Photo */}
@@ -404,50 +394,34 @@ export const EditCreationScreen = () => {
         </View>
 
         {/* Titre */}
-        <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Titre *</Text>
-          <TextInput
-            style={styles.textInput}
-            value={form.title}
-            onChangeText={(text) =>
-              setForm((prev) => ({ ...prev, title: text }))
-            }
-            placeholder="Nom de votre création"
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
+        <CommonInput
+          label="Titre *"
+          value={form.title}
+          onChangeText={(text) => setForm((prev) => ({ ...prev, title: text }))}
+          placeholder="Nom de votre création"
+        />
 
         {/* Description */}
-        <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Description *</Text>
-          <TextInput
-            style={[styles.textInput, styles.textArea]}
-            value={form.description}
-            onChangeText={(text) =>
-              setForm((prev) => ({ ...prev, description: text }))
-            }
-            placeholder="Décrivez votre création..."
-            placeholderTextColor="#9ca3af"
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-        </View>
+        <CommonInput
+          label="Description *"
+          value={form.description}
+          onChangeText={(text) =>
+            setForm((prev) => ({ ...prev, description: text }))
+          }
+          placeholder="Décrivez votre création..."
+          multiline
+          numberOfLines={4}
+          style={inputStyles.textArea}
+        />
 
         {/* Prix */}
-        <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Prix (€) *</Text>
-          <TextInput
-            style={styles.textInput}
-            value={form.price}
-            onChangeText={(text) =>
-              setForm((prev) => ({ ...prev, price: text }))
-            }
-            placeholder="0.00"
-            placeholderTextColor="#9ca3af"
-            keyboardType="numeric"
-          />
-        </View>
+        <CommonInput
+          label="Prix (€) *"
+          value={form.price}
+          onChangeText={(text) => setForm((prev) => ({ ...prev, price: text }))}
+          placeholder="0.00"
+          keyboardType="numeric"
+        />
 
         {/* Catégorie */}
         <View style={styles.inputSection}>
@@ -687,39 +661,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
-  backButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  backButtonText: {
-    color: "#4a5c4a",
-    fontSize: 16,
-    fontWeight: "500",
-    fontFamily: "System",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    fontFamily: "System",
-  },
-  saveButton: {
-    backgroundColor: "#4a5c4a",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    minWidth: 80,
-    alignItems: "center",
-  },
-  saveButtonDisabled: {
-    backgroundColor: "#9ca3af",
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-    fontFamily: "System",
-  },
   content: {
     flex: 1,
     padding: 20,
@@ -783,31 +724,7 @@ const styles = StyleSheet.create({
     color: "#7a8a7a",
     fontFamily: "System",
   },
-  inputSection: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    marginBottom: 8,
-    fontFamily: "System",
-  },
-  textInput: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e8e9e8",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: "#4a5c4a",
-    fontFamily: "System",
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
+
   selectButton: {
     backgroundColor: "#fff",
     borderWidth: 1,

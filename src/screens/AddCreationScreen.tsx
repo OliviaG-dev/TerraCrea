@@ -14,11 +14,12 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
 import { NotificationToast } from "../components/NotificationToast";
+import { CommonHeader, CommonInput, CommonButton } from "../components";
 import { Creation, CreationCategory, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
 import * as ImagePicker from "expo-image-picker";
-import { COLORS } from "../utils/colors";
+import { COLORS, inputStyles, modalStyles } from "../utils";
 
 type AddCreationScreenNavigationProp = ScreenNavigationProp<"AddCreation">;
 
@@ -367,88 +368,56 @@ export const AddCreationScreen = () => {
         duration={4000}
       />
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>← Annuler</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Nouvelle Création</Text>
-
-        <TouchableOpacity
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          <Text style={styles.saveButtonText}>
-            {loading ? "..." : "Sauvegarder"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <CommonHeader
+        title="Nouvelle Création"
+        onBack={() => navigation.goBack()}
+        backLabel="Annuler"
+        rightButton={{
+          text: "Sauvegarder",
+          onPress: handleSubmit,
+          loading: loading,
+          disabled: loading,
+        }}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.sectionTitle, { marginTop: 8 }]}>
           Informations de base
         </Text>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Titre de la création *</Text>
-          <TextInput
-            style={[styles.input, errors.title && styles.inputError]}
-            value={form.title}
-            onChangeText={(text) => updateForm("title", text)}
-            placeholder="Ex: Vase en céramique unique"
-            placeholderTextColor="#8a9a8a"
-            maxLength={100}
-          />
-          {errors.title ? (
-            <Text style={styles.fieldErrorText}>{errors.title}</Text>
-          ) : null}
-        </View>
+        <CommonInput
+          label="Titre de la création *"
+          value={form.title}
+          onChangeText={(text) => updateForm("title", text)}
+          placeholder="Ex: Vase en céramique unique"
+          maxLength={100}
+          error={errors.title}
+        />
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Description *</Text>
-          <TextInput
-            style={[
-              styles.input,
-              styles.textArea,
-              errors.description && styles.inputError,
-            ]}
-            value={form.description}
-            onChangeText={(text) => updateForm("description", text)}
-            placeholder="Décrivez votre création, son histoire, ses caractéristiques..."
-            placeholderTextColor="#8a9a8a"
-            multiline
-            numberOfLines={4}
-            maxLength={1000}
-          />
-          <Text style={styles.charCount}>
-            {form.description.length}/1000 caractères
-          </Text>
-          {errors.description ? (
-            <Text style={styles.fieldErrorText}>{errors.description}</Text>
-          ) : null}
-        </View>
+        <CommonInput
+          label="Description *"
+          value={form.description}
+          onChangeText={(text) => updateForm("description", text)}
+          placeholder="Décrivez votre création, son histoire, ses caractéristiques..."
+          multiline
+          numberOfLines={4}
+          maxLength={1000}
+          style={inputStyles.textArea}
+          charCount={{ current: form.description.length, max: 1000 }}
+          error={errors.description}
+        />
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Prix (€) *</Text>
-          <TextInput
-            style={[styles.input, errors.price && styles.inputError]}
-            value={form.price}
-            onChangeText={(text) => updateForm("price", text)}
-            placeholder="29.99"
-            placeholderTextColor="#8a9a8a"
-            keyboardType="numeric"
-          />
-          {errors.price ? (
-            <Text style={styles.fieldErrorText}>{errors.price}</Text>
-          ) : null}
-        </View>
+        <CommonInput
+          label="Prix (€) *"
+          value={form.price}
+          onChangeText={(text) => updateForm("price", text)}
+          placeholder="29.99"
+          keyboardType="numeric"
+          error={errors.price}
+        />
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Catégorie *</Text>
+        <View style={inputStyles.container}>
+          <Text style={inputStyles.label}>Catégorie *</Text>
           <TouchableOpacity
             style={styles.selectButton}
             onPress={() => setShowCategoryModal(true)}
@@ -462,7 +431,7 @@ export const AddCreationScreen = () => {
         </View>
 
         <Text style={styles.sectionTitle}>Photo de la création</Text>
-        <View style={styles.inputGroup}>
+        <View style={inputStyles.container}>
           {form.photo ? (
             <View style={styles.photoContainer}>
               <Image
@@ -488,7 +457,7 @@ export const AddCreationScreen = () => {
         </View>
 
         <Text style={styles.sectionTitle}>Matériaux utilisés</Text>
-        <View style={styles.inputGroup}>
+        <View style={inputStyles.container}>
           <TouchableOpacity
             style={styles.selectButton}
             onPress={() => setShowMaterialsModal(true)}
@@ -518,7 +487,7 @@ export const AddCreationScreen = () => {
         </View>
 
         <Text style={styles.sectionTitle}>Tags</Text>
-        <View style={styles.inputGroup}>
+        <View style={inputStyles.container}>
           <TouchableOpacity
             style={styles.selectButton}
             onPress={() => setShowTagsModal(true)}
@@ -749,37 +718,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
-  backButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  backButtonText: {
-    color: "#4a5c4a",
-    fontSize: 16,
-    fontWeight: "500",
-    fontFamily: "System",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    fontFamily: "System",
-  },
-  saveButton: {
-    backgroundColor: "#4a5c4a",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  saveButtonDisabled: {
-    backgroundColor: "#8a9a8a",
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-    fontFamily: "System",
-  },
   content: {
     flex: 1,
     padding: 20,
@@ -790,52 +728,6 @@ const styles = StyleSheet.create({
     color: "#4a5c4a",
     marginTop: 28,
     marginBottom: 16,
-    fontFamily: "System",
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    marginBottom: 8,
-    fontFamily: "System",
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: "#e8e9e8",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#4a5c4a",
-    fontFamily: "System",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  inputError: {
-    borderColor: COLORS.danger,
-    backgroundColor: "#fef2f2",
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  charCount: {
-    fontSize: 12,
-    color: "#8a9a8a",
-    textAlign: "right",
-    marginTop: 4,
-    fontFamily: "System",
-  },
-  fieldErrorText: {
-    fontSize: 12,
-    color: COLORS.danger,
-    marginTop: 4,
     fontFamily: "System",
   },
   selectButton: {
