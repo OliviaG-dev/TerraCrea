@@ -88,12 +88,6 @@ export const CreationsScreen = () => {
   };
 
   const handleDeleteCreation = (creation: Creation) => {
-    console.log(
-      "🔄 Tentative de suppression de la création:",
-      creation.id,
-      creation.title
-    );
-
     // Afficher la modal de confirmation
     setDeleteModal({
       visible: true,
@@ -105,15 +99,12 @@ export const CreationsScreen = () => {
     if (!deleteModal.creation) return;
 
     const creation = deleteModal.creation;
-    console.log("✅ Utilisateur a confirmé la suppression");
 
     setDeleteModal({ visible: false, creation: null });
     setLoading(true);
 
     try {
-      console.log("🔄 Appel de CreationsApi.deleteCreation...");
       const result = await CreationsApi.deleteCreation(creation.id);
-      console.log("✅ Résultat de la suppression:", result);
 
       setNotification({
         visible: true,
@@ -123,11 +114,8 @@ export const CreationsScreen = () => {
       });
 
       // Recharger la liste des créations
-      console.log("🔄 Rechargement de la liste...");
       await loadCreations();
-      console.log("✅ Liste rechargée");
     } catch (error) {
-      console.error("❌ Erreur lors de la suppression:", error);
       setNotification({
         visible: true,
         title: "❌ Erreur",
@@ -197,17 +185,14 @@ export const CreationsScreen = () => {
               style={[styles.actionButton, styles.editButton]}
               onPress={() => handleEditCreation(creation)}
             >
-              <Text style={styles.editButtonText}>✏️ Modifier</Text>
+              <Text style={styles.editButtonText}>Modifier</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionButton, styles.deleteButton]}
-              onPress={() => {
-                console.log("🔄 Bouton Supprimer cliqué pour:", creation.title);
-                handleDeleteCreation(creation);
-              }}
+              onPress={() => handleDeleteCreation(creation)}
             >
-              <Text style={styles.deleteButtonText}>🗑️ Supprimer</Text>
+              <Text style={styles.deleteButtonText}>Supprimer</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -41,10 +41,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         .single();
 
       if (userError && userError.code !== "PGRST116") {
-        console.warn(
-          "Erreur lors de la récupération des données utilisateur:",
-          userError
-        );
+        // Erreur silencieuse pour les erreurs non critiques
       }
 
       // Récupérer le profil artisan si l'utilisateur est artisan
@@ -57,10 +54,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           .single();
 
         if (artisanError && artisanError.code !== "PGRST116") {
-          console.warn(
-            "Erreur lors de la récupération du profil artisan:",
-            artisanError
-          );
+          // Erreur silencieuse pour les erreurs non critiques
         } else {
           artisanData = artisanProfile;
         }
@@ -68,10 +62,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
       return { userData, artisanData };
     } catch (error) {
-      console.error(
-        "Erreur lors de la récupération des données utilisateur:",
-        error
-      );
       return { userData: null, artisanData: null };
     }
   };
@@ -150,9 +140,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         const updatedUser = buildUserWithMetadata(currentUser);
         // Note: Dans une vraie implémentation, vous devriez avoir un setter pour l'utilisateur
       }
-    } catch (error) {
-      console.error("Erreur lors du rafraîchissement de l'utilisateur:", error);
-    }
+    } catch (error) {}
   };
 
   // Fonction de mise à jour du profil utilisateur
@@ -187,16 +175,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         });
 
         if (profileError) {
-          console.warn(
-            "Erreur lors de la mise à jour de la table 'users':",
-            profileError.message
-          );
+          // Erreur silencieuse pour les erreurs non critiques
         }
       } catch (tableError) {
-        console.warn(
-          "Erreur lors de la mise à jour de la table 'users':",
-          tableError
-        );
+        // Erreur silencieuse pour les erreurs non critiques
       }
 
       // Mettre à jour l'état local de l'utilisateur
@@ -212,7 +194,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         // Pour l'instant, on laisse l'état se mettre à jour via l'écouteur d'auth
       }
     } catch (error) {
-      console.error("Erreur lors de la mise à jour du profil:", error);
       throw error;
     }
   };
@@ -257,16 +238,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         });
 
         if (profileError) {
-          console.warn(
-            "Erreur lors de la mise à jour du statut artisan dans la table 'users':",
-            profileError.message
-          );
+          // Erreur silencieuse pour les erreurs non critiques
         }
       } catch (tableError) {
-        console.warn(
-          "Erreur lors de la mise à jour du statut artisan dans la table 'users':",
-          tableError
-        );
+        // Erreur silencieuse pour les erreurs non critiques
       }
 
       // Création/mise à jour du profil artisan dans la table artisans
@@ -285,19 +260,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         });
 
         if (artisanError) {
-          console.warn(
-            "Erreur lors de la création/mise à jour du profil artisan dans la table 'artisans':",
-            artisanError.message
-          );
+          // Erreur silencieuse pour les erreurs non critiques
         }
       } catch (tableError) {
-        console.warn("Table 'artisans' non disponible:", tableError);
+        // Erreur silencieuse pour les erreurs non critiques
       }
 
       // Note: Le profil artisan a déjà été créé/mis à jour avec l'appel UPSERT précédent
       // Pas besoin d'un deuxième appel INSERT qui causerait un conflit
     } catch (error) {
-      console.error("Erreur lors de la création du profil artisan:", error);
       throw error;
     }
   };
@@ -344,13 +315,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         });
 
         if (error) {
-          console.warn(
-            "Erreur lors de la mise à jour du profil artisan dans la table 'artisans':",
-            error.message
-          );
+          // Erreur silencieuse pour les erreurs non critiques
         }
       } catch (tableError) {
-        console.warn("Table 'artisans' non disponible:", tableError);
+        // Erreur silencieuse pour les erreurs non critiques
       }
 
       // Mise à jour de l'artisan dans la table artisans
@@ -372,16 +340,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           });
 
         if (artisansError) {
-          console.warn(
-            "Erreur lors de la mise à jour de l'artisan dans la table 'artisans':",
-            artisansError.message
-          );
+          // Erreur silencieuse pour les erreurs non critiques
         }
       } catch (tableError) {
-        console.warn("Table 'artisans' non disponible:", tableError);
+        // Erreur silencieuse pour les erreurs non critiques
       }
     } catch (error) {
-      console.error("Erreur lors de la mise à jour du profil artisan:", error);
       throw error;
     }
   };

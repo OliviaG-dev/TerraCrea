@@ -37,7 +37,6 @@ export const checkTimeSync = async (): Promise<{
       localTime,
     };
   } catch (error) {
-    console.warn("Impossible de vérifier la synchronisation d'heure:", error);
     return {
       isSynchronized: true, // Par défaut, on suppose que c'est OK
       localTime: new Date(),

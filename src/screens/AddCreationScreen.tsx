@@ -179,7 +179,6 @@ export const AddCreationScreen = () => {
         const categoriesData = await CreationsApi.getAllCategories();
         setCategories(categoriesData);
       } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error);
         // Fallback vers les catégories du frontend
         setCategories(
           Object.entries(CATEGORY_LABELS).map(([id, label]) => ({ id, label }))

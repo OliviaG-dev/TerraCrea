@@ -601,7 +601,6 @@ export class CreationsApi {
         .single();
 
       if (error) {
-        console.error("Erreur insertion création:", error);
         throw error;
       }
 
@@ -613,13 +612,11 @@ export class CreationsApi {
         .single();
 
       if (fetchError) {
-        console.error("Erreur récupération création complète:", fetchError);
         throw fetchError;
       }
 
       return transformSupabaseCreationWithUser(fullCreation);
     } catch (error) {
-      console.error("Erreur complète création:", error);
       if (error instanceof Error) {
         throw error;
       } else {
@@ -688,7 +685,6 @@ export class CreationsApi {
         canCreate: !insertError,
       };
     } catch (error) {
-      console.error("Erreur test permissions:", error);
       return {
         user: null,
         artisan: null,
@@ -748,7 +744,9 @@ export class CreationsApi {
           ...(updateData.category && { category_id: updateData.category }),
           ...(updateData.materials && { materials: updateData.materials }),
           ...(updateData.tags && { tags: updateData.tags }),
-          ...(updateData.imageUrl && { image_url: updateData.imageUrl }),
+          ...(updateData.imageUrl !== undefined && {
+            image_url: updateData.imageUrl,
+          }),
           ...(typeof updateData.isAvailable === "boolean" && {
             is_available: updateData.isAvailable,
           }),
@@ -784,20 +782,14 @@ export class CreationsApi {
    */
   static async deleteCreation(creationId: string): Promise<boolean> {
     try {
-      console.log("🔄 deleteCreation appelé avec ID:", creationId);
-
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        console.error("❌ Utilisateur non connecté");
         throw new Error("Utilisateur non connecté");
       }
 
-      console.log("✅ Utilisateur connecté:", user.id);
-
       // Vérifier que l'utilisateur est propriétaire de la création
-      console.log("🔄 Vérification de la propriété de la création...");
       const { data: existingCreation, error: fetchError } = await supabase
         .from("creations")
         .select("artisan_id, image_url")
@@ -805,24 +797,12 @@ export class CreationsApi {
         .single();
 
       if (fetchError || !existingCreation) {
-        console.error("❌ Création non trouvée:", fetchError);
         throw new Error("Création non trouvée");
       }
 
-      console.log("✅ Création trouvée:", existingCreation);
-      console.log(
-        "🔄 Comparaison artisan_id:",
-        existingCreation.artisan_id,
-        "vs user.id:",
-        user.id
-      );
-
       if (existingCreation.artisan_id !== user.id) {
-        console.error("❌ L'utilisateur n'est pas propriétaire de la création");
         throw new Error("Vous ne pouvez supprimer que vos propres créations");
       }
-
-      console.log("✅ L'utilisateur est propriétaire de la création");
 
       // Supprimer l'image si elle existe
       if (existingCreation.image_url) {
@@ -832,28 +812,21 @@ export class CreationsApi {
             await supabase.storage.from("creation-images").remove([imagePath]);
           }
         } catch (storageError) {
-          console.warn(
-            "Erreur lors de la suppression de l'image:",
-            storageError
-          );
+          // Erreur silencieuse lors de la suppression de l'image
         }
       }
 
-      console.log("🔄 Suppression de la création de la base de données...");
       const { error } = await supabase
         .from("creations")
         .delete()
         .eq("id", creationId);
 
       if (error) {
-        console.error("❌ Erreur lors de la suppression:", error);
         throw error;
       }
 
-      console.log("✅ Création supprimée avec succès");
       return true;
     } catch (error) {
-      console.error("❌ Erreur générale dans deleteCreation:", error);
       throw new Error(
         `Erreur lors de la suppression: ${
           error instanceof Error ? error.message : "Erreur inconnue"

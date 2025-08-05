@@ -16,7 +16,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.oliviagdev.terracrea",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Cette application nécessite l'accès à votre galerie pour sélectionner des photos de vos créations.",
+        "NSCameraUsageDescription": "Cette application nécessite l'accès à votre caméra pour prendre des photos de vos créations."
       }
     },
     "android": {
@@ -24,7 +26,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +41,15 @@
         "projectId": "627ab56f-70d2-4600-ab26-123d43282fe7"
       }
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cette application nécessite l'accès à votre galerie pour sélectionner des photos de vos créations.",
+          "cameraPermission": "Cette application nécessite l'accès à votre caméra pour prendre des photos de vos créations."
+        }
+      ]
+    ],
     "owner": "oliviag-dev"
   }
 }

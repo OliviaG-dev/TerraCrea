@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { ImagePicker } from "expo-image-picker";
+import { Platform } from "react-native";
 import { NotificationToast } from "../components/NotificationToast";
 import { Creation, CreationCategory, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
@@ -37,16 +38,53 @@ export const EditCreationScreen = () => {
     description: creation.description,
     price: creation.price.toString(),
     category: creation.category,
-    materials: creation.materials.join(", "),
-    tags: creation.tags.join(", "),
+    materials: creation.materials,
+    tags: creation.tags,
     photo: creation.imageUrl || "",
   });
 
   const [loading, setLoading] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showMaterialsModal, setShowMaterialsModal] = useState(false);
+  const [showTagsModal, setShowTagsModal] = useState(false);
+  const [hasNewPhoto, setHasNewPhoto] = useState(false);
   const [categories, setCategories] = useState<{ id: string; label: string }[]>(
     []
   );
+
+  const commonMaterials = [
+    "Bois",
+    "Argile",
+    "Verre",
+    "Métal",
+    "Pierre",
+    "Tissu",
+    "Cuir",
+    "Papier",
+    "Plastique",
+    "Céramique",
+    "Bambou",
+    "Laine",
+    "Soie",
+    "Coton",
+    "Lin",
+  ];
+
+  const commonTags = [
+    "Fait main",
+    "Unique",
+    "Écologique",
+    "Vintage",
+    "Moderne",
+    "Traditionnel",
+    "Artisanal",
+    "Durable",
+    "Recyclé",
+    "Bio",
+    "Éthique",
+    "Local",
+    "Personnalisable",
+  ];
   const [notification, setNotification] = useState<{
     visible: boolean;
     title: string;
@@ -66,7 +104,6 @@ export const EditCreationScreen = () => {
         const categoriesData = await CreationsApi.getAllCategories();
         setCategories(categoriesData);
       } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error);
         // Fallback vers les catégories du frontend
         setCategories(
           Object.entries(CATEGORY_LABELS).map(([id, label]) => ({ id, label }))
@@ -77,7 +114,45 @@ export const EditCreationScreen = () => {
   }, []);
 
   const handleAddPhoto = async () => {
+    // Vérifier si nous sommes sur le web
+    if (Platform.OS === "web") {
+      setNotification({
+        visible: true,
+        title: "⚠️ Fonctionnalité limitée",
+        message:
+          "La sélection de photo n'est pas disponible sur le web. Veuillez tester sur un appareil mobile.",
+        type: "warning",
+      });
+      return;
+    }
+
     try {
+      // Vérifier que ImagePicker est disponible
+      if (!ImagePicker.requestMediaLibraryPermissionsAsync) {
+        setNotification({
+          visible: true,
+          title: "❌ Erreur",
+          message: "ImagePicker n'est pas disponible sur cette plateforme",
+          type: "error",
+        });
+        return;
+      }
+
+      // Demander les permissions d'abord
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== "granted") {
+        setNotification({
+          visible: true,
+          title: "❌ Permission refusée",
+          message:
+            "Nous avons besoin de votre permission pour accéder à votre galerie",
+          type: "error",
+        });
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -90,12 +165,21 @@ export const EditCreationScreen = () => {
           ...prev,
           photo: result.assets[0].uri,
         }));
+        setHasNewPhoto(true);
+        setNotification({
+          visible: true,
+          title: "✅ Photo sélectionnée",
+          message: "Votre photo a été sélectionnée avec succès",
+          type: "success",
+        });
       }
     } catch (error) {
+      console.error("Erreur lors de la sélection de photo:", error);
       setNotification({
         visible: true,
         title: "❌ Erreur",
-        message: "Impossible d'accéder à la galerie",
+        message:
+          "Impossible d'accéder à la galerie. Veuillez vérifier les permissions.",
         type: "error",
       });
     }
@@ -105,6 +189,35 @@ export const EditCreationScreen = () => {
     setForm((prev) => ({
       ...prev,
       photo: "",
+    }));
+    setHasNewPhoto(false);
+    setNotification({
+      visible: true,
+      title: "🗑️ Photo supprimée",
+      message: "La photo a été supprimée de la création",
+      type: "info",
+    });
+  };
+
+  const addMaterial = () => {
+    setShowMaterialsModal(true);
+  };
+
+  const removeMaterial = (material: string) => {
+    setForm((prev) => ({
+      ...prev,
+      materials: prev.materials.filter((m) => m !== material),
+    }));
+  };
+
+  const addTag = () => {
+    setShowTagsModal(true);
+  };
+
+  const removeTag = (tag: string) => {
+    setForm((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tag),
     }));
   };
 
@@ -139,28 +252,18 @@ export const EditCreationScreen = () => {
         description: form.description.trim(),
         price: price,
         category: form.category,
-        materials: form.materials
-          .split(",")
-          .map((m) => m.trim())
-          .filter((m) => m.length > 0),
-        tags: form.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter((t) => t.length > 0),
+        materials: form.materials,
+        tags: form.tags,
       };
 
-      // Si une nouvelle photo a été sélectionnée, l'uploader
-      if (
-        form.photo &&
-        form.photo !== creation.imageUrl &&
-        !form.photo.startsWith("http")
-      ) {
+      // Gestion de la photo
+
+      if (hasNewPhoto && form.photo) {
+        // Nouvelle photo sélectionnée (URI local)
         try {
-          const response = await fetch(form.photo);
-          const blob = await response.blob();
           const fileName = `creation_${Date.now()}.jpg`;
           const imageUrl = await CreationsApi.uploadCreationImage(
-            blob,
+            form.photo,
             fileName
           );
           updateData.imageUrl = imageUrl;
@@ -174,10 +277,16 @@ export const EditCreationScreen = () => {
           setLoading(false);
           return;
         }
+      } else if (!form.photo && creation.imageUrl) {
+        // Photo supprimée
+        updateData.imageUrl = null;
       }
 
       // Mettre à jour la création
-      await CreationsApi.updateCreation(creation.id, updateData);
+      const updatedCreation = await CreationsApi.updateCreation(
+        creation.id,
+        updateData
+      );
 
       setNotification({
         visible: true,
@@ -357,30 +466,58 @@ export const EditCreationScreen = () => {
 
         {/* Matériaux */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Matériaux</Text>
-          <TextInput
-            style={styles.textInput}
-            value={form.materials}
-            onChangeText={(text) =>
-              setForm((prev) => ({ ...prev, materials: text }))
-            }
-            placeholder="Bois, métal, céramique... (séparés par des virgules)"
-            placeholderTextColor="#9ca3af"
-          />
+          <Text style={styles.inputLabel}>Matériaux utilisés</Text>
+          <TouchableOpacity style={styles.selectButton} onPress={addMaterial}>
+            <Text style={styles.selectButtonText}>
+              {form.materials.length > 0
+                ? `${form.materials.length} matériau(x) sélectionné(s)`
+                : "Sélectionner des matériaux"}
+            </Text>
+            <Text style={styles.selectArrow}>▼</Text>
+          </TouchableOpacity>
+          {form.materials.length > 0 && (
+            <View style={styles.itemsList}>
+              {form.materials.map((material, index) => (
+                <View key={index} style={styles.itemChip}>
+                  <Text style={styles.itemText}>{material}</Text>
+                  <TouchableOpacity
+                    onPress={() => removeMaterial(material)}
+                    style={styles.removeItemButton}
+                  >
+                    <Text style={styles.removeItemText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Tags */}
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Tags</Text>
-          <TextInput
-            style={styles.textInput}
-            value={form.tags}
-            onChangeText={(text) =>
-              setForm((prev) => ({ ...prev, tags: text }))
-            }
-            placeholder="artisanal, fait-main, unique... (séparés par des virgules)"
-            placeholderTextColor="#9ca3af"
-          />
+          <TouchableOpacity style={styles.selectButton} onPress={addTag}>
+            <Text style={styles.selectButtonText}>
+              {form.tags.length > 0
+                ? `${form.tags.length} tag(s) sélectionné(s)`
+                : "Sélectionner des tags"}
+            </Text>
+            <Text style={styles.selectArrow}>▼</Text>
+          </TouchableOpacity>
+          {form.tags.length > 0 && (
+            <View style={styles.itemsList}>
+              {form.tags.map((tag, index) => (
+                <View key={index} style={styles.itemChip}>
+                  <Text style={styles.itemText}>{tag}</Text>
+                  <TouchableOpacity
+                    onPress={() => removeTag(tag)}
+                    style={styles.removeItemButton}
+                  >
+                    <Text style={styles.removeItemText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -406,6 +543,121 @@ export const EditCreationScreen = () => {
               data={categories}
               keyExtractor={(item) => item.id}
               renderItem={renderCategoryItem}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal pour sélectionner des matériaux */}
+      <Modal
+        visible={showMaterialsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMaterialsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Sélectionner des matériaux</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowMaterialsModal(false)}
+              >
+                <Text style={styles.modalCloseText}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={commonMaterials}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.modalItem,
+                    form.materials.includes(item) && styles.modalItemSelected,
+                  ]}
+                  onPress={() => {
+                    if (form.materials.includes(item)) {
+                      removeMaterial(item);
+                    } else {
+                      setForm((prev) => ({
+                        ...prev,
+                        materials: [...prev.materials, item],
+                      }));
+                    }
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      form.materials.includes(item) &&
+                        styles.modalItemTextSelected,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {form.materials.includes(item) && (
+                    <Text style={styles.modalItemCheck}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal pour sélectionner des tags */}
+      <Modal
+        visible={showTagsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTagsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Sélectionner des tags</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowTagsModal(false)}
+              >
+                <Text style={styles.modalCloseText}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={commonTags}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.modalItem,
+                    form.tags.includes(item) && styles.modalItemSelected,
+                  ]}
+                  onPress={() => {
+                    if (form.tags.includes(item)) {
+                      removeTag(item);
+                    } else {
+                      setForm((prev) => ({
+                        ...prev,
+                        tags: [...prev.tags, item],
+                      }));
+                    }
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      form.tags.includes(item) && styles.modalItemTextSelected,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {form.tags.includes(item) && (
+                    <Text style={styles.modalItemCheck}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              )}
               showsVerticalScrollIndicator={false}
             />
           </View>
@@ -634,5 +886,53 @@ const styles = StyleSheet.create({
   modalItemTextSelected: {
     color: "#4a5c4a",
     fontWeight: "600",
+  },
+  modalItemCheck: {
+    color: "#4a5c4a",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: "auto",
+  },
+  itemsList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  itemChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#4a5c4a",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 18,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  itemText: {
+    color: "#fff",
+    fontSize: 13,
+    fontFamily: "System",
+    marginRight: 6,
+    fontWeight: "500",
+  },
+  removeItemButton: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  removeItemText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+    fontFamily: "System",
+    lineHeight: 13,
+    textAlign: "center",
   },
 });
