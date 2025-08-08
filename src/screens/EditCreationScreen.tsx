@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
-  Alert,
   Image,
   ActivityIndicator,
   Modal,
@@ -15,7 +14,6 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { ImagePicker } from "expo-image-picker";
-import { Platform } from "react-native";
 import { NotificationToast } from "../components/NotificationToast";
 import { CommonHeader, CommonInput } from "../components";
 import { Creation, CreationCategory, CATEGORY_LABELS } from "../types/Creation";
@@ -175,7 +173,6 @@ export const EditCreationScreen = () => {
         });
       }
     } catch (error) {
-      console.error("Erreur lors de la sélection de photo:", error);
       setNotification({
         visible: true,
         title: "❌ Erreur",
@@ -664,6 +661,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+    width: "100%",
   },
   photoSection: {
     marginBottom: 24,
@@ -756,6 +754,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: "70%",
+    width: "100%",
   },
   modalHeader: {
     flexDirection: "row",

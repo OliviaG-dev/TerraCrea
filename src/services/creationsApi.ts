@@ -33,6 +33,9 @@ interface SupabaseCreationWithUser {
   artisan_is_verified?: boolean;
   artisan_joined_at?: string;
   artisan_updated_at?: string;
+  artisan_established_year?: number;
+  artisan_specialties?: string[];
+  artisan_total_sales?: number;
 }
 
 interface CategoryWithCount {
@@ -102,6 +105,12 @@ const transformSupabaseCreationWithUser = (
         rating: supabaseCreation.rating, // Utiliser la note de la création
         joinedAt: supabaseCreation.artisan_joined_at,
         updatedAt: supabaseCreation.artisan_updated_at,
+        description: supabaseCreation.artisan_bio,
+        establishedYear: supabaseCreation.artisan_established_year,
+        specialties: supabaseCreation.artisan_specialties || [],
+        totalSales: supabaseCreation.artisan_total_sales || 0,
+        email: supabaseCreation.artisan_email,
+        phone: supabaseCreation.artisan_phone,
       },
     },
   };

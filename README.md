@@ -27,6 +27,7 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Design cohérent** avec palette de couleurs terre
 - ✅ **Responsive design** pour toutes les tailles d'écran
 - ✅ **Composants réutilisables** pour une interface uniforme
+- ✅ **Layout optimisé** sans barres de défilement indésirables
 
 ### 🛍️ **Exploration et découverte**
 
@@ -37,6 +38,17 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Informations artisan** intégrées à chaque création
 - ✅ **Pagination** pour optimiser les performances
 - ✅ **Dates de création** et statut de disponibilité
+- ✅ **Bouton "Voir plus"** pour accéder aux détails complets
+
+### 📖 **Détails des créations**
+
+- ✅ **Écran de détail complet** accessible à tous les utilisateurs
+- ✅ **Informations détaillées** : titre, prix, description, matériaux, tags
+- ✅ **Profil artisan intégré** avec lien vers le profil complet
+- ✅ **Statistiques** : note moyenne, nombre d'avis, disponibilité
+- ✅ **Gestion des favoris** directement depuis l'écran de détail
+- ✅ **Actions contextuelles** : modification pour le créateur
+- ✅ **Gestion d'erreurs** robuste pour les images et données
 
 ### 👥 **Profils et communauté**
 
@@ -47,6 +59,19 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Informations business** (nom, localisation, année création)
 - ✅ **Validation de profil** avec vérification
 - ✅ **Upgrade vers artisan** depuis le profil utilisateur
+- ✅ **Numéro de téléphone** pour les contacts
+- ✅ **Profil d'artisan public** accessible à tous les utilisateurs
+
+### 🎨 **Gestion des créations**
+
+- ✅ **Création d'œuvres** avec formulaire complet
+- ✅ **Édition en temps réel** des créations existantes
+- ✅ **Validation automatique** des champs obligatoires
+- ✅ **Interface intuitive** pour la gestion du portfolio
+- ✅ **Sélection de photos** avec expo-image-picker
+- ✅ **Gestion des matériaux** et tags
+- ✅ **Catégorisation** avec labels traduits
+- ✅ **Mise à jour en temps réel** après modifications
 
 ### 🏗️ **Architecture technique**
 
@@ -58,6 +83,7 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Composants réutilisables** et modulaires
 - ✅ **Gestion d'erreurs** centralisée et user-friendly
 - ✅ **Styles centralisés** pour une cohérence parfaite
+- ✅ **Code nettoyé** sans console.log ni imports inutilisés
 
 ## 🚀 Technologies utilisées
 
@@ -68,6 +94,7 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - **Supabase** ^2.45.4 (Authentification et Backend)
 - **React Navigation** ^7.1.14
 - **Zustand** ^5.0.6
+- **expo-image-picker** pour la gestion des photos
 
 ## 📁 Structure du projet
 
@@ -95,6 +122,8 @@ src/
 │   ├── CreationsScreen.tsx    # Gestion des créations utilisateur
 │   ├── AddCreationScreen.tsx  # Ajout de nouvelles créations
 │   ├── EditCreationScreen.tsx # Modification des créations
+│   ├── CreationDetailScreen.tsx # Détails complets d'une création
+│   ├── CreatorProfileScreen.tsx # Profil public d'un artisan
 │   ├── EmailConfirmationScreen.tsx  # Attente de confirmation email
 │   ├── EmailConfirmedScreen.tsx     # Confirmation réussie
 │   ├── ForgotPasswordScreen.tsx     # Mot de passe oublié
@@ -252,6 +281,8 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - ✅ **Composants réutilisables** pour tous les éléments UI
 - ✅ **Accessibilité intégrée** dans tous les composants
 - ✅ **Imports centralisés** pour une meilleure organisation
+- ✅ **Code nettoyé** sans console.log ni imports inutilisés
+- ✅ **Layout optimisé** sans débordements d'écran
 
 ## 📱 Parcours utilisateur
 
@@ -278,6 +309,18 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **Informations artisan** intégrées (nom, localisation, vérification)
 - **Système de favoris** pour utilisateurs connectés
 - **Pagination automatique** pour de meilleures performances
+- **Bouton "Voir plus"** pour accéder aux détails complets
+
+### 📖 **Détails des créations**
+
+- **Écran détaillé** accessible à tous les utilisateurs
+- **Image en grand format** avec gestion d'erreurs
+- **Informations complètes** : titre, prix, description, matériaux, tags
+- **Profil artisan cliquable** avec lien vers le profil complet
+- **Statistiques détaillées** : note moyenne, nombre d'avis, disponibilité
+- **Gestion des favoris** avec feedback visuel
+- **Actions contextuelles** : bouton de modification pour le créateur
+- **Informations de création** : dates de création et modification
 
 ### 👤 **Profils utilisateur**
 
@@ -286,9 +329,19 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
   - Nom d'entreprise et localisation
   - Spécialités par catégories
   - Description et année de création
+  - Numéro de téléphone pour les contacts
   - Statut de vérification
 - **Upgrade artisan** depuis le profil utilisateur
 - **Validation des données** avant sauvegarde
+
+### 👨‍🎨 **Profils d'artisans publics**
+
+- **Profil détaillé** accessible à tous les utilisateurs
+- **Informations complètes** : nom, localisation, spécialités
+- **Statistiques** : note moyenne, nombre de créations
+- **Liste des créations** avec liens vers les détails
+- **Informations de contact** : email et téléphone
+- **Date d'inscription** et année de création d'entreprise
 
 ### 🎨 **Gestion des créations**
 
@@ -296,6 +349,10 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **Édition en temps réel** des créations existantes
 - **Validation automatique** des champs obligatoires
 - **Interface intuitive** pour la gestion du portfolio
+- **Sélection de photos** avec expo-image-picker
+- **Gestion des matériaux** et tags avec modales
+- **Catégorisation** avec labels traduits
+- **Mise à jour en temps réel** après modifications
 
 ### 🔐 **Authentification complète**
 
@@ -330,6 +387,7 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **Feedback visuel** approprié (loading, erreurs)
 - **Expérience fluide** entre modes visiteur/connecté
 - **Interface épurée** sans icônes superflues
+- **Layout optimisé** sans débordements d'écran
 
 ## 🔒 Sécurité
 
@@ -359,6 +417,10 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
         ↓
         🔍 ExploreScreen (Recherche + Filtres + Favoris)
         ↓
+        📖 CreationDetailScreen (Détails complets)
+        ↓
+        👨‍🎨 CreatorProfileScreen (Profil artisan public)
+        ↓
         👤 ProfilScreen (Utilisateur ↔️ Artisan)
         ↓
         🎨 CreationsScreen (Gestion portfolio)
@@ -372,6 +434,7 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
   - Recherche et filtrage
   - Gestion des favoris
   - Transformations de données Supabase
+  - Gestion robuste des erreurs 406
 - **`useAuth`** : Hook de gestion complète de l'authentification
 - **`UserContext`** : État global utilisateur avec profils artisan
 - **`useFavorites`** : Hook pour la gestion des favoris
@@ -379,7 +442,7 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 ### 📊 **Modèles de données**
 
 - **`User`** : Profil utilisateur avec capacités artisan/acheteur
-- **`ArtisanProfile`** : Profil métier spécialisé
+- **`ArtisanProfile`** : Profil métier spécialisé avec téléphone
 - **`Creation`** : Créations avec catégories et métadonnées
 - **`CreationWithArtisan`** : Créations enrichies avec données artisan
 - **`CreationCategory`** : Enum des catégories disponibles
@@ -396,6 +459,8 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - [ ] **Photos multiples** par création
 - [ ] **Gestion de stock** pour les artisans
 - [ ] **Tableau de bord artisan** avec statistiques
+- [ ] **Système de recherche avancée** avec filtres multiples
+- [ ] **Partage de créations** sur les réseaux sociaux
 
 ## 🤝 Contribution
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
 import { getUserDisplayName } from "../utils/userUtils";
@@ -12,7 +12,6 @@ export const NavigationHeader: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, signOut, isAuthenticated } = useUserContext();
-  
 
   const handleSignOut = async () => {
     try {

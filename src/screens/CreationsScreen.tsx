@@ -341,6 +341,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+    width: "100%",
   },
   header: {
     flexDirection: "row",
@@ -360,6 +361,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+    width: "100%",
   },
   emptyAddButton: {
     backgroundColor: COLORS.primary,
@@ -380,6 +382,7 @@ const styles = StyleSheet.create({
   },
   creationsList: {
     flex: 1,
+    width: "100%",
   },
   sectionTitle: {
     fontSize: 22,
@@ -400,6 +403,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: COLORS.border,
+    width: "100%",
   },
   imageContainer: {
     width: "100%",

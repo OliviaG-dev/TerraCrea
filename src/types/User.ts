@@ -42,6 +42,7 @@ export interface ArtisanProfile {
   totalSales?: number;
   description?: string;
   establishedYear?: number;
+  phone?: string;
 }
 
 // Fonction utilitaire pour créer un utilisateur par défaut
@@ -69,4 +70,5 @@ export interface ArtisanProfileUpdate {
   specialties?: string[];
   description?: string;
   establishedYear?: number;
+  phone?: string;
 }

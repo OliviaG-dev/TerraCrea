@@ -32,6 +32,12 @@ export interface CreationWithArtisan extends Creation {
       rating?: number;
       joinedAt?: string;
       updatedAt?: string;
+      description?: string;
+      establishedYear?: number;
+      specialties?: string[];
+      totalSales?: number;
+      email?: string;
+      phone?: string;
     };
   };
 }

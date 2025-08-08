@@ -259,6 +259,14 @@ const validateArtisanField = (
       if (!Array.isArray(value) || value.length === 0)
         return "Veuillez sélectionner au moins une spécialité";
       return "";
+    case "phone":
+      if (value && value.toString().trim()) {
+        const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
+        if (!phoneRegex.test(value.toString().trim())) {
+          return "Format de téléphone invalide";
+        }
+      }
+      return "";
     default:
       return "";
   }
@@ -313,6 +321,7 @@ export const ProfilScreen = () => {
     description: "",
     establishedYear: new Date().getFullYear(),
     specialties: [] as string[],
+    phone: "",
   });
 
   // État pour les erreurs du profil artisan
@@ -322,6 +331,7 @@ export const ProfilScreen = () => {
     description: "",
     establishedYear: "",
     specialties: "",
+    phone: "",
   });
 
   // Clé pour forcer le re-rendu des formulaires
@@ -342,7 +352,6 @@ export const ProfilScreen = () => {
         const categoriesData = await CreationsApi.getAllCategories();
         setCategories(categoriesData);
       } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error);
         // Fallback vers les catégories du frontend
         setCategories(
           Object.entries(CATEGORY_LABELS).map(([id, label]) => ({ id, label }))
@@ -375,6 +384,7 @@ export const ProfilScreen = () => {
           establishedYear:
             user.artisanProfile.establishedYear || new Date().getFullYear(),
           specialties: user.artisanProfile.specialties || [],
+          phone: user.artisanProfile.phone || "",
         };
         setArtisanForm(newArtisanForm);
       }
@@ -882,6 +892,18 @@ export const ProfilScreen = () => {
                 error={artisanErrors.establishedYear}
               />
 
+              <EditableField
+                label="Téléphone"
+                field="phone"
+                value={artisanForm.phone}
+                placeholder="Ex: +33 6 12 34 56 78"
+                isEditing={editingField === "phone"}
+                onEdit={() => handleEditField("phone")}
+                onSave={(value) => handleSaveArtisanField("phone", value)}
+                onCancel={handleCancelEdit}
+                error={artisanErrors.phone}
+              />
+
               <View style={inputStyles.container}>
                 <Text style={inputStyles.label}>
                   Vos spécialités * (sélectionnez au moins une)
@@ -953,9 +975,11 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    width: "100%",
   },
   content: {
     padding: 20,
+    width: "100%",
   },
   welcomeSection: {
     marginBottom: 20,
@@ -1042,6 +1066,7 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     padding: 20,
+    width: "100%",
   },
   sectionTitle: {
     fontSize: 20,

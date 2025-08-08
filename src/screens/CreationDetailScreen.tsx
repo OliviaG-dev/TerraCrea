@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   Image,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -69,7 +68,6 @@ export const CreationDetailScreen = () => {
           const favoriteStatus = await CreationsApi.isFavorite(creationId);
           setIsFavorite(favoriteStatus);
         } catch (error) {
-          console.warn("Impossible de vérifier le statut favori:", error);
           // Continuer sans le statut favori
         }
       }
@@ -119,7 +117,6 @@ export const CreationDetailScreen = () => {
         });
       }
     } catch (error) {
-      console.error("Erreur toggleFavorite:", error);
       setNotification({
         visible: true,
         title: "❌ Erreur",
@@ -369,9 +366,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+    width: "100%",
   },
   content: {
     flex: 1,
+    width: "100%",
   },
   loadingContainer: {
     flex: 1,

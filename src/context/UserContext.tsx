@@ -116,6 +116,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
               establishedYear:
                 userMetadata.artisanEstablishedYear || new Date().getFullYear(),
               specialties: userMetadata.artisanSpecialties || [],
+              phone: userMetadata.artisanPhone || "",
               verified: appMetadata.verified || false,
               rating: userMetadata.rating || 0,
               totalSales: userMetadata.totalSales || 0,
@@ -215,6 +216,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             artisanDescription: artisanData.description,
             artisanEstablishedYear: artisanData.establishedYear,
             artisanSpecialties: artisanData.specialties,
+            artisanPhone: artisanData.phone,
           },
         });
 
@@ -252,6 +254,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           location: artisanData.location,
           bio: artisanData.description,
           email: auth.user.email,
+          phone: artisanData.phone,
           established_year: artisanData.establishedYear,
           specialties: artisanData.specialties,
           is_verified: false,
@@ -289,6 +292,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             artisanDescription: data.description,
             artisanEstablishedYear: data.establishedYear,
             artisanSpecialties: data.specialties,
+            artisanPhone: data.phone,
           },
         });
 
@@ -309,6 +313,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           name: data.businessName,
           location: data.location,
           bio: data.description,
+          phone: data.phone,
           established_year: data.establishedYear,
           specialties: data.specialties,
           updated_at: new Date().toISOString(),

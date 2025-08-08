@@ -266,6 +266,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: HORIZONTAL_PADDING,
     paddingVertical: 16,
+    width: "100%",
   },
   headerSection: {
     flex: 0.25,
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: "100%",
-    maxWidth: Math.min(380, screenWidth - (HORIZONTAL_PADDING + 10) * 2),
+    maxWidth: Math.min(380, screenWidth - HORIZONTAL_PADDING * 2),
     paddingVertical: 15,
   },
   submitButton: {

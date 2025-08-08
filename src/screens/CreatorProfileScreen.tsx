@@ -18,6 +18,7 @@ import { CreationWithArtisan } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
 import { COLORS, formatDate } from "../utils";
+import { supabase } from "../services/supabase";
 
 type CreatorProfileScreenNavigationProp =
   ScreenNavigationProp<"CreatorProfile">;
@@ -62,9 +63,35 @@ export const CreatorProfileScreen = () => {
         throw new Error("Artisan non trouvé");
       }
 
-      // Prendre les informations de l'artisan depuis sa première création
-      const artisanInfo = artisanCreations[0].artisan;
-      setArtisan(artisanInfo);
+      // Récupérer les données complètes de l'artisan depuis la table artisans
+      const { data: artisanData, error: artisanError } = await supabase
+        .from("artisans")
+        .select("*")
+        .eq("id", artisanId)
+        .single();
+
+      // Prendre les informations de base depuis la première création
+      const baseArtisanInfo = artisanCreations[0].artisan;
+
+      // Enrichir avec les données de la table artisans
+      const enrichedArtisanInfo = {
+        ...baseArtisanInfo,
+        artisanProfile: {
+          ...baseArtisanInfo.artisanProfile,
+          specialties: artisanData?.specialties || [],
+          establishedYear: artisanData?.established_year,
+          description:
+            artisanData?.bio || baseArtisanInfo.artisanProfile?.description,
+          businessName:
+            artisanData?.name || baseArtisanInfo.artisanProfile?.businessName,
+          location:
+            artisanData?.location || baseArtisanInfo.artisanProfile?.location,
+          email: artisanData?.email || baseArtisanInfo.artisanProfile?.email,
+          phone: artisanData?.phone || baseArtisanInfo.artisanProfile?.phone,
+        },
+      };
+
+      setArtisan(enrichedArtisanInfo);
       setCreations(artisanCreations);
     } catch (error) {
       setNotification({
@@ -221,14 +248,34 @@ export const CreatorProfileScreen = () => {
                 artisan.artisanProfile?.joinedAt || artisan.createdAt
               )}
             </Text>
+            <View style={styles.specialtiesContainer}>
+              {artisan.artisanProfile?.specialties &&
+              artisan.artisanProfile.specialties.length > 0 ? (
+                <View style={styles.specialtiesList}>
+                  {artisan.artisanProfile.specialties.map(
+                    (specialty, index) => (
+                      <View key={index} style={styles.specialtyTag}>
+                        <Text style={styles.specialtyText}>{specialty}</Text>
+                      </View>
+                    )
+                  )}
+                </View>
+              ) : (
+                <Text style={styles.noSpecialtiesText}>
+                  Aucune spécialité configurée
+                </Text>
+              )}
+            </View>
           </View>
         </View>
 
         {/* Bio de l'artisan */}
-        {artisan.artisanProfile?.bio && (
+        {artisan.artisanProfile?.description && (
           <View style={styles.bioSection}>
             <Text style={styles.sectionTitle}>À propos</Text>
-            <Text style={styles.bioText}>{artisan.artisanProfile.bio}</Text>
+            <Text style={styles.bioText}>
+              {artisan.artisanProfile.description}
+            </Text>
           </View>
         )}
 
@@ -248,13 +295,32 @@ export const CreatorProfileScreen = () => {
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {(
-                  creations.reduce((sum, c) => sum + c.rating, 0) /
-                  Math.max(creations.length, 1)
-                ).toFixed(1)}
+                {(() => {
+                  const averageRating =
+                    creations.reduce((sum, c) => sum + c.rating, 0) /
+                    Math.max(creations.length, 1);
+                  return averageRating % 1 === 0
+                    ? averageRating.toFixed(0)
+                    : averageRating.toFixed(1);
+                })()}
               </Text>
               <Text style={styles.statLabel}>Note moyenne</Text>
             </View>
+
+            {artisan.artisanProfile?.rating && (
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>
+                  ⭐{" "}
+                  {(() => {
+                    const rating = artisan.artisanProfile.rating;
+                    return rating % 1 === 0
+                      ? rating.toFixed(0)
+                      : rating.toFixed(1);
+                  })()}
+                </Text>
+                <Text style={styles.statLabel}>Note artisan</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -277,6 +343,12 @@ export const CreatorProfileScreen = () => {
                   <Text style={styles.contactValue}>
                     {artisan.artisanProfile.phone}
                   </Text>
+                </View>
+              )}
+              {!artisan.artisanProfile.phone && (
+                <View style={styles.contactItem}>
+                  <Text style={styles.contactLabel}>Téléphone :</Text>
+                  <Text style={styles.contactValue}>Non renseigné</Text>
                 </View>
               )}
             </View>
@@ -315,9 +387,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+    width: "100%",
   },
   content: {
     flex: 1,
+    width: "100%",
   },
   loadingContainer: {
     flex: 1,
@@ -408,6 +482,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textLight,
     fontStyle: "italic",
+    marginBottom: 8,
+  },
+  specialtiesContainer: {
+    marginTop: 8,
+  },
+  noSpecialtiesText: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    fontStyle: "italic",
   },
   bioSection: {
     marginHorizontal: 16,
@@ -426,12 +509,31 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     letterSpacing: 0.1,
   },
+
+  specialtiesList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  specialtyTag: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  specialtyText: {
+    fontSize: 14,
+    color: COLORS.textOnPrimary,
+    fontWeight: "500",
+  },
   statsSection: {
     marginHorizontal: 16,
     marginBottom: 24,
   },
   statsGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-around",
     backgroundColor: COLORS.cardBackground,
     borderRadius: 16,
@@ -446,6 +548,9 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: "center",
+    minWidth: 80,
+    marginHorizontal: 8,
+    marginVertical: 8,
   },
   statValue: {
     fontSize: 24,
@@ -506,6 +611,7 @@ const styles = StyleSheet.create({
   },
   creationsList: {
     gap: 16,
+    width: "100%",
   },
   creationCard: {
     backgroundColor: COLORS.cardBackground,

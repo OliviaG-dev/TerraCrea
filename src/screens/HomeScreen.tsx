@@ -242,9 +242,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   productCard: {
-    width: (width - HORIZONTAL_PADDING * 2 - CARD_SPACING * 2 - 4) / 3, // -4 marge de sécurité
+    width: Math.min(
+      (width - HORIZONTAL_PADDING * 2 - CARD_SPACING * 2 - 4) / 3,
+      width * 0.28
+    ), // Limite la largeur maximale
     height: 70,
-    maxWidth: width * 0.28, // Limite la largeur maximale
   },
   productImage1: {
     flex: 1,

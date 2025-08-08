@@ -585,6 +585,7 @@ export const AddCreationScreen = () => {
             <FlatList
               data={categories}
               keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[
@@ -635,6 +636,7 @@ export const AddCreationScreen = () => {
             <FlatList
               data={commonMaterials}
               keyExtractor={(item) => item}
+              showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[
@@ -692,6 +694,7 @@ export const AddCreationScreen = () => {
             <FlatList
               data={commonTags}
               keyExtractor={(item) => item}
+              showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[
@@ -734,6 +737,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fafaf9",
+    width: "100%",
   },
   header: {
     flexDirection: "row",
@@ -753,6 +757,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+    width: "100%",
   },
   sectionTitle: {
     fontSize: 20,
@@ -929,6 +934,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: "70%",
+    width: "100%",
   },
   modalHeader: {
     flexDirection: "row",

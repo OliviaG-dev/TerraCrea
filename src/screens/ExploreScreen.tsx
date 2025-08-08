@@ -424,7 +424,7 @@ const ExploreScreen: React.FC = () => {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={true}
+        showsVerticalScrollIndicator={false}
         accessible={false}
         importantForAccessibility="no-hide-descendants"
         ref={(scrollViewRef) => {
@@ -470,6 +470,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fafaf9",
+    width: "100%",
   },
 
   searchContainer: {
@@ -548,10 +549,11 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 20,
     alignItems: "center",
+    width: "100%",
   },
   creationsGrid: {
     width: "100%",
-    maxWidth: 800,
+    maxWidth: width - HORIZONTAL_PADDING * 2,
   },
   gridContent: {
     flexDirection: "row",
@@ -559,6 +561,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
+    maxWidth: "100%",
   },
   cardWrapper: {
     width: CARD_WIDTH,
