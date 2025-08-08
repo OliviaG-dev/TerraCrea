@@ -30,6 +30,8 @@ export interface CreationWithArtisan extends Creation {
       location?: string;
       verified: boolean;
       rating?: number;
+      joinedAt?: string;
+      updatedAt?: string;
     };
   };
 }

@@ -82,3 +82,37 @@ export const isTimeSyncError = (error: any): boolean => {
     message.includes("invalid token")
   );
 };
+
+// Fonction robuste pour formater une date
+export const formatDate = (dateInput: any): string => {
+  if (!dateInput) {
+    return "Date inconnue";
+  }
+
+  // Si c'est déjà une chaîne "null" ou "undefined"
+  if (
+    typeof dateInput === "string" &&
+    (dateInput === "null" || dateInput === "undefined")
+  ) {
+    return "Date inconnue";
+  }
+
+  try {
+    const date = new Date(dateInput);
+
+    // Vérifier si la date est valide
+    if (isNaN(date.getTime())) {
+      return "Date inconnue";
+    }
+
+    return date.toLocaleDateString("fr-FR");
+  } catch (error) {
+    console.log("Erreur formatDate:", error, "Input:", dateInput);
+    return "Date inconnue";
+  }
+};
+
+// Fonction pour formater un prix
+export const formatPrice = (price: number): string => {
+  return `${price}€`;
+};

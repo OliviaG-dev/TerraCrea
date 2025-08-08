@@ -13,6 +13,7 @@ import { CreationsScreen } from "../screens/CreationsScreen";
 import { AddCreationScreen } from "../screens/AddCreationScreen";
 import { EditCreationScreen } from "../screens/EditCreationScreen";
 import { CreationDetailScreen } from "../screens/CreationDetailScreen";
+import { CreatorProfileScreen } from "../screens/CreatorProfileScreen";
 import { NavigationHeader } from "./NavigationHeader";
 import { RootStackParamList } from "../types/Navigation";
 import {
@@ -145,6 +146,14 @@ export const AuthNavigator: React.FC = () => {
         component={CreationDetailScreen}
         options={{
           title: "Détails de la création",
+          headerRight: () => <NavigationHeader />,
+        }}
+      />
+      <Stack.Screen
+        name="CreatorProfile"
+        component={CreatorProfileScreen}
+        options={{
+          title: "Profil Artisan",
           headerRight: () => <NavigationHeader />,
         }}
       />

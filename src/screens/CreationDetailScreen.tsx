@@ -17,7 +17,7 @@ import { CommonHeader } from "../components";
 import { CreationWithArtisan, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
-import { COLORS } from "../utils";
+import { COLORS, formatDate } from "../utils";
 
 type CreationDetailScreenNavigationProp =
   ScreenNavigationProp<"CreationDetail">;
@@ -142,7 +142,7 @@ export const CreationDetailScreen = () => {
   // Navigation vers le profil de l'artisan
   const handleViewArtisanProfile = () => {
     if (creation?.artisan) {
-      navigation.navigate("Profil", { artisanId: creation.artisan.id });
+      navigation.navigate("CreatorProfile", { artisanId: creation.artisan.id });
     }
   };
 
@@ -333,14 +333,14 @@ export const CreationDetailScreen = () => {
               <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>Créée le :</Text>
                 <Text style={styles.infoValue}>
-                  {new Date(creation.createdAt).toLocaleDateString("fr-FR")}
+                  {formatDate(creation.createdAt)}
                 </Text>
               </View>
               {creation.updatedAt && (
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>Modifiée le :</Text>
                   <Text style={styles.infoValue}>
-                    {new Date(creation.updatedAt).toLocaleDateString("fr-FR")}
+                    {formatDate(creation.updatedAt)}
                   </Text>
                 </View>
               )}

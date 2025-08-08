@@ -100,6 +100,8 @@ const transformSupabaseCreationWithUser = (
         location: supabaseCreation.artisan_location,
         verified: supabaseCreation.artisan_is_verified || false,
         rating: supabaseCreation.rating, // Utiliser la note de la création
+        joinedAt: supabaseCreation.artisan_joined_at,
+        updatedAt: supabaseCreation.artisan_updated_at,
       },
     },
   };
