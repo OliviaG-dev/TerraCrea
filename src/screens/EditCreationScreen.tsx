@@ -296,9 +296,9 @@ export const EditCreationScreen = () => {
         type: "success",
       });
 
-      // Retourner à l'écran précédent après un délai
+      // Forcer le rafraîchissement des données en naviguant vers l'écran des créations
       setTimeout(() => {
-        navigation.goBack();
+        navigation.navigate("Creations");
       }, 2000);
     } catch (error) {
       setNotification({

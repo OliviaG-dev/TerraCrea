@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
 import { NotificationToast } from "../components/NotificationToast";
 import { CommonHeader } from "../components";
-import { Creation } from "../types/Creation";
+import { Creation, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
 import { COLORS, emptyStyles, loadingStyles, modalStyles } from "../utils";
@@ -82,6 +82,11 @@ export const CreationsScreen = () => {
 
   const handleAddCreation = () => {
     navigation.navigate("AddCreation");
+  };
+
+  const handleViewCreation = (creation: Creation) => {
+    // Navigation vers l'écran de détail de la création
+    navigation.navigate("CreationDetail", { creationId: creation.id });
   };
 
   const handleEditCreation = (creation: Creation) => {
@@ -173,15 +178,38 @@ export const CreationsScreen = () => {
             {creation.description}
           </Text>
 
+          {creation.materials && creation.materials.length > 0 && (
+            <View style={styles.materialsContainer}>
+              <Text style={styles.materialsLabel}>Matériaux :</Text>
+              <Text style={styles.materialsText}>
+                {creation.materials.slice(0, 3).join(", ")}
+                {creation.materials.length > 3 && "..."}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.creationStats}>
-            <Text style={styles.creationStat}>⭐ {creation.rating}</Text>
-            <Text style={styles.creationStat}>
-              📊 {creation.reviewCount} avis
+            <View style={styles.statsLeft}>
+              <Text style={styles.creationStat}>
+                ⭐ {creation.rating.toFixed(1)}
+              </Text>
+              <Text style={styles.creationStat}>
+                📊 {creation.reviewCount} avis
+              </Text>
+            </View>
+            <Text style={styles.creationCategory}>
+              {CATEGORY_LABELS[creation.category] || creation.category}
             </Text>
-            <Text style={styles.creationCategory}>{creation.category}</Text>
           </View>
 
           <View style={styles.creationActions}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.viewButton]}
+              onPress={() => handleViewCreation(creation)}
+            >
+              <Text style={styles.viewButtonText}>Voir plus</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.actionButton, styles.editButton]}
               onPress={() => handleEditCreation(creation)}
@@ -278,8 +306,8 @@ export const CreationsScreen = () => {
             <Text style={modalStyles.title}>🗑️ Supprimer la création</Text>
 
             <Text style={modalStyles.message}>
-              Êtes-vous sûr de vouloir supprimer définitivement
-              <Text style={{ fontWeight: "bold" }}>
+              Êtes-vous sûr de vouloir supprimer définitivement{" "}
+              <Text style={{ fontWeight: "700", color: COLORS.textPrimary }}>
                 "{deleteModal.creation?.title}" ?
               </Text>
               {"\n\n"}Cette action ne peut pas être annulée.
@@ -312,7 +340,7 @@ export const CreationsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafaf9",
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: "row",
@@ -320,150 +348,209 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.cardBackground,
     borderBottomWidth: 1,
-    borderBottomColor: "#e8e9e8",
+    borderBottomColor: COLORS.border,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   content: {
     flex: 1,
     padding: 20,
   },
   emptyAddButton: {
-    backgroundColor: "#4a5c4a",
+    backgroundColor: COLORS.primary,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
+    elevation: 2,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   emptyAddButtonText: {
-    color: "#fff",
+    color: COLORS.textOnPrimary,
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "System",
+    textAlign: "center",
   },
   creationsList: {
     flex: 1,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    marginBottom: 20,
-    fontFamily: "System",
+    fontSize: 22,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+    marginBottom: 24,
+    letterSpacing: -0.5,
   },
   creationCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 16,
+    marginBottom: 20,
+    elevation: 3,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   imageContainer: {
     width: "100%",
     height: 200,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: COLORS.lightGray,
   },
   creationImage: {
     width: "100%",
     height: "100%",
   },
   creationContent: {
-    padding: 16,
+    padding: 20,
   },
   imagePlaceholder: {
     width: "100%",
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: COLORS.lightGray,
   },
   imagePlaceholderText: {
     fontSize: 48,
     marginBottom: 8,
+    opacity: 0.6,
   },
   imagePlaceholderSubtext: {
     fontSize: 14,
-    color: "#7a8a7a",
-    fontFamily: "System",
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
   },
   creationHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+    alignItems: "flex-start",
+    marginBottom: 12,
   },
   creationTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#4a5c4a",
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
     flex: 1,
-    fontFamily: "System",
+    lineHeight: 26,
+    letterSpacing: -0.3,
   },
   creationPrice: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#ff6b35",
-    fontFamily: "System",
+    fontSize: 20,
+    fontWeight: "800",
+    color: COLORS.accent,
+    marginLeft: 12,
+    letterSpacing: -0.3,
   },
   creationDescription: {
-    fontSize: 14,
-    color: "#7a8a7a",
-    marginBottom: 12,
-    lineHeight: 20,
-    fontFamily: "System",
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    marginBottom: 16,
+    lineHeight: 22,
+    letterSpacing: 0.1,
+  },
+  materialsContainer: {
+    marginBottom: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 8,
+  },
+  materialsLabel: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    fontWeight: "600",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  materialsText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
   },
   creationStats: {
     flexDirection: "row",
-    gap: 16,
-    marginBottom: 16,
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 10,
+  },
+  statsLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 20,
   },
   creationStat: {
-    fontSize: 12,
-    color: "#8a9a8a",
-    fontFamily: "System",
+    fontSize: 13,
+    color: COLORS.textLight,
+    fontWeight: "500",
   },
   creationCategory: {
-    fontSize: 12,
-    color: "#4a5c4a",
-    fontWeight: "500",
-    fontFamily: "System",
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: "600",
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    overflow: "hidden",
   },
   creationActions: {
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
     alignItems: "center",
+    elevation: 2,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  viewButton: {
+    backgroundColor: COLORS.secondary,
+  },
+  viewButtonText: {
+    color: COLORS.textOnPrimary,
+    fontSize: 15,
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
   editButton: {
-    backgroundColor: "#4a5c4a",
+    backgroundColor: COLORS.primary,
   },
   editButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
-    fontFamily: "System",
+    color: COLORS.textOnPrimary,
+    fontSize: 15,
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
   deleteButton: {
     backgroundColor: COLORS.danger,
   },
   deleteButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
-    fontFamily: "System",
+    color: COLORS.textOnPrimary,
+    fontSize: 15,
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
   errorContainer: {
     flex: 1,
@@ -473,40 +560,46 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: "#7a8a7a",
+    color: COLORS.textSecondary,
     textAlign: "center",
-    fontFamily: "System",
+    lineHeight: 24,
+    letterSpacing: 0.2,
   },
   // Styles spécifiques pour les boutons de la modale
   deleteModalButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 44,
+    minHeight: 48,
+    elevation: 2,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   cancelButton: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: COLORS.lightGray,
     borderWidth: 1,
-    borderColor: "#e8e9e8",
+    borderColor: COLORS.border,
   },
   cancelButtonText: {
-    color: "#4a5c4a",
+    color: COLORS.textPrimary,
     fontSize: 16,
-    fontWeight: "500",
-    fontFamily: "System",
+    fontWeight: "600",
     textAlign: "center",
+    letterSpacing: 0.2,
   },
   confirmDeleteButton: {
     backgroundColor: COLORS.danger,
   },
   confirmDeleteButtonText: {
-    color: "#fff",
+    color: COLORS.textOnPrimary,
     fontSize: 16,
-    fontWeight: "500",
-    fontFamily: "System",
+    fontWeight: "600",
     textAlign: "center",
+    letterSpacing: 0.2,
   },
 });

@@ -12,6 +12,7 @@ import { ResetPasswordScreen } from "../screens/ResetPasswordScreen";
 import { CreationsScreen } from "../screens/CreationsScreen";
 import { AddCreationScreen } from "../screens/AddCreationScreen";
 import { EditCreationScreen } from "../screens/EditCreationScreen";
+import { CreationDetailScreen } from "../screens/CreationDetailScreen";
 import { NavigationHeader } from "./NavigationHeader";
 import { RootStackParamList } from "../types/Navigation";
 import {
@@ -136,6 +137,14 @@ export const AuthNavigator: React.FC = () => {
         options={{
           title: "Modifier la création",
           headerLeft: () => null, // Empêche le retour
+          headerRight: () => <NavigationHeader />,
+        }}
+      />
+      <Stack.Screen
+        name="CreationDetail"
+        component={CreationDetailScreen}
+        options={{
+          title: "Détails de la création",
           headerRight: () => <NavigationHeader />,
         }}
       />

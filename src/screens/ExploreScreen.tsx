@@ -266,7 +266,7 @@ const ExploreScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.viewDetailsButton}
             onPress={() => {
-              // TODO: Navigation vers les détails de la création
+              navigation.navigate("CreationDetail", { creationId: item.id });
             }}
             accessible={true}
             accessibilityRole="button"

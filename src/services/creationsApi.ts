@@ -539,17 +539,36 @@ export class CreationsApi {
         throw new Error("Utilisateur non connecté");
       }
 
+      // Vérifier d'abord si la création existe
+      const { data: creationExists } = await supabase
+        .from("creations")
+        .select("id")
+        .eq("id", creationId)
+        .single();
+
+      if (!creationExists) {
+        throw new Error("Création non trouvée");
+      }
+
+      // Vérifier si déjà en favoris
+      const isAlreadyFavorite = await this.isFavorite(creationId);
+      if (isAlreadyFavorite) {
+        return true; // Déjà en favoris
+      }
+
       const { error } = await supabase.from("user_favorites").insert({
         user_id: user.id,
         creation_id: creationId,
       });
 
       if (error) {
+        console.error("Erreur addToFavorites:", error);
         return false;
       }
 
       return true;
     } catch (error) {
+      console.error("Exception addToFavorites:", error);
       return false;
     }
   }
@@ -566,6 +585,12 @@ export class CreationsApi {
         throw new Error("Utilisateur non connecté");
       }
 
+      // Vérifier si en favoris avant de supprimer
+      const isFavorite = await this.isFavorite(creationId);
+      if (!isFavorite) {
+        return true; // Pas en favoris, considérer comme succès
+      }
+
       const { error } = await supabase
         .from("user_favorites")
         .delete()
@@ -573,11 +598,13 @@ export class CreationsApi {
         .eq("creation_id", creationId);
 
       if (error) {
+        console.error("Erreur removeFromFavorites:", error);
         return false;
       }
 
       return true;
     } catch (error) {
+      console.error("Exception removeFromFavorites:", error);
       return false;
     }
   }
@@ -592,20 +619,46 @@ export class CreationsApi {
       } = await supabase.auth.getUser();
       if (!user) return false;
 
+      // Vérifier d'abord si la création existe
+      const { data: creationExists } = await supabase
+        .from("creations")
+        .select("id")
+        .eq("id", creationId)
+        .single();
+
+      if (!creationExists) {
+        return false;
+      }
+
       const { data, error } = await supabase
         .from("user_favorites")
         .select("id")
         .eq("user_id", user.id)
         .eq("creation_id", creationId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== "PGRST116") {
+      if (error) {
+        console.error("Erreur isFavorite:", error);
         return false;
       }
 
       return !!data;
     } catch (error) {
+      console.error("Exception isFavorite:", error);
       return false;
+    }
+  }
+
+  static async toggleFavorite(creationId: string): Promise<boolean> {
+    try {
+      const isFav = await this.isFavorite(creationId);
+      if (isFav) {
+        return await this.removeFromFavorites(creationId);
+      } else {
+        return await this.addToFavorites(creationId);
+      }
+    } catch (error) {
+      throw new Error("Erreur lors de la modification des favoris");
     }
   }
 
@@ -631,6 +684,7 @@ export class CreationsApi {
         .order("created_at", { ascending: false });
 
       if (error) {
+        console.error("Erreur getUserFavorites:", error);
         return [];
       }
 
@@ -640,6 +694,7 @@ export class CreationsApi {
           .filter(Boolean) || []
       );
     } catch (error) {
+      console.error("Exception getUserFavorites:", error);
       return [];
     }
   }
@@ -775,6 +830,7 @@ export class CreationsApi {
     artisan: any;
     categories: any[];
     canCreate: boolean;
+    favoritesTest: any;
   }> {
     try {
       const {
@@ -820,11 +876,22 @@ export class CreationsApi {
         await supabase.from("creations").delete().eq("id", testInsert.id);
       }
 
+      // Test des favoris
+      const { data: favoritesTest, error: favoritesError } = await supabase
+        .from("user_favorites")
+        .select("id")
+        .limit(1);
+
       return {
         user: { id: user.id, email: user.email },
         artisan: artisan || null,
         categories: categories || [],
         canCreate: !insertError,
+        favoritesTest: {
+          success: !favoritesError,
+          error: favoritesError,
+          data: favoritesTest,
+        },
       };
     } catch (error) {
       return {
@@ -832,6 +899,11 @@ export class CreationsApi {
         artisan: null,
         categories: [],
         canCreate: false,
+        favoritesTest: {
+          success: false,
+          error: error,
+          data: null,
+        },
       };
     }
   }
@@ -875,23 +947,53 @@ export class CreationsApi {
         throw new Error("Vous ne pouvez modifier que vos propres créations");
       }
 
-      // Appeler la fonction RPC pour mettre à jour la création et ses tags
-      const { error } = await supabase.rpc("update_creation_with_tags", {
-        p_creation_id: creationId,
-        creation_data: JSON.stringify({
-          title: updateData.title,
-          description: updateData.description,
-          price: updateData.price,
-          category_id: updateData.category,
-          materials: updateData.materials,
-          image_url: updateData.imageUrl,
-          is_available: updateData.isAvailable,
-        }),
-        new_tags: updateData.tags || [],
-      });
+      // Mettre à jour la création directement
+      const updateFields: any = {};
+      if (updateData.title !== undefined) updateFields.title = updateData.title;
+      if (updateData.description !== undefined)
+        updateFields.description = updateData.description;
+      if (updateData.price !== undefined) updateFields.price = updateData.price;
+      if (updateData.category !== undefined)
+        updateFields.category_id = updateData.category;
+      if (updateData.materials !== undefined)
+        updateFields.materials = updateData.materials;
+      if (updateData.imageUrl !== undefined)
+        updateFields.image_url = updateData.imageUrl;
+      if (updateData.isAvailable !== undefined)
+        updateFields.is_available = updateData.isAvailable;
 
-      if (error) {
+      const { error: updateError } = await supabase
+        .from("creations")
+        .update(updateFields)
+        .eq("id", creationId);
+
+      if (updateError) {
         throw new Error("Erreur lors de la mise à jour de la création");
+      }
+
+      // Mettre à jour les tags si fournis
+      if (updateData.tags !== undefined) {
+        // Supprimer les anciens tags
+        await supabase
+          .from("creation_tags")
+          .delete()
+          .eq("creation_id", creationId);
+
+        // Ajouter les nouveaux tags
+        if (updateData.tags.length > 0) {
+          const { error: tagsError } = await supabase
+            .from("creation_tags")
+            .insert(
+              updateData.tags.map((tag) => ({
+                creation_id: creationId,
+                tag_name: tag,
+              }))
+            );
+
+          if (tagsError) {
+            throw new Error("Erreur lors de la mise à jour des tags");
+          }
+        }
       }
 
       // Récupérer la création mise à jour
