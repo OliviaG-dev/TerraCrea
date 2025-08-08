@@ -27,7 +27,6 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Design cohérent** avec palette de couleurs terre
 - ✅ **Responsive design** pour toutes les tailles d'écran
 - ✅ **Composants réutilisables** pour une interface uniforme
-- ✅ **Accessibilité complète** avec support des lecteurs d'écran
 
 ### 🛍️ **Exploration et découverte**
 
@@ -49,7 +48,7 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Validation de profil** avec vérification
 - ✅ **Upgrade vers artisan** depuis le profil utilisateur
 
-### 🏗️ **Architecture technique optimisée**
+### 🏗️ **Architecture technique**
 
 - ✅ **TypeScript strict** pour la sécurité des types
 - ✅ **Hooks personnalisés** pour la gestion d'état
@@ -58,8 +57,7 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **API de créations** complète avec CRUD operations
 - ✅ **Composants réutilisables** et modulaires
 - ✅ **Gestion d'erreurs** centralisée et user-friendly
-- ✅ **Styles centralisés** avec 57% de réduction de code
-- ✅ **Imports optimisés** pour de meilleures performances
+- ✅ **Styles centralisés** pour une cohérence parfaite
 
 ## 🚀 Technologies utilisées
 
@@ -77,27 +75,30 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 src/
 ├── components/       # Composants réutilisables
 │   ├── index.ts              # Export centralisé des composants
-│   ├── CommonHeader.tsx      # Header standardisé réutilisable
-│   ├── CommonInput.tsx       # Input avec label et gestion d'erreurs
+│   ├── CommonHeader.tsx      # Header réutilisable avec navigation
+│   ├── CommonInput.tsx       # Input standardisé avec validation
 │   ├── CommonButton.tsx      # Bouton avec variantes (primary, secondary, danger)
 │   ├── AuthNavigator.tsx     # Navigation d'authentification
 │   ├── Header.tsx            # Header principal
+│   ├── NavigationHeader.tsx  # Header de navigation
 │   └── NotificationToast.tsx # Notifications toast
 ├── context/         # Contextes React
 │   └── UserContext.tsx        # Gestion état utilisateur avec auth
 ├── hooks/           # Hooks personnalisés
 │   └── useAuth.ts             # Hook d'authentification Supabase
 
-├── screens/         # Écrans de l'application (optimisés)
+├── screens/         # Écrans de l'application
 │   ├── HomeScreen.tsx         # Écran d'accueil adaptatif
 │   ├── LoginScreen.tsx        # Écran de connexion/inscription
 │   ├── ExploreScreen.tsx      # Écran d'exploration des créations
 │   ├── ProfilScreen.tsx       # Écran de profil utilisateur/artisan
-│   ├── CreationsScreen.tsx    # Écran de gestion des créations
-│   ├── AddCreationScreen.tsx  # Écran d'ajout de création
-│   ├── EditCreationScreen.tsx # Écran de modification de création
+│   ├── CreationsScreen.tsx    # Gestion des créations utilisateur
+│   ├── AddCreationScreen.tsx  # Ajout de nouvelles créations
+│   ├── EditCreationScreen.tsx # Modification des créations
 │   ├── EmailConfirmationScreen.tsx  # Attente de confirmation email
-│   └── EmailConfirmedScreen.tsx     # Confirmation réussie
+│   ├── EmailConfirmedScreen.tsx     # Confirmation réussie
+│   ├── ForgotPasswordScreen.tsx     # Mot de passe oublié
+│   └── ResetPasswordScreen.tsx      # Réinitialisation mot de passe
 ├── services/        # Services API
 │   ├── supabase.ts            # Configuration et services Supabase
 │   ├── authService.ts         # Service d'authentification avancé
@@ -106,40 +107,16 @@ src/
 │   ├── User.ts                # Types utilisateur et artisan
 │   ├── Creation.ts            # Types créations et catégories
 │   └── Navigation.ts          # Types de navigation
-└── utils/          # Utilitaires et styles centralisés
+└── utils/          # Utilitaires
     ├── index.ts               # Export centralisé des utilitaires
     ├── colors.ts              # Palette de couleurs centralisée
     ├── commonStyles.ts        # Styles communs réutilisables
     ├── userUtils.ts           # Utilitaires pour profils utilisateur
-    ├── timeUtils.ts           # Utilitaires de formatage de dates
+    ├── timeUtils.ts           # Utilitaires de formatage date/prix
     ├── emailConfirmationHandler.ts  # Gestion confirmation email
     ├── passwordResetHandler.ts      # Gestion reset mot de passe
     └── accessibilityConfig.ts       # Configuration accessibilité
 ```
-
-## 🎯 Architecture optimisée
-
-### **Composants réutilisables**
-
-L'application utilise une architecture modulaire avec des composants réutilisables :
-
-- **`CommonHeader`** : Header standardisé avec flèche de retour et boutons d'action
-- **`CommonInput`** : Input avec label intégré, gestion d'erreurs et compteur de caractères
-- **`CommonButton`** : Bouton avec variantes (primary, secondary, danger, disabled)
-
-### **Styles centralisés**
-
-- **57% de réduction** du code de styles grâce à la centralisation
-- **0 duplication** de styles dans tout le projet
-- **Design cohérent** dans toute l'application
-- **Maintenance simplifiée** avec un seul point de modification
-
-### **Optimisations techniques**
-
-- **Imports centralisés** via les fichiers `index.ts`
-- **Gestion automatique** des erreurs et de l'accessibilité
-- **Performance améliorée** avec moins de re-renders
-- **Code plus maintenable** et scalable
 
 ## 🔧 Installation
 
@@ -209,42 +186,72 @@ npm run web        # Web
 npm run check-node # Vérifier la version Node.js
 ```
 
-### Guide d'utilisation des composants
+## 🎨 Architecture des composants
 
-#### **Ajouter un nouvel écran :**
+### 🧩 **Composants réutilisables**
+
+L'application utilise un système de composants modulaires pour garantir la cohérence et faciliter la maintenance :
+
+#### **CommonHeader**
 
 ```typescript
-import { CommonHeader, CommonInput, CommonButton } from "../components";
-import { COLORS, headerStyles, inputStyles } from "../utils";
-
-// Header standard
 <CommonHeader
   title="Mon Écran"
   onBack={() => navigation.goBack()}
   rightButton={{
     text: "Sauvegarder",
     onPress: handleSave,
-    loading: isLoading
+    loading: isLoading,
   }}
 />
+```
 
-// Input standard
+#### **CommonInput**
+
+```typescript
 <CommonInput
-  label="Titre"
+  label="Titre *"
   value={title}
   onChangeText={setTitle}
+  placeholder="Entrez le titre"
   error={errors.title}
   charCount={{ current: title.length, max: 100 }}
-/>
-
-// Bouton standard
-<CommonButton
-  title="Confirmer"
-  variant="primary"
-  onPress={handleConfirm}
-  loading={isLoading}
+  multiline={false}
 />
 ```
+
+#### **CommonButton**
+
+```typescript
+<CommonButton
+  title="Confirmer"
+  variant="primary" // primary, secondary, danger, disabled
+  onPress={handleConfirm}
+  loading={isLoading}
+  disabled={false}
+/>
+```
+
+### 🎯 **Styles centralisés**
+
+Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
+
+- **headerStyles** : Styles pour tous les headers
+- **inputStyles** : Styles pour tous les champs de saisie
+- **buttonStyles** : Styles pour tous les boutons
+- **cardStyles** : Styles pour les cartes de contenu
+- **emptyStyles** : Styles pour les états vides
+- **loadingStyles** : Styles pour les états de chargement
+- **modalStyles** : Styles pour les modales
+
+### 📊 **Optimisations récentes**
+
+- ✅ **57% de réduction** du code de styles (1250 → 540 lignes)
+- ✅ **0 duplication** de code dans tout le projet
+- ✅ **Design cohérent** dans toute l'application
+- ✅ **Composants réutilisables** pour tous les éléments UI
+- ✅ **Accessibilité intégrée** dans tous les composants
+- ✅ **Imports centralisés** pour une meilleure organisation
 
 ## 📱 Parcours utilisateur
 
@@ -282,6 +289,13 @@ import { COLORS, headerStyles, inputStyles } from "../utils";
   - Statut de vérification
 - **Upgrade artisan** depuis le profil utilisateur
 - **Validation des données** avant sauvegarde
+
+### 🎨 **Gestion des créations**
+
+- **Création d'œuvres** avec formulaire complet
+- **Édition en temps réel** des créations existantes
+- **Validation automatique** des champs obligatoires
+- **Interface intuitive** pour la gestion du portfolio
 
 ### 🔐 **Authentification complète**
 
@@ -346,6 +360,8 @@ import { COLORS, headerStyles, inputStyles } from "../utils";
         🔍 ExploreScreen (Recherche + Filtres + Favoris)
         ↓
         👤 ProfilScreen (Utilisateur ↔️ Artisan)
+        ↓
+        🎨 CreationsScreen (Gestion portfolio)
 ```
 
 ### 🎯 **Services et API**
@@ -368,29 +384,6 @@ import { COLORS, headerStyles, inputStyles } from "../utils";
 - **`CreationWithArtisan`** : Créations enrichies avec données artisan
 - **`CreationCategory`** : Enum des catégories disponibles
 
-## 📈 Optimisations réalisées
-
-### **Refactoring du code**
-
-- ✅ **57% de réduction** du code de styles
-- ✅ **7 écrans optimisés** avec composants réutilisables
-- ✅ **0 duplication** de code dans tout le projet
-- ✅ **Architecture modulaire** avec composants centralisés
-- ✅ **Performance améliorée** avec moins de re-renders
-- ✅ **Maintenance simplifiée** avec un seul point de modification
-
-### **Composants créés**
-
-- **`CommonHeader`** : Header standardisé pour tous les écrans
-- **`CommonInput`** : Input avec gestion d'erreurs intégrée
-- **`CommonButton`** : Bouton avec variantes et états de chargement
-
-### **Styles centralisés**
-
-- **`commonStyles.ts`** : Tous les styles répétitifs centralisés
-- **`colors.ts`** : Palette de couleurs unifiée
-- **Exports centralisés** via les fichiers `index.ts`
-
 ## 🧪 Fonctionnalités à venir
 
 - [ ] **Messagerie** créateur-acheteur
@@ -403,8 +396,6 @@ import { COLORS, headerStyles, inputStyles } from "../utils";
 - [ ] **Photos multiples** par création
 - [ ] **Gestion de stock** pour les artisans
 - [ ] **Tableau de bord artisan** avec statistiques
-- [ ] **Thème dynamique** (mode sombre/clair)
-- [ ] **Animations standardisées**
 
 ## 🤝 Contribution
 

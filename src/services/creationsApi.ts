@@ -20,7 +20,8 @@ interface SupabaseCreationWithUser {
   review_count: number;
   created_at: string;
   updated_at?: string;
-  tags: string[]; // Tags directement dans creations_full
+  tags: string[]; // Tags existants de la table creations
+  creation_tags: string[]; // Nouveaux tags depuis la table creation_tags
   category_label: string; // Label de la catégorie depuis la jointure
   // Données artisan depuis la jointure avec la table artisans
   artisan_name?: string;
@@ -86,7 +87,7 @@ const transformSupabaseCreationWithUser = (
     reviewCount: supabaseCreation.review_count,
     createdAt: supabaseCreation.created_at,
     updatedAt: supabaseCreation.updated_at,
-    tags: supabaseCreation.tags || [],
+    tags: supabaseCreation.creation_tags || supabaseCreation.tags || [],
     artisan: {
       id: supabaseCreation.artisan_id,
       username: supabaseCreation.artisan_email?.split("@")[0], // Généré à partir de l'email
@@ -109,6 +110,118 @@ const transformSupabaseCreationWithUser = (
 // =============================================
 
 export class CreationsApi {
+  static deleteCreation = async (creationId: string): Promise<boolean> => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Utilisateur non connecté");
+      }
+
+      // Vérifier que l'utilisateur est propriétaire de la création
+      const { data: existingCreation, error: fetchError } = await supabase
+        .from("creations")
+        .select("artisan_id, image_url")
+        .eq("id", creationId)
+        .single();
+
+      if (fetchError || !existingCreation) {
+        throw new Error("Création non trouvée");
+      }
+
+      if (existingCreation.artisan_id !== user.id) {
+        throw new Error("Vous ne pouvez supprimer que vos propres créations");
+      }
+
+      // Supprimer l'image si elle existe
+      if (existingCreation.image_url) {
+        try {
+          const imagePath = existingCreation.image_url.split("/").pop();
+          if (imagePath) {
+            await supabase.storage.from("creation-images").remove([imagePath]);
+          }
+        } catch (storageError) {
+          // Erreur silencieuse lors de la suppression de l'image
+        }
+      }
+
+      const { error } = await supabase
+        .from("creations")
+        .delete()
+        .eq("id", creationId);
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (error) {
+      throw new Error(
+        `Erreur lors de la suppression: ${
+          error instanceof Error ? error.message : "Erreur inconnue"
+        }`
+      );
+    }
+  };
+
+  static uploadCreationImage = async (
+    file: File | Blob | string,
+    fileName: string
+  ): Promise<string> => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Utilisateur non connecté");
+      }
+
+      // Générer un nom de fichier unique
+      const timestamp = Date.now();
+      const uniqueFileName = `${user.id}_${timestamp}_${fileName}`;
+
+      let fileToUpload: File | Blob;
+
+      // Si c'est une URI string (React Native), la convertir en Blob
+      if (typeof file === "string") {
+        const response = await fetch(file);
+        fileToUpload = await response.blob();
+      } else {
+        fileToUpload = file;
+      }
+
+      // Upload vers Supabase Storage
+      const { data, error } = await supabase.storage
+        .from("creation-images")
+        .upload(uniqueFileName, fileToUpload, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Obtenir l'URL publique
+      const { data: urlData } = supabase.storage
+        .from("creation-images")
+        .getPublicUrl(uniqueFileName);
+
+      // Vérifier que l'URL est valide
+      if (!urlData.publicUrl) {
+        throw new Error("Impossible de générer l'URL publique de l'image");
+      }
+
+      // Attendre un peu pour s'assurer que l'image est disponible
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      return urlData.publicUrl;
+    } catch (error) {
+      throw new Error("Erreur lors de l'upload de l'image");
+    }
+  };
+
   /**
    * Récupère toutes les créations disponibles avec informations artisan
    */
@@ -582,7 +695,19 @@ export class CreationsApi {
         );
       }
 
-      const { data, error } = await supabase
+      // Vérifier que l'utilisateur existe dans la table artisans
+      const { data: artisan, error: artisanError } = await supabase
+        .from("artisans")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (artisanError || !artisan) {
+        throw new Error("Vous devez être artisan pour créer une création");
+      }
+
+      // Insérer d'abord la création
+      const { data: creationResult, error: creationError } = await supabase
         .from("creations")
         .insert({
           title: creationData.title,
@@ -591,8 +716,7 @@ export class CreationsApi {
           category_id: creationData.category,
           artisan_id: creationData.artisanId,
           materials: creationData.materials,
-          tags: creationData.tags,
-          image_url: creationData.imageUrl || null,
+          ...(creationData.imageUrl && { image_url: creationData.imageUrl }), // N'inclure que si imageUrl existe
           is_available: true,
           rating: 0,
           review_count: 0,
@@ -600,15 +724,33 @@ export class CreationsApi {
         .select("id")
         .single();
 
-      if (error) {
-        throw error;
+      if (creationError) {
+        throw creationError;
+      }
+
+      // Insérer les tags si présents
+      if (creationData.tags && creationData.tags.length > 0) {
+        const { error: tagsError } = await supabase
+          .from("creation_tags")
+          .insert(
+            creationData.tags.map((tag) => ({
+              creation_id: creationResult.id,
+              tag_name: tag,
+            }))
+          );
+
+        if (tagsError) {
+          // Si l'insertion des tags échoue, supprimer la création
+          await supabase.from("creations").delete().eq("id", creationResult.id);
+          throw tagsError;
+        }
       }
 
       // Récupérer la création complète avec les données artisan
       const { data: fullCreation, error: fetchError } = await supabase
         .from("creations_full")
         .select("*")
-        .eq("id", data.id)
+        .eq("id", creationResult.id)
         .single();
 
       if (fetchError) {
@@ -733,165 +875,41 @@ export class CreationsApi {
         throw new Error("Vous ne pouvez modifier que vos propres créations");
       }
 
-      const { data, error } = await supabase
-        .from("creations")
-        .update({
-          ...(updateData.title && { title: updateData.title }),
-          ...(updateData.description && {
-            description: updateData.description,
-          }),
-          ...(updateData.price && { price: updateData.price }),
-          ...(updateData.category && { category_id: updateData.category }),
-          ...(updateData.materials && { materials: updateData.materials }),
-          ...(updateData.tags && { tags: updateData.tags }),
-          ...(updateData.imageUrl !== undefined && {
-            image_url: updateData.imageUrl,
-          }),
-          ...(typeof updateData.isAvailable === "boolean" && {
-            is_available: updateData.isAvailable,
-          }),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", creationId)
-        .select()
-        .single();
+      // Appeler la fonction RPC pour mettre à jour la création et ses tags
+      const { error } = await supabase.rpc("update_creation_with_tags", {
+        p_creation_id: creationId,
+        creation_data: JSON.stringify({
+          title: updateData.title,
+          description: updateData.description,
+          price: updateData.price,
+          category_id: updateData.category,
+          materials: updateData.materials,
+          image_url: updateData.imageUrl,
+          is_available: updateData.isAvailable,
+        }),
+        new_tags: updateData.tags || [],
+      });
 
       if (error) {
-        throw error;
+        throw new Error("Erreur lors de la mise à jour de la création");
       }
 
-      // Récupérer la création complète avec les données artisan
-      const { data: fullCreation, error: fetchFullError } = await supabase
+      // Récupérer la création mise à jour
+      const { data: updatedCreation, error: fetchError2 } = await supabase
         .from("creations_full")
         .select("*")
         .eq("id", creationId)
         .single();
 
-      if (fetchFullError) {
-        throw fetchFullError;
+      if (fetchError2 || !updatedCreation) {
+        throw new Error(
+          "Erreur lors de la récupération de la création mise à jour"
+        );
       }
 
-      return transformSupabaseCreationWithUser(fullCreation);
+      return transformSupabaseCreationWithUser(updatedCreation);
     } catch (error) {
-      throw new Error("Erreur lors de la mise à jour");
-    }
-  }
-
-  /**
-   * Supprimer une création
-   */
-  static async deleteCreation(creationId: string): Promise<boolean> {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("Utilisateur non connecté");
-      }
-
-      // Vérifier que l'utilisateur est propriétaire de la création
-      const { data: existingCreation, error: fetchError } = await supabase
-        .from("creations")
-        .select("artisan_id, image_url")
-        .eq("id", creationId)
-        .single();
-
-      if (fetchError || !existingCreation) {
-        throw new Error("Création non trouvée");
-      }
-
-      if (existingCreation.artisan_id !== user.id) {
-        throw new Error("Vous ne pouvez supprimer que vos propres créations");
-      }
-
-      // Supprimer l'image si elle existe
-      if (existingCreation.image_url) {
-        try {
-          const imagePath = existingCreation.image_url.split("/").pop();
-          if (imagePath) {
-            await supabase.storage.from("creation-images").remove([imagePath]);
-          }
-        } catch (storageError) {
-          // Erreur silencieuse lors de la suppression de l'image
-        }
-      }
-
-      const { error } = await supabase
-        .from("creations")
-        .delete()
-        .eq("id", creationId);
-
-      if (error) {
-        throw error;
-      }
-
-      return true;
-    } catch (error) {
-      throw new Error(
-        `Erreur lors de la suppression: ${
-          error instanceof Error ? error.message : "Erreur inconnue"
-        }`
-      );
-    }
-  }
-
-  /**
-   * Uploader une image pour une création
-   */
-  static async uploadCreationImage(
-    file: File | Blob | string,
-    fileName: string
-  ): Promise<string> {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("Utilisateur non connecté");
-      }
-
-      // Générer un nom de fichier unique
-      const timestamp = Date.now();
-      const uniqueFileName = `${user.id}_${timestamp}_${fileName}`;
-
-      let fileToUpload: File | Blob;
-
-      // Si c'est une URI string (React Native), la convertir en Blob
-      if (typeof file === "string") {
-        const response = await fetch(file);
-        fileToUpload = await response.blob();
-      } else {
-        fileToUpload = file;
-      }
-
-      // Upload vers Supabase Storage
-      const { data, error } = await supabase.storage
-        .from("creation-images")
-        .upload(uniqueFileName, fileToUpload, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      // Obtenir l'URL publique
-      const { data: urlData } = supabase.storage
-        .from("creation-images")
-        .getPublicUrl(uniqueFileName);
-
-      // Vérifier que l'URL est valide
-      if (!urlData.publicUrl) {
-        throw new Error("Impossible de générer l'URL publique de l'image");
-      }
-
-      // Attendre un peu pour s'assurer que l'image est disponible
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      return urlData.publicUrl;
-    } catch (error) {
-      throw new Error("Erreur lors de l'upload de l'image");
+      throw error;
     }
   }
 }

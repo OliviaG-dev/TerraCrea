@@ -59,10 +59,11 @@ export interface CreateCreationData {
   title: string;
   description: string;
   price: number;
-  imageUrl: string;
+  imageUrl?: string; // Optionnel car peut être null
   category: CreationCategory;
   materials: string[];
   tags: string[];
+  artisanId: string; // Ajouté pour correspondre à l'API
 }
 
 export interface UpdateCreationData extends Partial<CreateCreationData> {

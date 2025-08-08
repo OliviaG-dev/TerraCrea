@@ -11,6 +11,7 @@ interface CommonHeaderProps {
     onPress: () => void;
     loading?: boolean;
     disabled?: boolean;
+    isFavorites?: boolean;
   };
 }
 
@@ -41,16 +42,34 @@ export const CommonHeader: React.FC<CommonHeaderProps> = ({
       {rightButton ? (
         <TouchableOpacity
           style={[
-            headerStyles.actionButton,
-            rightButton.disabled && headerStyles.actionButtonDisabled,
+            rightButton.isFavorites
+              ? headerStyles.favoritesButton
+              : headerStyles.actionButton,
+            !rightButton.isFavorites &&
+              rightButton.disabled &&
+              headerStyles.actionButtonDisabled,
           ]}
           onPress={rightButton.onPress}
           disabled={rightButton.disabled || rightButton.loading}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={
+            rightButton.isFavorites ? "Mes favoris" : "Action"
+          }
         >
           {rightButton.loading ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator
+              size="small"
+              color={rightButton.isFavorites ? "#4a5c4a" : "#fff"}
+            />
           ) : (
-            <Text style={headerStyles.actionButtonText}>
+            <Text
+              style={
+                rightButton.isFavorites
+                  ? headerStyles.favoritesButtonText
+                  : headerStyles.actionButtonText
+              }
+            >
               {rightButton.text}
             </Text>
           )}

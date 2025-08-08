@@ -15,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
 import { NotificationToast } from "../components/NotificationToast";
 import { CommonHeader, CommonInput, CommonButton } from "../components";
-import { Creation, CreationCategory, CATEGORY_LABELS } from "../types/Creation";
+import { CreationCategory, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
 import * as ImagePicker from "expo-image-picker";
@@ -285,15 +285,29 @@ export const AddCreationScreen = () => {
         }
       }
 
-      const creationData = {
+      // Vérifier que l'utilisateur est connecté et a un ID
+      if (!user?.id) {
+        throw new Error("Utilisateur non connecté");
+      }
+
+      const creationData: {
+        title: string;
+        description: string;
+        price: number;
+        category: CreationCategory;
+        materials: string[];
+        tags: string[];
+        artisanId: string;
+        imageUrl?: string;
+      } = {
         title: form.title.trim(),
         description: form.description.trim(),
         price: parseFloat(form.price),
         category: form.category,
-        materials: form.materials,
-        tags: form.tags,
         artisanId: user.id,
-        imageUrl: imageUrl || undefined,
+        materials: form.materials || [],
+        ...(imageUrl && { imageUrl }), // N'inclure imageUrl que s'il n'est pas null
+        tags: form.tags || [],
       };
 
       await CreationsApi.createCreation(creationData);
@@ -352,6 +366,24 @@ export const AddCreationScreen = () => {
           <Text style={styles.errorText}>
             Vous devez être connecté pour créer une création.
           </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!user.isArtisan) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            Vous devez être artisan pour créer une création.
+          </Text>
+          <TouchableOpacity
+            style={[styles.submitButton, { marginTop: 20 }]}
+            onPress={() => navigation.navigate("Profil")}
+          >
+            <Text style={styles.submitButtonText}>Devenir artisan</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );

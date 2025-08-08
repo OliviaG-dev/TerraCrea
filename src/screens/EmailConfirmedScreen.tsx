@@ -8,9 +8,11 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { ScreenNavigationProp } from "../types/Navigation";
+import { COLORS } from "../utils/colors";
 
 export const EmailConfirmedScreen = () => {
   const navigation = useNavigation<ScreenNavigationProp<"EmailConfirmed">>();
+  
   const scaleAnim = new Animated.Value(0);
 
   useEffect(() => {
@@ -30,33 +32,89 @@ export const EmailConfirmedScreen = () => {
     return () => clearTimeout(timer);
   }, [navigation, scaleAnim]);
 
+  // Styles dynamiques basés sur le thème
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: COLORS.background,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    checkIcon: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: COLORS.success,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    checkText: {
+      fontSize: 40,
+      color: COLORS.textOnPrimary,
+      fontWeight: "bold",
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: COLORS.success,
+      marginBottom: 16,
+      textAlign: "center",
+    },
+    subtitle: {
+      fontSize: 16,
+      color: COLORS.textSecondary,
+      textAlign: "center",
+      marginBottom: 32,
+      lineHeight: 22,
+    },
+    continueButton: {
+      backgroundColor: COLORS.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 32,
+      borderRadius: 8,
+      marginBottom: 16,
+    },
+    continueText: {
+      color: COLORS.textOnPrimary,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    homeText: {
+      color: COLORS.textSecondary,
+      fontSize: 14,
+      textDecorationLine: "underline",
+    },
+  });
+
   return (
-    <View style={styles.container}>
+    <View style={dynamicStyles.container}>
       <Animated.View
         style={[styles.content, { transform: [{ scale: scaleAnim }] }]}
       >
-        <View style={styles.checkIcon}>
-          <Text style={styles.checkText}>✓</Text>
+        <View style={dynamicStyles.checkIcon}>
+          <Text style={dynamicStyles.checkText}>✓</Text>
         </View>
 
-        <Text style={styles.title}>Email confirmé !</Text>
-        <Text style={styles.subtitle}>
+        <Text style={dynamicStyles.title}>Email confirmé !</Text>
+        <Text style={dynamicStyles.subtitle}>
           Votre compte a été activé avec succès. Vous allez être redirigé vers
           votre profil.
         </Text>
 
         <TouchableOpacity
-          style={styles.continueButton}
+          style={dynamicStyles.continueButton}
           onPress={() => navigation.navigate("Profil")}
         >
-          <Text style={styles.continueText}>Continuer</Text>
+          <Text style={dynamicStyles.continueText}>Continuer</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.homeButton}
           onPress={() => navigation.navigate("Home")}
         >
-          <Text style={styles.homeText}>Retour à l'accueil</Text>
+          <Text style={dynamicStyles.homeText}>Retour à l'accueil</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -64,64 +122,17 @@ export const EmailConfirmedScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
+  // container supprimé - maintenant dans dynamicStyles
   content: {
     alignItems: "center",
     maxWidth: 300,
   },
-  checkIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#28a745",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  checkText: {
-    fontSize: 40,
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#28a745",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6c757d",
-    textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 22,
-  },
-  continueButton: {
-    backgroundColor: "#007bff",
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  continueText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  // checkIcon, checkText supprimés - maintenant dans dynamicStyles
+  // title, subtitle supprimés - maintenant dans dynamicStyles
+  // continueButton, continueText supprimés - maintenant dans dynamicStyles
   homeButton: {
     paddingVertical: 12,
     paddingHorizontal: 32,
   },
-  homeText: {
-    color: "#6c757d",
-    fontSize: 14,
-    textDecorationLine: "underline",
-  },
+  // homeText supprimé - maintenant dans dynamicStyles
 });

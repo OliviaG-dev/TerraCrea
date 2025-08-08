@@ -27,6 +27,7 @@ export const COLORS = {
   textPrimary: "#4a5c4a",
   textSecondary: "#7a8a7a",
   textLight: "#9ca3af",
+  textOnPrimary: "#ffffff",
 
   // Couleurs de bordure
   border: "#e8e9e8",

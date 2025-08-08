@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
+import { COLORS } from "../utils/colors";
 
 interface NotificationToastProps {
   visible: boolean;
@@ -29,6 +30,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
 }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(-100));
+  
 
   useEffect(() => {
     if (visible) {
@@ -75,15 +77,15 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
   const getBackgroundColor = () => {
     switch (type) {
       case "success":
-        return "#4a5c4a"; // Couleur principale du projet
+        return COLORS.primary; // Couleur principale du projet
       case "error":
-        return "#d4a574"; // Couleur d'accent du projet
+        return COLORS.danger; // Couleur de danger
       case "warning":
-        return "#8a9a8a"; // Couleur secondaire du projet
+        return COLORS.warning; // Couleur d'avertissement
       case "info":
-        return "#4a5c4a"; // Couleur principale du projet
+        return COLORS.primary; // Couleur principale du projet
       default:
-        return "#4a5c4a";
+        return COLORS.primary;
     }
   };
 
@@ -102,12 +104,59 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
     }
   };
 
+  // Styles dynamiques basés sur le thème
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      position: "absolute",
+      top: 80,
+      left: 20,
+      right: 20,
+      borderRadius: 12,
+      elevation: 3,
+      shadowColor: COLORS.overlay,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      zIndex: 1000,
+      borderWidth: 1,
+      borderColor: COLORS.border,
+    },
+    icon: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: COLORS.textOnPrimary,
+    },
+    title: {
+      color: COLORS.textOnPrimary,
+      fontSize: 16,
+      fontWeight: "600",
+      marginBottom: 4,
+      fontFamily: "System",
+      letterSpacing: 0.3,
+    },
+    message: {
+      color: COLORS.textOnPrimary,
+      fontSize: 14,
+      opacity: 0.9,
+      fontFamily: "System",
+      letterSpacing: 0.2,
+      lineHeight: 20,
+    },
+    closeText: {
+      color: COLORS.textOnPrimary,
+      fontSize: 18,
+      fontWeight: "bold",
+      fontFamily: "System",
+      letterSpacing: 0.3,
+    },
+  });
+
   if (!visible) return null;
 
   return (
     <Animated.View
       style={[
-        styles.container,
+        dynamicStyles.container,
         {
           backgroundColor: getBackgroundColor(),
           opacity: fadeAnim,
@@ -117,14 +166,14 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
     >
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Text style={styles.icon}>{getIcon()}</Text>
+          <Text style={dynamicStyles.icon}>{getIcon()}</Text>
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+          <Text style={dynamicStyles.title}>{title}</Text>
+          <Text style={dynamicStyles.message}>{message}</Text>
         </View>
         <TouchableOpacity style={styles.closeButton} onPress={hideToast}>
-          <Text style={styles.closeText}>✕</Text>
+          <Text style={dynamicStyles.closeText}>✕</Text>
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -132,21 +181,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    top: 80,
-    left: 20,
-    right: 20,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: "rgba(74, 92, 74, 0.25)",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    zIndex: 1000,
-    borderWidth: 1,
-    borderColor: "#3d4f3d",
-  },
+  // container supprimé - maintenant dans dynamicStyles
   content: {
     flexDirection: "row",
     alignItems: "center",
@@ -155,38 +190,13 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginRight: 12,
   },
-  icon: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fafaf9",
-  },
+  // icon supprimé - maintenant dans dynamicStyles
   textContainer: {
     flex: 1,
   },
-  title: {
-    color: "#fafaf9",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-    fontFamily: "System",
-    letterSpacing: 0.3,
-  },
-  message: {
-    color: "#fafaf9",
-    fontSize: 14,
-    opacity: 0.9,
-    fontFamily: "System",
-    letterSpacing: 0.2,
-    lineHeight: 20,
-  },
+  // title, message supprimés - maintenant dans dynamicStyles
   closeButton: {
     padding: 4,
   },
-  closeText: {
-    color: "#fafaf9",
-    fontSize: 18,
-    fontWeight: "bold",
-    fontFamily: "System",
-    letterSpacing: 0.3,
-  },
+  // closeText supprimé - maintenant dans dynamicStyles
 });

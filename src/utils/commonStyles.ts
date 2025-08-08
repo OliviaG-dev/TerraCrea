@@ -9,7 +9,7 @@ export const headerStyles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: "#ffffff",
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     elevation: 2,
@@ -57,6 +57,23 @@ export const headerStyles = StyleSheet.create({
   },
   actionButtonDisabled: {
     backgroundColor: COLORS.darkGray,
+  },
+  favoritesButton: {
+    backgroundColor: "transparent",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    minWidth: 65,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  favoritesButtonText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "System",
+    letterSpacing: 0.2,
   },
 });
 

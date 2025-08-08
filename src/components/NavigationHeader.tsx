@@ -5,12 +5,14 @@ import { useUserContext } from "../context/UserContext";
 import { getUserDisplayName } from "../utils/userUtils";
 import { RootStackParamList } from "../types/Navigation";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { COLORS } from "../utils/colors";
 import { supabase } from "../services/supabase";
 
 export const NavigationHeader: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, signOut, isAuthenticated } = useUserContext();
+  
 
   const handleSignOut = async () => {
     try {
@@ -55,6 +57,73 @@ export const NavigationHeader: React.FC = () => {
     return "Utilisateur";
   };
 
+  // Styles dynamiques basés sur le thème
+  const dynamicStyles = StyleSheet.create({
+    userIcon: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: COLORS.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    userIconInactive: {
+      backgroundColor: COLORS.textSecondary,
+    },
+    userIconArtisan: {
+      backgroundColor: COLORS.accent, // Couleur orange pour les artisans
+    },
+    userIconText: {
+      fontSize: 14,
+      color: COLORS.textOnPrimary,
+      textAlign: "center",
+      lineHeight: 28,
+      includeFontPadding: false,
+      textAlignVertical: "center",
+    },
+    userName: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: COLORS.textPrimary,
+      flex: 1,
+    },
+    profileButton: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+      backgroundColor: COLORS.primary,
+    },
+    profileButtonText: {
+      fontSize: 10,
+      color: COLORS.textOnPrimary,
+      fontWeight: "500",
+    },
+    signOutButton: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: COLORS.danger,
+    },
+    signOutText: {
+      fontSize: 10,
+      color: COLORS.danger,
+      fontWeight: "500",
+    },
+    loginButton: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+      backgroundColor: COLORS.primary,
+    },
+    loginButtonText: {
+      fontSize: 10,
+      color: COLORS.textOnPrimary,
+      fontWeight: "500",
+    },
+  });
+
   return (
     <View style={styles.container}>
       {isAuthenticated ? (
@@ -62,42 +131,44 @@ export const NavigationHeader: React.FC = () => {
           <View style={styles.userInfo}>
             <View
               style={[
-                styles.userIcon,
+                dynamicStyles.userIcon,
                 (user?.isArtisan || user?.user_metadata?.isArtisan) &&
-                  styles.userIconArtisan,
+                  dynamicStyles.userIconArtisan,
               ]}
             >
-              <Text style={styles.userIconText}>★</Text>
+              <Text style={dynamicStyles.userIconText}>★</Text>
             </View>
-            <Text style={styles.userName} numberOfLines={1}>
+            <Text style={dynamicStyles.userName} numberOfLines={1}>
               {getUserDisplay()}
             </Text>
           </View>
           <View style={styles.actions}>
             <TouchableOpacity
-              style={styles.profileButton}
+              style={dynamicStyles.profileButton}
               onPress={handleProfilePress}
             >
-              <Text style={styles.profileButtonText}>Profil</Text>
+              <Text style={dynamicStyles.profileButtonText}>Profil</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.signOutButton}
+              style={dynamicStyles.signOutButton}
               onPress={handleSignOut}
             >
-              <Text style={styles.signOutText}>Déco</Text>
+              <Text style={dynamicStyles.signOutText}>Déco</Text>
             </TouchableOpacity>
           </View>
         </View>
       ) : (
         <View style={styles.guestContainer}>
-          <View style={[styles.userIcon, styles.userIconInactive]}>
-            <Text style={styles.userIconText}>☆</Text>
+          <View
+            style={[dynamicStyles.userIcon, dynamicStyles.userIconInactive]}
+          >
+            <Text style={dynamicStyles.userIconText}>☆</Text>
           </View>
           <TouchableOpacity
-            style={styles.loginButton}
+            style={dynamicStyles.loginButton}
             onPress={() => navigation.navigate("Login", {})}
           >
-            <Text style={styles.loginButtonText}>Connexion</Text>
+            <Text style={dynamicStyles.loginButtonText}>Connexion</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -121,76 +192,18 @@ const styles = StyleSheet.create({
     gap: 6,
     maxWidth: 120,
   },
-  userIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#4a5c4a",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  userIconInactive: {
-    backgroundColor: "#8a9a8a",
-  },
-  userIconArtisan: {
-    backgroundColor: "#ff6b35", // Couleur orange pour les artisans
-  },
-  userIconText: {
-    fontSize: 14,
-    color: "#fff",
-    textAlign: "center",
-    lineHeight: 28,
-    includeFontPadding: false,
-    textAlignVertical: "center",
-  },
-  userName: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#4a5c4a",
-    flex: 1,
-  },
+  // userIcon, userIconInactive, userIconArtisan, userIconText supprimés - maintenant dans dynamicStyles
+  // userName supprimé - maintenant dans dynamicStyles
   actions: {
     flexDirection: "row",
     gap: 4,
   },
-  profileButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    backgroundColor: "#4a5c4a",
-  },
-  profileButtonText: {
-    fontSize: 10,
-    color: "#fff",
-    fontWeight: "500",
-  },
-  signOutButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "#dc3545",
-  },
-  signOutText: {
-    fontSize: 10,
-    color: "#dc3545",
-    fontWeight: "500",
-  },
+  // profileButton, profileButtonText supprimés - maintenant dans dynamicStyles
+  // signOutButton, signOutText supprimés - maintenant dans dynamicStyles
   guestContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  loginButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    backgroundColor: "#4a5c4a",
-  },
-  loginButtonText: {
-    fontSize: 10,
-    color: "#fff",
-    fontWeight: "500",
-  },
+  // loginButton, loginButtonText supprimés - maintenant dans dynamicStyles
 });
