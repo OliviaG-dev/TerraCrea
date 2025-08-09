@@ -253,7 +253,7 @@ export const CreatorProfileScreen = () => {
               artisan.artisanProfile.specialties.length > 0 ? (
                 <View style={styles.specialtiesList}>
                   {artisan.artisanProfile.specialties.map(
-                    (specialty, index) => (
+                    (specialty: string, index: number) => (
                       <View key={index} style={styles.specialtyTag}>
                         <Text style={styles.specialtyText}>{specialty}</Text>
                       </View>
@@ -284,41 +284,45 @@ export const CreatorProfileScreen = () => {
           <Text style={styles.sectionTitle}>Statistiques</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>🎨</Text>
+              </View>
               <Text style={styles.statValue}>{creations.length}</Text>
               <Text style={styles.statLabel}>Créations</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {creations.filter((c) => c.isAvailable).length}
-              </Text>
-              <Text style={styles.statLabel}>Disponibles</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {(() => {
-                  const averageRating =
-                    creations.reduce((sum, c) => sum + c.rating, 0) /
-                    Math.max(creations.length, 1);
-                  return averageRating % 1 === 0
-                    ? averageRating.toFixed(0)
-                    : averageRating.toFixed(1);
-                })()}
-              </Text>
-              <Text style={styles.statLabel}>Note moyenne</Text>
-            </View>
 
-            {artisan.artisanProfile?.rating && (
+            {creations.length > 0 && (
               <View style={styles.statItem}>
+                <View style={styles.statIconContainer}>
+                  <Text style={styles.statIcon}>✅</Text>
+                </View>
                 <Text style={styles.statValue}>
-                  ⭐{" "}
+                  {creations.filter((c) => c.isAvailable).length}
+                </Text>
+                <Text style={styles.statLabel}>Disponibles</Text>
+              </View>
+            )}
+
+            {creations.length > 0 && (
+              <View style={styles.statItem}>
+                <View style={styles.statIconContainer}>
+                  <Text style={styles.statIcon}>⭐</Text>
+                </View>
+                <Text style={styles.statValue}>
                   {(() => {
-                    const rating = artisan.artisanProfile.rating;
-                    return rating % 1 === 0
-                      ? rating.toFixed(0)
-                      : rating.toFixed(1);
+                    if (creations.length === 0) return "—";
+                    const totalRating = creations.reduce(
+                      (sum, c) => sum + (c.rating || 0),
+                      0
+                    );
+                    const averageRating = totalRating / creations.length;
+                    if (averageRating === 0) return "—";
+                    return averageRating % 1 === 0
+                      ? averageRating.toFixed(0)
+                      : averageRating.toFixed(1);
                   })()}
                 </Text>
-                <Text style={styles.statLabel}>Note artisan</Text>
+                <Text style={styles.statLabel}>Note moyenne</Text>
               </View>
             )}
           </View>
@@ -532,37 +536,53 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-around",
+    flexDirection: "column",
     backgroundColor: COLORS.cardBackground,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 20,
     borderWidth: 1,
     borderColor: COLORS.border,
-    elevation: 2,
+    elevation: 1,
     shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   statItem: {
+    flexDirection: "row",
     alignItems: "center",
-    minWidth: 80,
-    marginHorizontal: 8,
-    marginVertical: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.background,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 12,
+  },
+  statIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary + "10",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  statIcon: {
+    fontSize: 20,
   },
   statValue: {
     fontSize: 24,
-    fontWeight: "800",
+    fontWeight: "700",
     color: COLORS.primary,
-    marginBottom: 4,
+    marginRight: 12,
+    letterSpacing: -0.5,
   },
   statLabel: {
     fontSize: 14,
     color: COLORS.textLight,
-    textAlign: "center",
     fontWeight: "500",
+    flex: 1,
   },
   contactSection: {
     marginHorizontal: 16,
