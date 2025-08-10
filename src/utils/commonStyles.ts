@@ -179,16 +179,16 @@ export const inputStyles = StyleSheet.create({
 export const buttonStyles = StyleSheet.create({
   primary: {
     backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
   secondary: {
     backgroundColor: COLORS.white,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -197,16 +197,16 @@ export const buttonStyles = StyleSheet.create({
   },
   danger: {
     backgroundColor: COLORS.danger,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
   disabled: {
     backgroundColor: COLORS.darkGray,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -240,7 +240,7 @@ export const buttonStyles = StyleSheet.create({
 // Styles communs pour les cartes
 export const cardStyles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.white,
+    backgroundColor: "#fefefe",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,

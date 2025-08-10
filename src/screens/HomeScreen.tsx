@@ -176,10 +176,11 @@ const styles = StyleSheet.create({
   // Styles pour visiteur
   authButtons: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     width: "100%",
     paddingHorizontal: HORIZONTAL_PADDING,
     marginBottom: 25,
+    gap: 16,
   },
   loginButton: {
     width: 120,

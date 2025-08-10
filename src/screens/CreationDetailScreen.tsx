@@ -16,7 +16,46 @@ import { CommonHeader } from "../components";
 import { CreationWithArtisan, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
+import { RatingsApi } from "../services/ratingsApi";
 import { COLORS, formatDate } from "../utils";
+
+// Composant pour les étoiles de notation
+const StarRating = ({
+  rating,
+  onRatingChange,
+  readonly = false,
+  size = 24,
+}: {
+  rating: number;
+  onRatingChange?: (rating: number) => void;
+  readonly?: boolean;
+  size?: number;
+}) => {
+  const stars = [1, 2, 3, 4, 5];
+
+  return (
+    <View style={styles.starsContainer}>
+      {stars.map((star) => (
+        <TouchableOpacity
+          key={star}
+          onPress={() => !readonly && onRatingChange?.(star)}
+          disabled={readonly}
+          style={styles.starButton}
+        >
+          <Text
+            style={[
+              styles.starIcon,
+              { fontSize: size },
+              star <= rating ? styles.starFilled : styles.starEmpty,
+            ]}
+          >
+            {star <= rating ? "★" : "☆"}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
 
 type CreationDetailScreenNavigationProp =
   ScreenNavigationProp<"CreationDetail">;
@@ -36,6 +75,8 @@ export const CreationDetailScreen = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [userRating, setUserRating] = useState<number | null>(null);
+  const [ratingLoading, setRatingLoading] = useState(false);
   const [notification, setNotification] = useState<{
     visible: boolean;
     title: string;
@@ -69,6 +110,16 @@ export const CreationDetailScreen = () => {
           setIsFavorite(favoriteStatus);
         } catch (error) {
           // Continuer sans le statut favori
+        }
+      }
+
+      // Charger la notation existante de l'utilisateur (si connecté et pas créateur)
+      if (user && user.id !== foundCreation.artisanId) {
+        try {
+          const existingRating = await RatingsApi.getUserRating(creationId);
+          setUserRating(existingRating);
+        } catch (error) {
+          // Continuer sans la notation existante
         }
       }
     } catch (error) {
@@ -126,6 +177,64 @@ export const CreationDetailScreen = () => {
       });
     } finally {
       setFavoriteLoading(false);
+    }
+  };
+
+  // Gérer la notation
+  const handleRating = async (rating: number) => {
+    if (!user) {
+      setNotification({
+        visible: true,
+        title: "⚠️ Connexion requise",
+        message: "Vous devez être connecté pour noter cette création",
+        type: "warning",
+      });
+      return;
+    }
+
+    if (user.id === creation?.artisanId) {
+      setNotification({
+        visible: true,
+        title: "⚠️ Action non autorisée",
+        message: "Vous ne pouvez pas noter vos propres créations",
+        type: "warning",
+      });
+      return;
+    }
+
+    try {
+      setRatingLoading(true);
+
+      const success = await RatingsApi.saveUserRating(creationId, rating);
+
+      if (success) {
+        setUserRating(rating);
+        setNotification({
+          visible: true,
+          title: "⭐ Merci pour votre note !",
+          message: `Vous avez donné ${rating}/5 étoiles à cette création`,
+          type: "success",
+        });
+
+        // Recharger les détails de la création pour mettre à jour la note moyenne
+        await loadCreationDetails();
+      } else {
+        setNotification({
+          visible: true,
+          title: "❌ Erreur",
+          message: "Impossible de sauvegarder votre note. Veuillez réessayer.",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      setNotification({
+        visible: true,
+        title: "❌ Erreur",
+        message: "Impossible de sauvegarder votre note. Veuillez réessayer.",
+        type: "error",
+      });
+    } finally {
+      setRatingLoading(false);
     }
   };
 
@@ -322,6 +431,50 @@ export const CreationDetailScreen = () => {
               </View>
             </View>
           </View>
+
+          {/* Notation utilisateur */}
+          {user && user.id !== creation.artisanId && (
+            <View style={styles.ratingSection}>
+              <Text style={styles.sectionTitle}>Donnez votre avis</Text>
+              <View style={styles.ratingContainer}>
+                <Text style={styles.ratingInstruction}>
+                  {userRating
+                    ? `Vous avez donné ${userRating}/5 étoiles`
+                    : "Tapez sur les étoiles pour noter cette création"}
+                </Text>
+                <StarRating
+                  rating={userRating || 0}
+                  onRatingChange={handleRating}
+                  readonly={ratingLoading}
+                  size={32}
+                />
+                {ratingLoading && (
+                  <ActivityIndicator
+                    size="small"
+                    color={COLORS.primary}
+                    style={styles.ratingLoader}
+                  />
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Affichage de la notation pour les non-connectés */}
+          {!user && (
+            <View style={styles.ratingSection}>
+              <Text style={styles.sectionTitle}>Note moyenne</Text>
+              <View style={styles.ratingContainer}>
+                <Text style={styles.ratingInstruction}>
+                  Connectez-vous pour noter cette création
+                </Text>
+                <StarRating
+                  rating={creation.rating}
+                  readonly={true}
+                  size={32}
+                />
+              </View>
+            </View>
+          )}
 
           {/* Informations de création */}
           <View style={styles.infoSection}>
@@ -617,5 +770,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     letterSpacing: 0.2,
+  },
+  starsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  starButton: {
+    padding: 5,
+  },
+  starIcon: {
+    fontSize: 24,
+  },
+  starFilled: {
+    color: COLORS.accent,
+  },
+  starEmpty: {
+    color: COLORS.textSecondary,
+  },
+  ratingSection: {
+    marginBottom: 24,
+  },
+  ratingContainer: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+  },
+  ratingInstruction: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  ratingLoader: {
+    marginTop: 10,
   },
 });

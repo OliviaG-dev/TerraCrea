@@ -110,170 +110,179 @@ const ExploreScreen: React.FC = () => {
   };
 
   const renderCreationCard = (item: CreationWithArtisan) => (
-    <View key={item.id} style={cardStyles.container}>
-      {/* Container d'image avec overlays */}
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: item.imageUrl }}
-          style={styles.creationImage}
-          accessible={true}
-          accessibilityLabel={`Image de ${item.title}`}
-        />
-
-        {/* Cœur favoris - Haut gauche (visible seulement si connecté) */}
-        {isAuthenticated && (
-          <TouchableOpacity
-            style={[
-              styles.favoriteOverlay,
-              favorites.some((fav) => fav.id === item.id) &&
-                styles.favoriteOverlayActive,
-            ]}
-            onPress={() => handleToggleFavorite(item.id)}
+    <View key={item.id} style={styles.cardWrapper}>
+      {/* Nouvelle div qui englobe l'image et le contenu avec la bordure */}
+      <View style={styles.cardBorderContainer}>
+        {/* Container d'image avec overlays */}
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.creationImage}
             accessible={true}
-            accessibilityRole="button"
-            accessibilityLabel="Ajouter aux favoris"
-            accessibilityHint="Double-tap pour ajouter ou retirer des favoris"
-          >
-            <Text
-              style={[
-                styles.favoriteOverlayIcon,
-                favorites.some((fav) => fav.id === item.id) &&
-                  styles.favoriteOverlayIconActive,
-              ]}
-            >
-              {favorites.some((fav) => fav.id === item.id) ? "♥" : "♡"}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Prix - Haut droite */}
-        <View style={styles.priceOverlay}>
-          <Text style={styles.priceOverlayText}>{item.price.toFixed(2)} €</Text>
-        </View>
-
-        {/* Rating et avis - Bas droite */}
-        <View style={styles.ratingOverlay}>
-          <View style={styles.ratingOverlayContainer}>
-            <Text style={styles.ratingOverlayText}>
-              ⭐ {item.rating.toFixed(1)}
-            </Text>
-            <Text style={styles.reviewOverlayText}>
-              ({item.reviewCount} avis)
-            </Text>
-          </View>
-        </View>
-
-        {/* Date de création - Bas gauche */}
-        <View style={styles.dateOverlay}>
-          <Text style={styles.dateOverlayText}>
-            {formatCreationDate(item.createdAt)}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.cardContent}>
-        {/* Titre avec indicateur de disponibilité */}
-        <View style={styles.titleWithAvailability}>
-          <Text style={styles.creationTitle} numberOfLines={2}>
-            {item.title}
-          </Text>
-          <View
-            style={[
-              styles.availabilityDot,
-              { backgroundColor: item.isAvailable ? "#22c55e" : COLORS.danger },
-            ]}
-            accessible={true}
-            accessibilityLabel={
-              item.isAvailable ? "Disponible" : "Non disponible"
-            }
+            accessibilityLabel={`Image de ${item.title}`}
           />
-        </View>
 
-        <Text style={styles.creationDescription} numberOfLines={2}>
-          {item.description}
-        </Text>
+          {/* Cœur favoris - Haut gauche (visible seulement si connecté) */}
+          {isAuthenticated && (
+            <TouchableOpacity
+              style={[
+                styles.favoriteOverlay,
+                favorites.some((fav) => fav.id === item.id) &&
+                  styles.favoriteOverlayActive,
+              ]}
+              onPress={() => handleToggleFavorite(item.id)}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Ajouter aux favoris"
+              accessibilityHint="Double-tap pour ajouter ou retirer des favoris"
+            >
+              <Text
+                style={[
+                  styles.favoriteOverlayIcon,
+                  favorites.some((fav) => fav.id === item.id) &&
+                    styles.favoriteOverlayIconActive,
+                ]}
+              >
+                {favorites.some((fav) => fav.id === item.id) ? "♥" : "♡"}
+              </Text>
+            </TouchableOpacity>
+          )}
 
-        <View style={styles.creatorContainer}>
-          <Text style={styles.creatorLabel}>Créateur: </Text>
-          <Text style={styles.creatorNameText}>
-            {item.artisan?.displayName ||
-              (item.artisan?.firstName && item.artisan?.lastName
-                ? `${item.artisan.firstName} ${item.artisan.lastName}`
-                : item.artisan?.username || "Artisan inconnu")}
-          </Text>
-        </View>
-
-        {/* Tags repositionnés au-dessus */}
-        <View style={styles.tagsContainer}>
-          <Text style={styles.tagsLabel}>Tags:</Text>
-          <View style={styles.tagsList}>
-            {item.tags && item.tags.length > 0 ? (
-              <>
-                {item.tags.slice(0, 4).map((tag: string, index: number) => (
-                  <View key={index} style={styles.tagItem}>
-                    <Text style={styles.tagText}>#{tag}</Text>
-                  </View>
-                ))}
-                {item.tags.length > 4 && (
-                  <Text style={styles.moreTags}>+{item.tags.length - 4}</Text>
-                )}
-              </>
-            ) : (
-              // Tags par défaut si aucun tag de la DB
-              <>
-                <View style={styles.tagItem}>
-                  <Text style={styles.tagText}>#fait-main</Text>
-                </View>
-                <View style={styles.tagItem}>
-                  <Text style={styles.tagText}>
-                    #
-                    {item.categoryLabel?.toLowerCase() ||
-                      (item.category
-                        ? CATEGORY_LABELS[item.category as CreationCategory] ||
-                          item.category.toLowerCase()
-                        : "artisanal")}
-                  </Text>
-                </View>
-                <View style={styles.tagItem}>
-                  <Text style={styles.tagText}>
-                    #
-                    {item.price < 50
-                      ? "abordable"
-                      : item.price > 100
-                      ? "premium"
-                      : "qualité"}
-                  </Text>
-                </View>
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* Section inférieure avec catégorie et bouton */}
-        <View style={styles.bottomSection}>
-          {/* Catégorie en bas à gauche */}
-          <View style={styles.categoryContainer}>
-            <Text style={styles.categoryLabel}>
-              {item.categoryLabel ||
-                (item.category
-                  ? CATEGORY_LABELS[item.category as CreationCategory] ||
-                    item.category.toUpperCase()
-                  : "ARTISANAT")}
+          {/* Prix - Haut droite */}
+          <View style={styles.priceOverlay}>
+            <Text style={styles.priceOverlayText}>
+              {item.price.toFixed(2)} €
             </Text>
           </View>
 
-          {/* Bouton d'action intégré */}
-          <TouchableOpacity
-            style={styles.viewDetailsButton}
-            onPress={() => {
-              navigation.navigate("CreationDetail", { creationId: item.id });
-            }}
-            accessible={true}
-            accessibilityRole="button"
-            accessibilityLabel={`Voir les détails de ${item.title}`}
-          >
-            <Text style={styles.viewDetailsText}>Voir plus</Text>
-          </TouchableOpacity>
+          {/* Rating et avis - Bas droite */}
+          <View style={styles.ratingOverlay}>
+            <View style={styles.ratingOverlayContainer}>
+              <Text style={styles.ratingOverlayText}>
+                ⭐ {item.rating.toFixed(1)}
+              </Text>
+              <Text style={styles.reviewOverlayText}>
+                ({item.reviewCount} avis)
+              </Text>
+            </View>
+          </View>
+
+          {/* Date de création - Bas gauche */}
+          <View style={styles.dateOverlay}>
+            <Text style={styles.dateOverlayText}>
+              {formatCreationDate(item.createdAt)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Contenu de la carte - fusionné avec l'image */}
+        <View style={styles.cardContent}>
+          {/* Titre avec indicateur de disponibilité */}
+          <View style={styles.titleWithAvailability}>
+            <Text style={styles.creationTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+            <View
+              style={[
+                styles.availabilityDot,
+                {
+                  backgroundColor: item.isAvailable ? "#22c55e" : COLORS.danger,
+                },
+              ]}
+              accessible={true}
+              accessibilityLabel={
+                item.isAvailable ? "Disponible" : "Non disponible"
+              }
+            />
+          </View>
+
+          <Text style={styles.creationDescription} numberOfLines={2}>
+            {item.description}
+          </Text>
+
+          <View style={styles.creatorContainer}>
+            <Text style={styles.creatorLabel}>Créateur: </Text>
+            <Text style={styles.creatorNameText}>
+              {item.artisan?.displayName ||
+                (item.artisan?.firstName && item.artisan?.lastName
+                  ? `${item.artisan.firstName} ${item.artisan.lastName}`
+                  : item.artisan?.username || "Artisan inconnu")}
+            </Text>
+          </View>
+
+          {/* Tags repositionnés au-dessus */}
+          <View style={styles.tagsContainer}>
+            <Text style={styles.tagsLabel}>Tags:</Text>
+            <View style={styles.tagsList}>
+              {item.tags && item.tags.length > 0 ? (
+                <>
+                  {item.tags.slice(0, 4).map((tag: string, index: number) => (
+                    <View key={index} style={styles.tagItem}>
+                      <Text style={styles.tagText}>#{tag}</Text>
+                    </View>
+                  ))}
+                  {item.tags.length > 4 && (
+                    <Text style={styles.moreTags}>+{item.tags.length - 4}</Text>
+                  )}
+                </>
+              ) : (
+                // Tags par défaut si aucun tag de la DB
+                <>
+                  <View style={styles.tagItem}>
+                    <Text style={styles.tagText}>#fait-main</Text>
+                  </View>
+                  <View style={styles.tagItem}>
+                    <Text style={styles.tagText}>
+                      #
+                      {item.categoryLabel?.toLowerCase() ||
+                        (item.category
+                          ? CATEGORY_LABELS[
+                              item.category as CreationCategory
+                            ] || item.category.toLowerCase()
+                          : "artisanal")}
+                    </Text>
+                  </View>
+                  <View style={styles.tagItem}>
+                    <Text style={styles.tagText}>
+                      #
+                      {item.price < 50
+                        ? "abordable"
+                        : item.price > 100
+                        ? "premium"
+                        : "qualité"}
+                    </Text>
+                  </View>
+                </>
+              )}
+            </View>
+          </View>
+
+          {/* Section inférieure avec catégorie et bouton */}
+          <View style={styles.bottomSection}>
+            {/* Catégorie en bas à gauche */}
+            <View style={styles.categoryContainer}>
+              <Text style={styles.categoryLabel}>
+                {item.categoryLabel ||
+                  (item.category
+                    ? CATEGORY_LABELS[item.category as CreationCategory] ||
+                      item.category.toUpperCase()
+                    : "ARTISANAT")}
+              </Text>
+            </View>
+
+            {/* Bouton d'action intégré */}
+            <TouchableOpacity
+              style={styles.viewDetailsButton}
+              onPress={() => {
+                navigation.navigate("CreationDetail", { creationId: item.id });
+              }}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`Voir les détails de ${item.title}`}
+            >
+              <Text style={styles.viewDetailsText}>Voir plus</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -566,17 +575,32 @@ const styles = StyleSheet.create({
   cardWrapper: {
     width: CARD_WIDTH,
     marginBottom: 16,
+    // Style sans bordure pour éviter la double bordure
+    backgroundColor: "#fff",
+    // Suppression de la bordure externe
+    // borderWidth: 1.5,
+    // borderColor: "#4a5c4a",
+    // borderRadius: 12,
+    // Effet de profondeur très subtil
+    transform: [{ scale: 1 }],
+    // Suppression de overflow hidden qui cause des problèmes
   },
 
   imageContainer: {
     position: "relative",
     height: CARD_HEIGHT * 0.6,
-    backgroundColor: "#f5f5f4",
+    backgroundColor: "#fafafa",
+    // Suppression des coins arrondis pour s'intégrer avec cardBorderContainer
+    // borderTopLeftRadius: 12,
+    // borderTopRightRadius: 12,
+    // Suppression des bordures pour un look plus épuré
+    // Pas de séparation visuelle avec le contenu
   },
   creationImage: {
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+    // Suppression des coins arrondis pour un look plus carré et moderne
   },
   favoriteOverlay: {
     position: "absolute",
@@ -585,17 +609,22 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     justifyContent: "center",
     alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
+    // Bordure subtile qui s'harmonise avec la carte
+    borderWidth: 1,
+    borderColor: "rgba(74, 92, 74, 0.2)",
+    // Ombres élégantes
+    shadowColor: "#2d3a2d",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   favoriteOverlayActive: {
-    backgroundColor: "rgba(74, 92, 74, 0.9)",
+    backgroundColor: "rgba(74, 92, 74, 0.95)",
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   favoriteOverlayIcon: {
     fontSize: 16,
@@ -608,10 +637,19 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 12,
     right: 12,
-    backgroundColor: "rgba(74, 92, 74, 0.9)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    backgroundColor: "rgba(74, 92, 74, 0.95)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    // Bordure élégante qui s'harmonise
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    // Ombres sophistiquées
+    shadowColor: "#2d3a2d",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   priceOverlayText: {
     color: "#fff",
@@ -623,15 +661,19 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 12,
     right: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    // Bordure subtile qui s'harmonise
+    borderWidth: 1,
+    borderColor: "rgba(74, 92, 74, 0.15)",
+    // Ombres élégantes
+    shadowColor: "#2d3a2d",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   ratingOverlayContainer: {
     alignItems: "center",
@@ -651,15 +693,19 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 12,
     left: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    // Bordure subtile qui s'harmonise
+    borderWidth: 1,
+    borderColor: "rgba(74, 92, 74, 0.15)",
+    // Ombres élégantes
+    shadowColor: "#2d3a2d",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   dateOverlayText: {
     fontSize: 9,
@@ -669,6 +715,17 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     padding: 16,
+    // Style minimaliste : pas de bordures, focus sur le contenu
+    backgroundColor: "#fff",
+    // Suppression du paddingTop supplémentaire pour une intégration parfaite
+    // paddingTop: 16,
+    // Suppression de la bordure externe
+    // borderWidth: 1.5,
+    // borderColor: "#4a5c4a",
+    // borderRadius: 12,
+    // Effet de profondeur très subtil
+    // transform: [{ scale: 1 }],
+    // Suppression de overflow hidden qui cause des problèmes
   },
   titleWithAvailability: {
     flexDirection: "row",
@@ -690,6 +747,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginTop: 8,
+    // Suppression de la bordure pour un look plus épuré
   },
   creationDescription: {
     fontSize: 15,
@@ -736,8 +794,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#d4a574",
+    // Suppression des bordures et ombres pour un look plus épuré
   },
   tagText: {
     fontSize: 12,
@@ -758,13 +815,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 8,
+    // Style minimaliste sans fond coloré pour éviter la double bordure
+    paddingTop: 12,
+    paddingBottom: 8,
+    paddingHorizontal: 12,
+    // Suppression du fond coloré qui crée l'effet de double bordure
+    // backgroundColor: "#fafbfa",
+    borderRadius: 0, // Coins carrés pour un look épuré
   },
   categoryContainer: {
-    backgroundColor: "#edf2ed",
+    backgroundColor: "#f8f9f8",
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 8,
+    borderRadius: 6,
+    // Suppression des bordures et ombres pour un look plus épuré
   },
   categoryLabel: {
     fontSize: 12,
@@ -779,11 +844,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    // Suppression complète de toutes les ombres et élévations
+    // elevation: 0,
+    // shadowColor: "transparent",
+    // shadowOffset: { width: 0, height: 0 },
+    // shadowOpacity: 0,
+    // shadowRadius: 0,
+    // Suppression des bordures pour un look plus épuré
   },
   viewDetailsText: {
     color: "#fff",
@@ -843,6 +910,23 @@ const styles = StyleSheet.create({
     color: "#4a5c4a",
     fontSize: 14,
     fontWeight: "500",
+  },
+  cardBorderContainer: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 12, // Coins modérément arrondis
+    overflow: "hidden",
+    // Bordure sobre et élégante
+    borderWidth: 1,
+    borderColor: "#e2e8e0", // Couleur très subtile
+    // Ombre très légère pour la profondeur
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    // Fond neutre
+    backgroundColor: "#ffffff",
   },
 });
 

@@ -1045,7 +1045,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 12,
     alignItems: "center",
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
@@ -1094,7 +1094,7 @@ const styles = StyleSheet.create({
   },
   specialtyChip: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: "#e8e9e8",
@@ -1208,10 +1208,12 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: "#4a5c4a",
-    padding: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: "center",
     marginHorizontal: 20,
+    minWidth: 350,
     elevation: 3,
     shadowColor: "rgba(74, 92, 74, 0.25)",
     shadowOffset: { width: 0, height: 3 },
@@ -1236,7 +1238,7 @@ const styles = StyleSheet.create({
   },
   backToHomeButton: {
     backgroundColor: "transparent",
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
@@ -1256,7 +1258,7 @@ const styles = StyleSheet.create({
   },
   myCreationsButton: {
     backgroundColor: "#ff6b35",
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
     elevation: 1,
@@ -1284,7 +1286,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#e8e9e8",
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     backgroundColor: "#fff",
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1329,7 +1331,7 @@ const styles = StyleSheet.create({
   },
   editButton: {
     flex: 1,
-    padding: 12,
+    padding: 10,
     borderRadius: 8,
     alignItems: "center",
   },
