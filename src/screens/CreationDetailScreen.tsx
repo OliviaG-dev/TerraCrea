@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  Alert,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
 import { NotificationToast } from "../components/NotificationToast";
 import { CommonHeader } from "../components";
@@ -21,6 +26,25 @@ import { RatingsApi } from "../services/ratingsApi";
 import { ReviewsApi, UserReview } from "../services/reviewsApi";
 import { useFavorites } from "../context/FavoritesContext";
 import { COLORS, formatDate } from "../utils";
+import Svg, { Path } from "react-native-svg";
+
+// Composant SVG pour le cœur personnalisé
+const HeartIcon = ({
+  isFavorite,
+  size = 24,
+}: {
+  isFavorite: boolean;
+  size?: number;
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+      fill={isFavorite ? COLORS.white : "transparent"}
+      stroke={COLORS.primary}
+      strokeWidth="1.5"
+    />
+  </Svg>
+);
 
 // Composant pour les étoiles de notation
 const StarRating = ({
@@ -101,60 +125,51 @@ export const CreationDetailScreen = () => {
   });
 
   // Charger les détails de la création
-  const loadCreationDetails = async () => {
+  const loadCreationDetails = useCallback(async () => {
+    if (!creationId) return;
+
     try {
       setLoading(true);
       // Récupérer toutes les créations et filtrer par ID
       const allCreations = await CreationsApi.getAllCreations();
       const foundCreation = allCreations.find((c) => c.id === creationId);
 
-      if (!foundCreation) {
-        throw new Error("Création non trouvée");
-      }
+      if (foundCreation) {
+        setCreation(foundCreation);
+        setAllReviews([]);
 
-      setCreation(foundCreation);
-
-      // Le statut des favoris est maintenant géré par le contexte global
-      // Pas besoin de vérifier manuellement
-
-      // Charger la notation existante de l'utilisateur (si connecté et pas créateur)
-      if (user && user.id !== foundCreation.artisanId) {
+        // Charger les avis existants de l'utilisateur
         try {
-          const existingRating = await RatingsApi.getUserRating(creationId);
-          setUserRating(existingRating);
+          const userRating = await RatingsApi.getUserRating(creationId);
+          if (userRating !== null) {
+            setUserRating(userRating);
+          }
         } catch (error) {
-          // Continuer sans la notation existante
+          // Gérer silencieusement les erreurs de chargement des notes
         }
-      }
 
-      // Charger l'avis existant de l'utilisateur (si connecté et pas créateur)
-      if (user && user.id !== foundCreation.artisanId) {
         try {
-          const existingReview = await ReviewsApi.getUserReview(creationId);
-          setUserReview(existingReview);
+          const userReview = await ReviewsApi.getUserReview(creationId);
+          if (userReview !== null) {
+            setUserReview(userReview);
+          }
         } catch (error) {
-          // Continuer sans l'avis existant
+          // Gérer silencieusement les erreurs de chargement des avis
         }
-      }
 
-      // Charger tous les avis de la création
-      try {
-        const reviews = await ReviewsApi.getCreationReviews(creationId);
-        setAllReviews(reviews);
-      } catch (error) {
-        // Continuer sans les avis
+        try {
+          const reviews = await ReviewsApi.getCreationReviews(creationId);
+          setAllReviews(reviews);
+        } catch (error) {
+          setAllReviews([]);
+        }
       }
     } catch (error) {
-      setNotification({
-        visible: true,
-        title: "❌ Erreur",
-        message: "Impossible de charger les détails de la création",
-        type: "error",
-      });
+      Alert.alert("Erreur", "Impossible de charger les détails de la création");
     } finally {
       setLoading(false);
     }
-  };
+  }, [creationId]);
 
   // Gérer les favoris
   const handleToggleFavorite = async () => {
@@ -387,6 +402,15 @@ export const CreationDetailScreen = () => {
     loadCreationDetails();
   }, [creationId]);
 
+  // Rafraîchir les données quand l'écran redevient actif (après édition)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (creation) {
+        loadCreationDetails();
+      }
+    }, [creation?.id])
+  );
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -417,6 +441,7 @@ export const CreationDetailScreen = () => {
   }
 
   const isCreator = user?.id === creation.artisanId;
+  const isCurrentlyFavorite = isFavorite(creationId);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -435,13 +460,30 @@ export const CreationDetailScreen = () => {
         rightButton={
           user
             ? {
-                text: favoritesLoading
-                  ? "..."
-                  : isFavorite(creationId)
-                  ? "❤️"
-                  : "🤍",
                 onPress: handleToggleFavorite,
-                disabled: favoritesLoading,
+                customButton: (
+                  <View style={styles.headerButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.favoriteButton,
+                        isCurrentlyFavorite
+                          ? styles.favoriteButtonActive
+                          : styles.favoriteButtonInactive,
+                      ]}
+                      onPress={handleToggleFavorite}
+                      disabled={favoritesLoading}
+                    >
+                      {favoritesLoading ? (
+                        <ActivityIndicator
+                          size="small"
+                          color={COLORS.primary}
+                        />
+                      ) : (
+                        <HeartIcon isFavorite={isCurrentlyFavorite} size={20} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                ),
               }
             : undefined
         }
@@ -1282,5 +1324,31 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: "center",
     lineHeight: 24,
+  },
+  // Styles pour le bouton favori
+  favoriteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  favoriteButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+  favoriteButtonInactive: {
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  headerButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
 });

@@ -28,13 +28,14 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Responsive design** pour toutes les tailles d'écran
 - ✅ **Composants réutilisables** pour une interface uniforme
 - ✅ **Layout optimisé** sans barres de défilement indésirables
+- ✅ **Icônes SVG personnalisées** pour une harmonie visuelle parfaite
 
 ### 🛍️ **Exploration et découverte**
 
 - ✅ **Catalogue de créations** avec affichage en grille
 - ✅ **Recherche textuelle** dans titres et descriptions
 - ✅ **Filtres par catégorie** (Bijoux, Poterie, Décoration, Textiles, Bois, Métal)
-- ✅ **Système de favoris** pour les créations préférées
+- ✅ **Système de favoris global** synchronisé entre tous les écrans
 - ✅ **Informations artisan** intégrées à chaque création
 - ✅ **Pagination** pour optimiser les performances
 - ✅ **Dates de création** et statut de disponibilité
@@ -49,6 +50,7 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Gestion des favoris** directement depuis l'écran de détail
 - ✅ **Actions contextuelles** : modification pour le créateur
 - ✅ **Gestion d'erreurs** robuste pour les images et données
+- ✅ **Bouton favori personnalisé** avec design harmonisé
 
 ### 👥 **Profils et communauté**
 
@@ -73,17 +75,38 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Catégorisation** avec labels traduits
 - ✅ **Mise à jour en temps réel** après modifications
 
+### ⭐ **Système d'évaluations et avis**
+
+- ✅ **Notation par étoiles** (1-5 étoiles) pour les créations
+- ✅ **Commentaires textuels** détaillés sur les créations
+- ✅ **Prévention des auto-évaluations** (artisans ne peuvent pas noter leurs créations)
+- ✅ **Calcul automatique** des notes moyennes et compteurs
+- ✅ **Gestion des avis** avec création, modification et suppression
+- ✅ **Affichage des avis** avec noms d'utilisateurs
+- ✅ **Gestion robuste des erreurs** avec fallbacks multiples
+
+### ❤️ **Système de favoris avancé**
+
+- ✅ **Gestion globale des favoris** via Context API centralisé
+- ✅ **Synchronisation en temps réel** entre tous les écrans
+- ✅ **Bouton flottant** avec compteur de favoris
+- ✅ **Ajout/Suppression** depuis n'importe quel écran
+- ✅ **Persistance des données** avec Supabase
+- ✅ **Design harmonisé** avec les couleurs du projet
+- ✅ **Icônes SVG personnalisées** pour une cohérence visuelle
+
 ### 🏗️ **Architecture technique**
 
 - ✅ **TypeScript strict** pour la sécurité des types
 - ✅ **Hooks personnalisés** pour la gestion d'état
-- ✅ **Context API** pour l'état global utilisateur
+- ✅ **Context API** pour l'état global utilisateur et favoris
 - ✅ **Services centralisés** pour l'API Supabase
 - ✅ **API de créations** complète avec CRUD operations
 - ✅ **Composants réutilisables** et modulaires
 - ✅ **Gestion d'erreurs** centralisée et user-friendly
 - ✅ **Styles centralisés** pour une cohérence parfaite
 - ✅ **Code nettoyé** sans console.log ni imports inutilisés
+- ✅ **Gestion robuste des erreurs 406** avec fallbacks multiples
 
 ## 🚀 Technologies utilisées
 
@@ -95,6 +118,7 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - **React Navigation** ^7.1.14
 - **Zustand** ^5.0.6
 - **expo-image-picker** pour la gestion des photos
+- **react-native-svg** pour les icônes personnalisées
 
 ## 📁 Structure du projet
 
@@ -108,9 +132,11 @@ src/
 │   ├── AuthNavigator.tsx     # Navigation d'authentification
 │   ├── Header.tsx            # Header principal
 │   ├── NavigationHeader.tsx  # Header de navigation
-│   └── NotificationToast.tsx # Notifications toast
+│   ├── NotificationToast.tsx # Notifications toast
+│   └── FloatingFavoritesButton.tsx # Bouton flottant des favoris
 ├── context/         # Contextes React
-│   └── UserContext.tsx        # Gestion état utilisateur avec auth
+│   ├── UserContext.tsx        # Gestion état utilisateur avec auth
+│   └── FavoritesContext.tsx   # Gestion globale des favoris
 ├── hooks/           # Hooks personnalisés
 │   └── useAuth.ts             # Hook d'authentification Supabase
 
@@ -127,11 +153,15 @@ src/
 │   ├── EmailConfirmationScreen.tsx  # Attente de confirmation email
 │   ├── EmailConfirmedScreen.tsx     # Confirmation réussie
 │   ├── ForgotPasswordScreen.tsx     # Mot de passe oublié
-│   └── ResetPasswordScreen.tsx      # Réinitialisation mot de passe
+│   ├── ResetPasswordScreen.tsx      # Réinitialisation mot de passe
+│   └── FavoritesScreen.tsx          # Écran des favoris utilisateur
 ├── services/        # Services API
 │   ├── supabase.ts            # Configuration et services Supabase
 │   ├── authService.ts         # Service d'authentification avancé
-│   └── creationsApi.ts        # API complète pour les créations
+│   ├── creationsApi.ts        # API complète pour les créations
+│   ├── favoritesApi.ts        # API pour la gestion des favoris
+│   ├── ratingsApi.ts          # API pour les évaluations
+│   └── reviewsApi.ts          # API pour les avis et commentaires
 ├── types/          # Types TypeScript
 │   ├── User.ts                # Types utilisateur et artisan
 │   ├── Creation.ts            # Types créations et catégories
@@ -231,6 +261,7 @@ L'application utilise un système de composants modulaires pour garantir la coh�
     text: "Sauvegarder",
     onPress: handleSave,
     loading: isLoading,
+    customButton: <CustomButton />, // Support pour boutons personnalisés
   }}
 />
 ```
@@ -261,6 +292,15 @@ L'application utilise un système de composants modulaires pour garantir la coh�
 />
 ```
 
+#### **FloatingFavoritesButton**
+
+```typescript
+<FloatingFavoritesButton
+  onPress={() => navigation.navigate("Favorites")}
+  favoritesCount={favoritesCount}
+/>
+```
+
 ### 🎯 **Styles centralisés**
 
 Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
@@ -283,6 +323,8 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - ✅ **Imports centralisés** pour une meilleure organisation
 - ✅ **Code nettoyé** sans console.log ni imports inutilisés
 - ✅ **Layout optimisé** sans débordements d'écran
+- ✅ **Système de favoris global** avec synchronisation en temps réel
+- ✅ **Gestion robuste des erreurs** avec fallbacks multiples
 
 ## 📱 Parcours utilisateur
 
@@ -318,9 +360,10 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **Informations complètes** : titre, prix, description, matériaux, tags
 - **Profil artisan cliquable** avec lien vers le profil complet
 - **Statistiques détaillées** : note moyenne, nombre d'avis, disponibilité
-- **Gestion des favoris** avec feedback visuel
+- **Gestion des favoris** avec feedback visuel et design harmonisé
 - **Actions contextuelles** : bouton de modification pour le créateur
 - **Informations de création** : dates de création et modification
+- **Bouton favori personnalisé** avec icône SVG et couleurs du projet
 
 ### 👤 **Profils utilisateur**
 
@@ -353,6 +396,24 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **Gestion des matériaux** et tags avec modales
 - **Catégorisation** avec labels traduits
 - **Mise à jour en temps réel** après modifications
+
+### ❤️ **Gestion des favoris**
+
+- **Ajout/Suppression** depuis n'importe quel écran
+- **Synchronisation en temps réel** entre tous les composants
+- **Bouton flottant** avec compteur de favoris
+- **Écran dédié** pour visualiser tous les favoris
+- **Design harmonisé** avec les couleurs du projet
+- **Icônes SVG personnalisées** pour une cohérence visuelle
+
+### ⭐ **Système d'évaluations**
+
+- **Notation par étoiles** intuitive (1-5 étoiles)
+- **Commentaires détaillés** sur les créations
+- **Prévention des conflits** (artisans ne peuvent pas noter leurs créations)
+- **Calcul automatique** des moyennes et statistiques
+- **Gestion des avis** avec CRUD complet
+- **Affichage des noms** d'utilisateurs sur les avis
 
 ### 🔐 **Authentification complète**
 
@@ -388,6 +449,8 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **Expérience fluide** entre modes visiteur/connecté
 - **Interface épurée** sans icônes superflues
 - **Layout optimisé** sans débordements d'écran
+- **Icônes SVG personnalisées** pour une harmonie parfaite
+- **Boutons favoris harmonisés** avec les couleurs du projet
 
 ## 🔒 Sécurité
 
@@ -395,6 +458,7 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **Sessions chiffrées** et tokens sécurisés
 - **Navigation protégée** selon l'état d'authentification
 - **Gestion d'erreurs** appropriée sans exposer de données sensibles
+- **Prévention des conflits** dans les évaluations
 
 ## 🏗️ Architecture
 
@@ -417,13 +481,15 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
         ↓
         🔍 ExploreScreen (Recherche + Filtres + Favoris)
         ↓
-        📖 CreationDetailScreen (Détails complets)
+        📖 CreationDetailScreen (Détails complets + Favoris)
         ↓
         👨‍🎨 CreatorProfileScreen (Profil artisan public)
         ↓
         👤 ProfilScreen (Utilisateur ↔️ Artisan)
         ↓
         🎨 CreationsScreen (Gestion portfolio)
+        ↓
+        ❤️ FavoritesScreen (Gestion des favoris)
 ```
 
 ### 🎯 **Services et API**
@@ -435,9 +501,12 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
   - Gestion des favoris
   - Transformations de données Supabase
   - Gestion robuste des erreurs 406
+- **`FavoritesApi`** : Gestion complète des favoris
+- **`RatingsApi`** : Gestion des évaluations par étoiles
+- **`ReviewsApi`** : Gestion des commentaires et avis
 - **`useAuth`** : Hook de gestion complète de l'authentification
 - **`UserContext`** : État global utilisateur avec profils artisan
-- **`useFavorites`** : Hook pour la gestion des favoris
+- **`FavoritesContext`** : État global des favoris avec synchronisation
 
 ### 📊 **Modèles de données**
 
@@ -446,6 +515,8 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **`Creation`** : Créations avec catégories et métadonnées
 - **`CreationWithArtisan`** : Créations enrichies avec données artisan
 - **`CreationCategory`** : Enum des catégories disponibles
+- **`UserRating`** : Évaluations par étoiles des utilisateurs
+- **`UserReview`** : Commentaires et avis des utilisateurs
 
 ## 🧪 Fonctionnalités à venir
 
@@ -455,7 +526,6 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - [ ] **Reset de mot de passe** par email
 - [ ] **Authentification sociale** (Google, Apple)
 - [ ] **Système de commandes** et panier
-- [ ] **Évaluations et commentaires** sur les créations
 - [ ] **Photos multiples** par création
 - [ ] **Gestion de stock** pour les artisans
 - [ ] **Tableau de bord artisan** avec statistiques

@@ -23,16 +23,18 @@ export class RatingsApi {
         .select("rating")
         .eq("user_id", user.id)
         .eq("creation_id", creationId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== "PGRST116") {
-        console.error("Erreur lors de la récupération de la notation:", error);
+      if (error) {
+        if (error.code === "PGRST116") {
+          // Aucune notation trouvée, c'est normal
+          return null;
+        }
         return null;
       }
 
       return data?.rating || null;
     } catch (error) {
-      console.error("Erreur lors de la récupération de la notation:", error);
       return null;
     }
   }
@@ -96,7 +98,6 @@ export class RatingsApi {
 
       return true;
     } catch (error) {
-      console.error("Erreur lors de la sauvegarde de la notation:", error);
       return false;
     }
   }
@@ -127,7 +128,7 @@ export class RatingsApi {
           .eq("id", creationId);
       }
     } catch (error) {
-      console.error("Erreur lors de la mise à jour de la note moyenne:", error);
+      // Erreur silencieuse pour la mise à jour de la note moyenne
     }
   }
 
@@ -161,7 +162,6 @@ export class RatingsApi {
         updatedAt: item.updated_at,
       }));
     } catch (error) {
-      console.error("Erreur lors de la récupération des notations:", error);
       return [];
     }
   }

@@ -9,7 +9,6 @@ export class FavoritesApi {
     try {
       return await CreationsApi.getUserFavorites();
     } catch (error) {
-      console.error("Erreur lors de la récupération des favoris:", error);
       throw new Error("Impossible de récupérer vos favoris");
     }
   }
@@ -21,7 +20,6 @@ export class FavoritesApi {
     try {
       return await CreationsApi.addToFavorites(creationId);
     } catch (error) {
-      console.error("Erreur lors de l'ajout aux favoris:", error);
       throw new Error("Impossible d'ajouter aux favoris");
     }
   }
@@ -33,7 +31,6 @@ export class FavoritesApi {
     try {
       return await CreationsApi.removeFromFavorites(creationId);
     } catch (error) {
-      console.error("Erreur lors de la suppression des favoris:", error);
       throw new Error("Impossible de retirer des favoris");
     }
   }
@@ -45,7 +42,6 @@ export class FavoritesApi {
     try {
       return await CreationsApi.isFavorite(creationId);
     } catch (error) {
-      console.error("Erreur lors de la vérification des favoris:", error);
       return false;
     }
   }
@@ -57,7 +53,6 @@ export class FavoritesApi {
     try {
       return await CreationsApi.toggleFavorite(creationId);
     } catch (error) {
-      console.error("Erreur lors du basculement des favoris:", error);
       throw new Error("Impossible de modifier les favoris");
     }
   }
@@ -70,9 +65,7 @@ export class FavoritesApi {
       const favorites = await CreationsApi.getUserFavorites();
       return favorites.length;
     } catch (error) {
-      console.error("Erreur lors du comptage des favoris:", error);
       return 0;
     }
   }
 }
-

@@ -7,11 +7,12 @@ interface CommonHeaderProps {
   onBack?: () => void;
   backLabel?: string;
   rightButton?: {
-    text: string;
+    text?: string;
     onPress: () => void;
     loading?: boolean;
     disabled?: boolean;
     isFavorites?: boolean;
+    customButton?: React.ReactNode;
   };
 }
 
@@ -40,40 +41,44 @@ export const CommonHeader: React.FC<CommonHeaderProps> = ({
       <Text style={headerStyles.title}>{title}</Text>
 
       {rightButton ? (
-        <TouchableOpacity
-          style={[
-            rightButton.isFavorites
-              ? headerStyles.favoritesButton
-              : headerStyles.actionButton,
-            !rightButton.isFavorites &&
-              rightButton.disabled &&
-              headerStyles.actionButtonDisabled,
-          ]}
-          onPress={rightButton.onPress}
-          disabled={rightButton.disabled || rightButton.loading}
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel={
-            rightButton.isFavorites ? "Mes favoris" : "Action"
-          }
-        >
-          {rightButton.loading ? (
-            <ActivityIndicator
-              size="small"
-              color={rightButton.isFavorites ? "#4a5c4a" : "#fff"}
-            />
-          ) : (
-            <Text
-              style={
-                rightButton.isFavorites
-                  ? headerStyles.favoritesButtonText
-                  : headerStyles.actionButtonText
-              }
-            >
-              {rightButton.text}
-            </Text>
-          )}
-        </TouchableOpacity>
+        rightButton.customButton ? (
+          rightButton.customButton
+        ) : (
+          <TouchableOpacity
+            style={[
+              rightButton.isFavorites
+                ? headerStyles.favoritesButton
+                : headerStyles.actionButton,
+              !rightButton.isFavorites &&
+                rightButton.disabled &&
+                headerStyles.actionButtonDisabled,
+            ]}
+            onPress={rightButton.onPress}
+            disabled={rightButton.disabled || rightButton.loading}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={
+              rightButton.isFavorites ? "Mes favoris" : "Action"
+            }
+          >
+            {rightButton.loading ? (
+              <ActivityIndicator
+                size="small"
+                color={rightButton.isFavorites ? "#4a5c4a" : "#fff"}
+              />
+            ) : (
+              <Text
+                style={
+                  rightButton.isFavorites
+                    ? headerStyles.favoritesButtonText
+                    : headerStyles.actionButtonText
+                }
+              >
+                {rightButton.text}
+              </Text>
+            )}
+          </TouchableOpacity>
+        )
       ) : (
         <View style={{ width: 80 }} />
       )}

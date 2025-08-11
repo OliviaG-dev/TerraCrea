@@ -1,6 +1,5 @@
 import { supabase } from "./supabase";
 import { CreationCategory, CreationWithArtisan } from "../types/Creation";
-import { useState, useEffect } from "react";
 
 // =============================================
 // INTERFACES POUR LES RÉPONSES SUPABASE
@@ -573,13 +572,11 @@ export class CreationsApi {
       });
 
       if (error) {
-        console.error("Erreur addToFavorites:", error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error("Exception addToFavorites:", error);
       return false;
     }
   }
@@ -609,13 +606,11 @@ export class CreationsApi {
         .eq("creation_id", creationId);
 
       if (error) {
-        console.error("Erreur removeFromFavorites:", error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error("Exception removeFromFavorites:", error);
       return false;
     }
   }
@@ -649,13 +644,11 @@ export class CreationsApi {
         .maybeSingle();
 
       if (error) {
-        console.error("Erreur isFavorite:", error);
         return false;
       }
 
       return !!data;
     } catch (error) {
-      console.error("Exception isFavorite:", error);
       return false;
     }
   }
@@ -695,7 +688,6 @@ export class CreationsApi {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Erreur getUserFavorites:", error);
         return [];
       }
 
@@ -705,7 +697,6 @@ export class CreationsApi {
           .filter(Boolean) || []
       );
     } catch (error) {
-      console.error("Exception getUserFavorites:", error);
       return [];
     }
   }
@@ -782,6 +773,7 @@ export class CreationsApi {
           category_id: creationData.category,
           artisan_id: creationData.artisanId,
           materials: creationData.materials,
+          tags: creationData.tags, // Ajouter les tags ici !
           ...(creationData.imageUrl && { image_url: creationData.imageUrl }), // N'inclure que si imageUrl existe
           is_available: true,
           rating: 0,
@@ -794,23 +786,8 @@ export class CreationsApi {
         throw creationError;
       }
 
-      // Insérer les tags si présents
-      if (creationData.tags && creationData.tags.length > 0) {
-        const { error: tagsError } = await supabase
-          .from("creation_tags")
-          .insert(
-            creationData.tags.map((tag) => ({
-              creation_id: creationResult.id,
-              tag_name: tag,
-            }))
-          );
-
-        if (tagsError) {
-          // Si l'insertion des tags échoue, supprimer la création
-          await supabase.from("creations").delete().eq("id", creationResult.id);
-          throw tagsError;
-        }
-      }
+      // Les tags sont déjà inclus dans creationData.tags
+      // Pas besoin d'insertion séparée dans creation_tags
 
       // Récupérer la création complète avec les données artisan
       const { data: fullCreation, error: fetchError } = await supabase
@@ -842,6 +819,7 @@ export class CreationsApi {
     categories: any[];
     canCreate: boolean;
     favoritesTest: any;
+    tagsTest: any;
   }> {
     try {
       const {
@@ -852,70 +830,46 @@ export class CreationsApi {
         throw new Error("Utilisateur non connecté");
       }
 
-      // Vérifier le profil artisan
+      // Test des permissions artisan
       const { data: artisan, error: artisanError } = await supabase
         .from("artisans")
         .select("*")
         .eq("id", user.id)
         .single();
 
-      // Vérifier les catégories
+      // Test des catégories
       const { data: categories, error: categoriesError } = await supabase
-        .from("categories")
-        .select("*");
-
-      // Test d'insertion simple
-      const { data: testInsert, error: insertError } = await supabase
-        .from("creations")
-        .insert({
-          title: "Test diagnostic",
-          description: "Test",
-          price: 10,
-          category_id: "CERAMICS",
-          artisan_id: user.id,
-          materials: ["test"],
-          tags: ["test"],
-          is_available: true,
-          rating: 0,
-          review_count: 0,
-        })
-        .select("id")
-        .single();
-
-      // Supprimer le test
-      if (testInsert) {
-        await supabase.from("creations").delete().eq("id", testInsert.id);
-      }
+        .from("creation_categories")
+        .select("*")
+        .order("label");
 
       // Test des favoris
       const { data: favoritesTest, error: favoritesError } = await supabase
         .from("user_favorites")
-        .select("id")
+        .select("*")
+        .eq("user_id", user.id)
         .limit(1);
 
+      // Test des tags - utiliser directement le champ tags des créations
+      const { data: tagsTest, error: tagsError } = await supabase
+        .from("creations")
+        .select("id, tags")
+        .not("tags", "is", null)
+        .limit(5);
+
       return {
-        user: { id: user.id, email: user.email },
+        user: {
+          id: user.id,
+          email: user.email,
+        },
         artisan: artisan || null,
         categories: categories || [],
-        canCreate: !insertError,
-        favoritesTest: {
-          success: !favoritesError,
-          error: favoritesError,
-          data: favoritesTest,
-        },
+        canCreate: !artisanError && artisan,
+        favoritesTest: favoritesError ? null : favoritesTest,
+        tagsTest: tagsError ? null : tagsTest,
       };
     } catch (error) {
-      return {
-        user: null,
-        artisan: null,
-        categories: [],
-        canCreate: false,
-        favoritesTest: {
-          success: false,
-          error: error,
-          data: null,
-        },
-      };
+      throw error;
     }
   }
 
@@ -984,26 +938,14 @@ export class CreationsApi {
 
       // Mettre à jour les tags si fournis
       if (updateData.tags !== undefined) {
-        // Supprimer les anciens tags
-        await supabase
-          .from("creation_tags")
-          .delete()
-          .eq("creation_id", creationId);
+        // Mettre à jour directement le champ tags dans creations
+        const { error: updateTagsError } = await supabase
+          .from("creations")
+          .update({ tags: updateData.tags })
+          .eq("id", creationId);
 
-        // Ajouter les nouveaux tags
-        if (updateData.tags.length > 0) {
-          const { error: tagsError } = await supabase
-            .from("creation_tags")
-            .insert(
-              updateData.tags.map((tag) => ({
-                creation_id: creationId,
-                tag_name: tag,
-              }))
-            );
-
-          if (tagsError) {
-            throw new Error("Erreur lors de la mise à jour des tags");
-          }
+        if (updateTagsError) {
+          throw new Error("Erreur lors de la mise à jour des tags");
         }
       }
 

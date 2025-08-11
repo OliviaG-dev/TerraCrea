@@ -84,31 +84,41 @@ export const isTimeSyncError = (error: any): boolean => {
 };
 
 // Fonction robuste pour formater une date
-export const formatDate = (dateInput: any): string => {
-  if (!dateInput) {
-    return "Date inconnue";
-  }
-
-  // Si c'est déjà une chaîne "null" ou "undefined"
-  if (
-    typeof dateInput === "string" &&
-    (dateInput === "null" || dateInput === "undefined")
-  ) {
-    return "Date inconnue";
-  }
-
+export const formatDate = (dateInput: string | Date): string => {
   try {
     const date = new Date(dateInput);
 
     // Vérifier si la date est valide
     if (isNaN(date.getTime())) {
-      return "Date inconnue";
+      return "Date invalide";
     }
 
-    return date.toLocaleDateString("fr-FR");
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    const diffInMonths = Math.floor(diffInDays / 30);
+    const diffInYears = Math.floor(diffInDays / 365);
+
+    if (diffInMinutes < 1) {
+      return "À l'instant";
+    } else if (diffInMinutes < 60) {
+      return `Il y a ${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""}`;
+    } else if (diffInHours < 24) {
+      return `Il y a ${diffInHours} heure${diffInHours > 1 ? "s" : ""}`;
+    } else if (diffInDays < 7) {
+      return `Il y a ${diffInDays} jour${diffInDays > 1 ? "s" : ""}`;
+    } else if (diffInWeeks < 4) {
+      return `Il y a ${diffInWeeks} semaine${diffInWeeks > 1 ? "s" : ""}`;
+    } else if (diffInMonths < 12) {
+      return `Il y a ${diffInMonths} mois`;
+    } else {
+      return `Il y a ${diffInYears} an${diffInYears > 1 ? "s" : ""}`;
+    }
   } catch (error) {
-    console.log("Erreur formatDate:", error, "Input:", dateInput);
-    return "Date inconnue";
+    return "Date invalide";
   }
 };
 

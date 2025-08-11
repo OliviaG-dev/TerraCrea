@@ -46,7 +46,6 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
       setFavorites(userFavorites);
     } catch (err) {
       setError("Impossible de charger vos favoris");
-      console.error("Erreur lors du chargement des favoris:", err);
     } finally {
       setLoading(false);
     }
@@ -63,7 +62,6 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
         return success;
       } catch (err) {
         setError("Impossible d'ajouter aux favoris");
-        console.error("Erreur lors de l'ajout aux favoris:", err);
         return false;
       }
     },
@@ -80,7 +78,6 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
       return success;
     } catch (err) {
       setError("Impossible de retirer des favoris");
-      console.error("Erreur lors de la suppression des favoris:", err);
       return false;
     }
   }, []);
@@ -96,7 +93,6 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
         return success;
       } catch (err) {
         setError("Impossible de modifier les favoris");
-        console.error("Erreur lors du basculement des favoris:", err);
         return false;
       }
     },

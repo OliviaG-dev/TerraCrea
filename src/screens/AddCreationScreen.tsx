@@ -14,12 +14,13 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
 import { NotificationToast } from "../components/NotificationToast";
-import { CommonHeader, CommonInput, CommonButton } from "../components";
+import { CommonHeader, CommonInput } from "../components";
 import { CreationCategory, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
 import * as ImagePicker from "expo-image-picker";
 import { COLORS, inputStyles, modalStyles } from "../utils";
+import { commonMaterials, commonTags } from "../../assets/data";
 
 type AddCreationScreenNavigationProp = ScreenNavigationProp<"AddCreation">;
 
@@ -65,40 +66,6 @@ export const AddCreationScreen = () => {
     []
   );
 
-  const commonMaterials = [
-    "Bois",
-    "Argile",
-    "Verre",
-    "Métal",
-    "Pierre",
-    "Tissu",
-    "Cuir",
-    "Papier",
-    "Plastique",
-    "Céramique",
-    "Bambou",
-    "Laine",
-    "Soie",
-    "Coton",
-    "Lin",
-  ];
-
-  const commonTags = [
-    "Fait main",
-    "Unique",
-    "Écologique",
-    "Vintage",
-    "Moderne",
-    "Traditionnel",
-    "Artisanal",
-    "Durable",
-    "Recyclé",
-    "Bio",
-    "Éthique",
-    "Local",
-    "Personnalisable",
-  ];
-
   const validateField = (field: string, value: string) => {
     switch (field) {
       case "title":
@@ -134,6 +101,15 @@ export const AddCreationScreen = () => {
   };
 
   const addMaterial = () => {
+    if (form.materials.length >= 6) {
+      setNotification({
+        visible: true,
+        title: "Limite atteinte",
+        message: "Vous ne pouvez pas ajouter plus de 6 matériaux",
+        type: "warning",
+      });
+      return;
+    }
     if (
       materialInput.trim() &&
       !form.materials.includes(materialInput.trim())
@@ -154,6 +130,15 @@ export const AddCreationScreen = () => {
   };
 
   const addTag = () => {
+    if (form.tags.length >= 8) {
+      setNotification({
+        visible: true,
+        title: "Limite atteinte",
+        message: "Vous ne pouvez pas ajouter plus de 8 tags",
+        type: "warning",
+      });
+      return;
+    }
     if (tagInput.trim() && !form.tags.includes(tagInput.trim())) {
       setForm((prev) => ({
         ...prev,

@@ -19,21 +19,44 @@ export class ReviewsApi {
       } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data, error } = await supabase
-        .from("user_reviews")
-        .select("comment")
-        .eq("user_id", user.id)
-        .eq("creation_id", creationId)
-        .single();
+      // Essayer d'abord avec une requête simple
+      try {
+        const { data, error } = await supabase
+          .from("user_reviews")
+          .select("comment")
+          .eq("user_id", user.id)
+          .eq("creation_id", creationId)
+          .maybeSingle();
 
-      if (error && error.code !== "PGRST116") {
-        console.error("Erreur lors de la récupération de l'avis:", error);
-        return null;
+        if (error) {
+          if (error.code === "PGRST116") {
+            // Aucun avis trouvé, c'est normal
+            return null;
+          }
+          return null;
+        }
+
+        return data?.comment || null;
+      } catch (queryError) {
+        // Fallback : essayer avec une requête encore plus simple
+        try {
+          const { data, error } = await supabase
+            .from("user_reviews")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("creation_id", creationId)
+            .limit(1);
+
+          if (error) {
+            return null;
+          }
+
+          return data && data.length > 0 ? data[0].comment : null;
+        } catch (fallbackError) {
+          return null;
+        }
       }
-
-      return data?.comment || null;
     } catch (error) {
-      console.error("Erreur lors de la récupération de l'avis:", error);
       return null;
     }
   }
@@ -94,7 +117,6 @@ export class ReviewsApi {
 
       return true;
     } catch (error) {
-      console.error("Erreur lors de la sauvegarde de l'avis:", error);
       return false;
     }
   }
@@ -102,62 +124,108 @@ export class ReviewsApi {
   // Récupérer tous les avis d'une création avec le surnom de l'utilisateur
   static async getCreationReviews(creationId: string): Promise<UserReview[]> {
     try {
-      // Récupérer d'abord tous les avis
-      const { data: reviews, error: reviewsError } = await supabase
-        .from("user_reviews")
-        .select(
-          `
-          id,
-          user_id,
-          creation_id,
-          comment,
-          created_at,
-          updated_at
-        `
-        )
-        .eq("creation_id", creationId)
-        .order("created_at", { ascending: false });
+      // Essayer d'abord avec une requête simple
+      let reviews: any[] = [];
+      let reviewsError: any = null;
 
-      if (reviewsError) throw reviewsError;
+      try {
+        const { data, error } = await supabase
+          .from("user_reviews")
+          .select("*")
+          .eq("creation_id", creationId)
+          .order("created_at", { ascending: false });
+
+        reviews = data || [];
+        reviewsError = error;
+      } catch (queryError) {
+        // Fallback : essayer avec une requête encore plus basique
+        try {
+          const { data, error } = await supabase
+            .from("user_reviews")
+            .select("id, user_id, creation_id, comment, created_at, updated_at")
+            .eq("creation_id", creationId);
+
+          reviews = data || [];
+          reviewsError = error;
+        } catch (fallbackError) {
+          return [];
+        }
+      }
+
+      if (reviewsError) {
+        return [];
+      }
 
       if (!reviews || reviews.length === 0) {
         return [];
       }
 
-      // Récupérer les usernames pour tous les utilisateurs qui ont laissé des avis
-      const userIds = reviews.map((review) => review.user_id);
-      const { data: users, error: usersError } = await supabase
-        .from("users")
-        .select("id, username")
-        .in("id", userIds);
+      try {
+        // Récupérer les usernames pour tous les utilisateurs qui ont laissé des avis
+        const userIds = reviews.map((review) => review.user_id);
 
-      if (usersError) {
-        console.warn("Impossible de récupérer les usernames:", usersError);
-        // Continuer sans les usernames
+        if (userIds.length === 0) {
+          return reviews.map((item: any) => ({
+            id: item.id,
+            userId: item.user_id,
+            creationId: item.creation_id,
+            comment: item.comment,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at,
+            userNickname: `Utilisateur ${item.user_id.slice(0, 8)}...`,
+          }));
+        }
+
+        // Essayer de récupérer les usernames
+        let users: any[] = [];
+        try {
+          const { data: usersData, error: usersError } = await supabase
+            .from("users")
+            .select("id, username")
+            .in("id", userIds);
+
+          if (usersError) {
+            // Continuer sans les usernames
+          } else {
+            users = usersData || [];
+          }
+        } catch (usersQueryError) {
+          // Continuer sans les usernames
+        }
+
+        // Créer un map des usernames par userId
+        const usernameMap = new Map();
+        if (users) {
+          users.forEach((user) => {
+            usernameMap.set(user.id, user.username);
+          });
+        }
+
+        // Mapper les données snake_case vers camelCase pour correspondre à l'interface UserReview
+        return reviews.map((item: any) => ({
+          id: item.id,
+          userId: item.user_id,
+          creationId: item.creation_id,
+          comment: item.comment,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+          userNickname:
+            usernameMap.get(item.user_id) ||
+            `Utilisateur ${item.user_id.slice(0, 8)}...`,
+        }));
+      } catch (innerError) {
+        // En cas d'erreur avec les usernames, retourner les avis sans les noms
+        return reviews.map((item: any) => ({
+          id: item.id,
+          userId: item.user_id,
+          creationId: item.creation_id,
+          comment: item.comment,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+          userNickname: `Utilisateur ${item.user_id.slice(0, 8)}...`,
+        }));
       }
-
-      // Créer un map des usernames par userId
-      const usernameMap = new Map();
-      if (users) {
-        users.forEach((user) => {
-          usernameMap.set(user.id, user.username);
-        });
-      }
-
-      // Mapper les données snake_case vers camelCase pour correspondre à l'interface UserReview
-      return reviews.map((item: any) => ({
-        id: item.id,
-        userId: item.user_id,
-        creationId: item.creation_id,
-        comment: item.comment,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-        userNickname:
-          usernameMap.get(item.user_id) ||
-          `Utilisateur ${item.user_id.slice(0, 8)}...`,
-      }));
     } catch (error) {
-      console.error("Erreur lors de la récupération des avis:", error);
       return [];
     }
   }
@@ -180,7 +248,6 @@ export class ReviewsApi {
 
       return true;
     } catch (error) {
-      console.error("Erreur lors de la suppression de l'avis:", error);
       return false;
     }
   }

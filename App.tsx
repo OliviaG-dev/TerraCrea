@@ -3,15 +3,8 @@ import { StatusBar } from "expo-status-bar";
 import { Linking } from "react-native";
 
 import { NavigationContainer, LinkingOptions } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { UserProvider } from "./src/context/UserContext";
 import { FavoritesProvider } from "./src/context/FavoritesContext";
-import { HomeScreen } from "./src/screens/HomeScreen";
-import LoginScreen from "./src/screens/LoginScreen";
-import ExploreScreen from "./src/screens/ExploreScreen";
-import { ProfilScreen } from "./src/screens/ProfilScreen";
-import { EmailConfirmationScreen } from "./src/screens/EmailConfirmationScreen";
-import { EmailConfirmedScreen } from "./src/screens/EmailConfirmedScreen";
 import AccessibilityConfig from "./src/utils/accessibilityConfig";
 import {
   useEmailConfirmationHandler,
@@ -23,10 +16,6 @@ import {
 } from "./src/utils/passwordResetHandler";
 import { RootStackParamList } from "./src/types/Navigation";
 import { AuthNavigator } from "./src/components/AuthNavigator";
-
-import { supabase } from "./src/services/supabase";
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Configuration des liens profonds
 const linking: LinkingOptions<RootStackParamList> = {
@@ -101,14 +90,6 @@ export default function App() {
   // Initialiser la configuration d'accessibilité
   useEffect(() => {
     AccessibilityConfig.configureOverlayAccessibility();
-  }, []);
-
-  // Test de connexion Supabase (temporaire)
-  useEffect(() => {
-    supabase
-      .from("categories")
-      .select("count")
-      .then(({ data, error }) => {});
   }, []);
 
   return (

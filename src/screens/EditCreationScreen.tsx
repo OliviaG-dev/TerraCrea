@@ -11,15 +11,17 @@ import {
   ActivityIndicator,
   Modal,
   FlatList,
+  Platform,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ImagePicker } from "expo-image-picker";
+import * as ImagePicker from "expo-image-picker";
 import { NotificationToast } from "../components/NotificationToast";
 import { CommonHeader, CommonInput } from "../components";
 import { Creation, CreationCategory, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
 import { COLORS, inputStyles } from "../utils";
+import { commonMaterials, commonTags } from "../../assets/data";
 
 type EditCreationScreenNavigationProp = ScreenNavigationProp<"EditCreation">;
 
@@ -51,39 +53,6 @@ export const EditCreationScreen = () => {
     []
   );
 
-  const commonMaterials = [
-    "Bois",
-    "Argile",
-    "Verre",
-    "Métal",
-    "Pierre",
-    "Tissu",
-    "Cuir",
-    "Papier",
-    "Plastique",
-    "Céramique",
-    "Bambou",
-    "Laine",
-    "Soie",
-    "Coton",
-    "Lin",
-  ];
-
-  const commonTags = [
-    "Fait main",
-    "Unique",
-    "Écologique",
-    "Vintage",
-    "Moderne",
-    "Traditionnel",
-    "Artisanal",
-    "Durable",
-    "Recyclé",
-    "Bio",
-    "Éthique",
-    "Local",
-    "Personnalisable",
-  ];
   const [notification, setNotification] = useState<{
     visible: boolean;
     title: string;
@@ -198,6 +167,15 @@ export const EditCreationScreen = () => {
   };
 
   const addMaterial = () => {
+    if (form.materials.length >= 6) {
+      setNotification({
+        visible: true,
+        title: "Limite atteinte",
+        message: "Vous ne pouvez pas ajouter plus de 6 matériaux",
+        type: "warning",
+      });
+      return;
+    }
     setShowMaterialsModal(true);
   };
 
@@ -209,6 +187,15 @@ export const EditCreationScreen = () => {
   };
 
   const addTag = () => {
+    if (form.tags.length >= 8) {
+      setNotification({
+        visible: true,
+        title: "Limite atteinte",
+        message: "Vous ne pouvez pas ajouter plus de 8 tags",
+        type: "warning",
+      });
+      return;
+    }
     setShowTagsModal(true);
   };
 
@@ -551,6 +538,16 @@ export const EditCreationScreen = () => {
                     if (form.materials.includes(item)) {
                       removeMaterial(item);
                     } else {
+                      if (form.materials.length >= 6) {
+                        setNotification({
+                          visible: true,
+                          title: "Limite atteinte",
+                          message:
+                            "Vous ne pouvez pas ajouter plus de 6 matériaux",
+                          type: "warning",
+                        });
+                        return;
+                      }
                       setForm((prev) => ({
                         ...prev,
                         materials: [...prev.materials, item],
@@ -609,6 +606,15 @@ export const EditCreationScreen = () => {
                     if (form.tags.includes(item)) {
                       removeTag(item);
                     } else {
+                      if (form.tags.length >= 8) {
+                        setNotification({
+                          visible: true,
+                          title: "Limite atteinte",
+                          message: "Vous ne pouvez pas ajouter plus de 8 tags",
+                          type: "warning",
+                        });
+                        return;
+                      }
                       setForm((prev) => ({
                         ...prev,
                         tags: [...prev.tags, item],
@@ -722,7 +728,16 @@ const styles = StyleSheet.create({
     color: "#7a8a7a",
     fontFamily: "System",
   },
-
+  inputSection: {
+    marginBottom: 24,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4a5c4a",
+    marginBottom: 12,
+    fontFamily: "System",
+  },
   selectButton: {
     backgroundColor: "#fff",
     borderWidth: 1,
