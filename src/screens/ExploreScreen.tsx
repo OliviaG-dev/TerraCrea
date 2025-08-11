@@ -13,13 +13,14 @@ import {
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { CommonHeader } from "../components";
+import { CommonHeader, FloatingFavoritesButton } from "../components";
 import {
   CreationWithArtisan,
   CreationCategory,
   CATEGORY_LABELS,
 } from "../types/Creation";
-import { CreationsApi, useFavorites } from "../services/creationsApi";
+import { CreationsApi } from "../services/creationsApi";
+import { useFavorites } from "../context/FavoritesContext";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
 import { COLORS, cardStyles, emptyStyles, loadingStyles } from "../utils";
@@ -471,6 +472,9 @@ const ExploreScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Bouton flottant des favoris pour les utilisateurs connectés */}
+      {isAuthenticated && <FloatingFavoritesButton />}
     </SafeAreaView>
   );
 };

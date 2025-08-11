@@ -5,6 +5,7 @@ import { Linking } from "react-native";
 import { NavigationContainer, LinkingOptions } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { UserProvider } from "./src/context/UserContext";
+import { FavoritesProvider } from "./src/context/FavoritesContext";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import ExploreScreen from "./src/screens/ExploreScreen";
@@ -40,6 +41,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       EmailConfirmed: "email-confirmed",
       ForgotPassword: "forgot-password",
       ResetPassword: "reset-password",
+      Favorites: "favorites",
     },
   },
   async getInitialURL() {
@@ -111,8 +113,10 @@ export default function App() {
 
   return (
     <UserProvider>
-      <RootNavigator />
-      <StatusBar style="auto" />
+      <FavoritesProvider>
+        <RootNavigator />
+        <StatusBar style="auto" />
+      </FavoritesProvider>
     </UserProvider>
   );
 }

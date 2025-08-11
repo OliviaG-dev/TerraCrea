@@ -8,6 +8,7 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
@@ -17,6 +18,8 @@ import { CreationWithArtisan, CATEGORY_LABELS } from "../types/Creation";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { CreationsApi } from "../services/creationsApi";
 import { RatingsApi } from "../services/ratingsApi";
+import { ReviewsApi, UserReview } from "../services/reviewsApi";
+import { useFavorites } from "../context/FavoritesContext";
 import { COLORS, formatDate } from "../utils";
 
 // Composant pour les étoiles de notation
@@ -70,13 +73,21 @@ export const CreationDetailScreen = () => {
   const { creationId } = route.params as CreationDetailScreenParams;
   const { user } = useUserContext();
 
+  const {
+    isFavorite,
+    toggleFavorite,
+    loading: favoritesLoading,
+  } = useFavorites();
   const [creation, setCreation] = useState<CreationWithArtisan | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [userRating, setUserRating] = useState<number | null>(null);
   const [ratingLoading, setRatingLoading] = useState(false);
+  const [userReview, setUserReview] = useState<string | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [allReviews, setAllReviews] = useState<UserReview[]>([]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewText, setReviewText] = useState("");
   const [notification, setNotification] = useState<{
     visible: boolean;
     title: string;
@@ -103,15 +114,8 @@ export const CreationDetailScreen = () => {
 
       setCreation(foundCreation);
 
-      // Vérifier si l'utilisateur connecté a mis en favori cette création
-      if (user) {
-        try {
-          const favoriteStatus = await CreationsApi.isFavorite(creationId);
-          setIsFavorite(favoriteStatus);
-        } catch (error) {
-          // Continuer sans le statut favori
-        }
-      }
+      // Le statut des favoris est maintenant géré par le contexte global
+      // Pas besoin de vérifier manuellement
 
       // Charger la notation existante de l'utilisateur (si connecté et pas créateur)
       if (user && user.id !== foundCreation.artisanId) {
@@ -121,6 +125,24 @@ export const CreationDetailScreen = () => {
         } catch (error) {
           // Continuer sans la notation existante
         }
+      }
+
+      // Charger l'avis existant de l'utilisateur (si connecté et pas créateur)
+      if (user && user.id !== foundCreation.artisanId) {
+        try {
+          const existingReview = await ReviewsApi.getUserReview(creationId);
+          setUserReview(existingReview);
+        } catch (error) {
+          // Continuer sans l'avis existant
+        }
+      }
+
+      // Charger tous les avis de la création
+      try {
+        const reviews = await ReviewsApi.getCreationReviews(creationId);
+        setAllReviews(reviews);
+      } catch (error) {
+        // Continuer sans les avis
       }
     } catch (error) {
       setNotification({
@@ -147,14 +169,14 @@ export const CreationDetailScreen = () => {
     }
 
     try {
-      setFavoriteLoading(true);
-      const success = await CreationsApi.toggleFavorite(creationId);
+      const success = await toggleFavorite(creationId);
       if (success) {
-        setIsFavorite(!isFavorite);
         setNotification({
           visible: true,
-          title: isFavorite ? "💔 Retiré des favoris" : "❤️ Ajouté aux favoris",
-          message: isFavorite
+          title: isFavorite(creationId)
+            ? "💔 Retiré des favoris"
+            : "❤️ Ajouté aux favoris",
+          message: isFavorite(creationId)
             ? "Création retirée de vos favoris"
             : "Création ajoutée à vos favoris",
           type: "success",
@@ -175,8 +197,6 @@ export const CreationDetailScreen = () => {
           "Impossible de modifier les favoris. Veuillez réessayer plus tard.",
         type: "error",
       });
-    } finally {
-      setFavoriteLoading(false);
     }
   };
 
@@ -235,6 +255,117 @@ export const CreationDetailScreen = () => {
       });
     } finally {
       setRatingLoading(false);
+    }
+  };
+
+  // Gérer la soumission d'un avis
+  const handleSubmitReview = async () => {
+    if (!user) {
+      setNotification({
+        visible: true,
+        title: "⚠️ Connexion requise",
+        message: "Vous devez être connecté pour laisser un avis",
+        type: "warning",
+      });
+      return;
+    }
+
+    if (user.id === creation?.artisanId) {
+      setNotification({
+        visible: true,
+        title: "⚠️ Action non autorisée",
+        message: "Vous ne pouvez pas commenter vos propres créations",
+        type: "warning",
+      });
+      return;
+    }
+
+    if (!reviewText.trim() || reviewText.trim().length < 10) {
+      setNotification({
+        visible: true,
+        title: "⚠️ Avis trop court",
+        message: "Votre avis doit contenir au moins 10 caractères",
+        type: "warning",
+      });
+      return;
+    }
+
+    try {
+      setReviewLoading(true);
+
+      const success = await ReviewsApi.saveUserReview(
+        creationId,
+        reviewText.trim()
+      );
+
+      if (success) {
+        setUserReview(reviewText.trim());
+        setReviewText("");
+        setShowReviewForm(false);
+        setNotification({
+          visible: true,
+          title: "💬 Merci pour votre avis !",
+          message: "Votre commentaire a été publié avec succès",
+          type: "success",
+        });
+
+        // Recharger les détails pour afficher le nouvel avis
+        await loadCreationDetails();
+      } else {
+        setNotification({
+          visible: true,
+          title: "❌ Erreur",
+          message: "Impossible de publier votre avis. Veuillez réessayer.",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      setNotification({
+        visible: true,
+        title: "❌ Erreur",
+        message: "Impossible de publier votre avis. Veuillez réessayer.",
+        type: "error",
+      });
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  // Gérer la suppression d'un avis
+  const handleDeleteReview = async () => {
+    try {
+      setReviewLoading(true);
+
+      const success = await ReviewsApi.deleteUserReview(creationId);
+
+      if (success) {
+        setUserReview(null);
+        setNotification({
+          visible: true,
+          title: "🗑️ Avis supprimé",
+          message: "Votre avis a été supprimé avec succès",
+          type: "success",
+        });
+
+        // Recharger les détails pour mettre à jour la liste des avis
+        await loadCreationDetails();
+      } else {
+        setNotification({
+          visible: true,
+          title: "❌ Erreur",
+          message: "Impossible de supprimer votre avis. Veuillez réessayer.",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      setNotification({
+        visible: true,
+        title: "❌ Erreur",
+        message: "Impossible de supprimer votre avis. Veuillez réessayer.",
+        type: "error",
+      });
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -304,9 +435,13 @@ export const CreationDetailScreen = () => {
         rightButton={
           user
             ? {
-                text: favoriteLoading ? "..." : isFavorite ? "❤️" : "🤍",
+                text: favoritesLoading
+                  ? "..."
+                  : isFavorite(creationId)
+                  ? "❤️"
+                  : "🤍",
                 onPress: handleToggleFavorite,
-                disabled: favoriteLoading,
+                disabled: favoritesLoading,
               }
             : undefined
         }
@@ -418,7 +553,7 @@ export const CreationDetailScreen = () => {
                 <Text style={styles.statLabel}>Note moyenne</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>📊 {creation.reviewCount}</Text>
+                <Text style={styles.statValue}>📊 {allReviews.length}</Text>
                 <Text style={styles.statLabel}>Avis</Text>
               </View>
               <View style={styles.statItem}>
@@ -430,6 +565,159 @@ export const CreationDetailScreen = () => {
                 </Text>
               </View>
             </View>
+          </View>
+
+          {/* Section des avis */}
+          <View style={styles.reviewsSection}>
+            <Text style={styles.sectionTitle}>Avis des utilisateurs</Text>
+
+            {/* Formulaire d'avis pour les utilisateurs connectés (pas créateurs) */}
+            {user && user.id !== creation.artisanId && (
+              <View style={styles.reviewFormContainer}>
+                {!userReview ? (
+                  <View style={styles.reviewForm}>
+                    <Text style={styles.reviewFormLabel}>
+                      Partagez votre expérience avec cette création
+                    </Text>
+                    <TextInput
+                      style={styles.reviewTextInput}
+                      placeholder="Votre avis (minimum 10 caractères)..."
+                      value={reviewText}
+                      onChangeText={setReviewText}
+                      multiline
+                      numberOfLines={4}
+                      maxLength={500}
+                    />
+                    <View style={styles.reviewFormActions}>
+                      <TouchableOpacity
+                        style={styles.submitReviewButton}
+                        onPress={handleSubmitReview}
+                        disabled={
+                          reviewLoading ||
+                          !reviewText.trim() ||
+                          reviewText.trim().length < 10
+                        }
+                      >
+                        <Text style={styles.submitReviewButtonText}>
+                          {reviewLoading
+                            ? "Publication..."
+                            : "Publier mon avis"}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.userReviewContainer}>
+                    <Text style={styles.userReviewLabel}>Votre avis :</Text>
+                    <Text style={styles.userReviewText}>{userReview}</Text>
+
+                    {/* Bouton de suppression en haut à droite */}
+                    <TouchableOpacity
+                      style={styles.deleteReviewButton}
+                      onPress={handleDeleteReview}
+                      disabled={reviewLoading}
+                    >
+                      <Text style={styles.deleteReviewButtonText}>
+                        {reviewLoading ? "..." : "×"}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Bouton d'édition en bas à droite */}
+                    <TouchableOpacity
+                      style={styles.editReviewButton}
+                      onPress={() => {
+                        setReviewText(userReview);
+                        setShowReviewForm(true);
+                      }}
+                    >
+                      <Text style={styles.editReviewButtonText}>EDIT</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* Formulaire de modification */}
+                {showReviewForm && (
+                  <View style={styles.editReviewForm}>
+                    <Text style={styles.reviewFormLabel}>
+                      Modifier votre avis
+                    </Text>
+                    <TextInput
+                      style={styles.reviewTextInput}
+                      placeholder="Votre avis modifié..."
+                      value={reviewText}
+                      onChangeText={setReviewText}
+                      multiline
+                      numberOfLines={4}
+                      maxLength={500}
+                    />
+                    <View style={styles.reviewFormActions}>
+                      <TouchableOpacity
+                        style={styles.submitReviewButton}
+                        onPress={handleSubmitReview}
+                        disabled={
+                          reviewLoading ||
+                          !reviewText.trim() ||
+                          reviewText.trim().length < 10
+                        }
+                      >
+                        <Text style={styles.submitReviewButtonText}>
+                          {reviewLoading ? "Modification..." : "Mettre à jour"}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.cancelEditButton}
+                        onPress={() => {
+                          setShowReviewForm(false);
+                          setReviewText("");
+                        }}
+                      >
+                        <Text style={styles.cancelEditButtonText}>Annuler</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Message pour les non-connectés */}
+            {!user && (
+              <View style={styles.loginPromptContainer}>
+                <Text style={styles.loginPromptText}>
+                  Connectez-vous pour laisser un avis sur cette création
+                </Text>
+              </View>
+            )}
+
+            {/* Liste des avis */}
+            {allReviews.length > 0 ? (
+              <View style={styles.reviewsList}>
+                {allReviews.map((review) => (
+                  <View key={review.id} style={styles.reviewItem}>
+                    <View style={styles.reviewHeader}>
+                      <Text style={styles.reviewAuthor}>
+                        {review.userNickname ||
+                          `Utilisateur ${review.userId.slice(0, 8)}...`}
+                      </Text>
+                      <Text style={styles.reviewDate}>
+                        {formatDate(review.createdAt)}
+                      </Text>
+                    </View>
+                    <Text style={styles.reviewComment}>{review.comment}</Text>
+                    {review.updatedAt &&
+                      review.updatedAt !== review.createdAt && (
+                        <Text style={styles.reviewEdited}>(modifié)</Text>
+                      )}
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.noReviewsContainer}>
+                <Text style={styles.noReviewsText}>
+                  Aucun avis pour le moment. Soyez le premier à partager votre
+                  expérience !
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Notation utilisateur */}
@@ -807,5 +1095,192 @@ const styles = StyleSheet.create({
   },
   ratingLoader: {
     marginTop: 10,
+  },
+  // Styles pour la section des avis
+  reviewsSection: {
+    marginBottom: 24,
+  },
+  reviewFormContainer: {
+    marginBottom: 20,
+  },
+  reviewForm: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  reviewFormLabel: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  reviewTextInput: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    backgroundColor: COLORS.background,
+    minHeight: 100,
+    textAlignVertical: "top",
+    marginBottom: 16,
+  },
+  reviewFormActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  submitReviewButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: "center",
+  },
+  submitReviewButtonText: {
+    color: COLORS.textOnPrimary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  userReviewContainer: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    position: "relative",
+  },
+  userReviewLabel: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  userReviewText: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  editReviewButton: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    backgroundColor: "transparent",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    minWidth: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editReviewButtonText: {
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  deleteReviewButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    backgroundColor: "transparent",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteReviewButtonText: {
+    color: COLORS.textPrimary,
+    fontSize: 18,
+    fontWeight: "400",
+  },
+  editReviewForm: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginTop: 12,
+  },
+  cancelEditButton: {
+    backgroundColor: COLORS.lightGray,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: "center",
+  },
+  cancelEditButtonText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  loginPromptContainer: {
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  loginPromptText: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+  },
+  reviewsList: {
+    gap: 16,
+  },
+  reviewItem: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  reviewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  reviewAuthor: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontWeight: "600",
+  },
+  reviewDate: {
+    fontSize: 12,
+    color: COLORS.textLight,
+  },
+  reviewComment: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    lineHeight: 24,
+  },
+  reviewEdited: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    fontStyle: "italic",
+    marginTop: 8,
+  },
+  noReviewsContainer: {
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+  },
+  noReviewsText: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    lineHeight: 24,
   },
 });

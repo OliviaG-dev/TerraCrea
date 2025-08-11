@@ -5,3 +5,4 @@ export { NavigationHeader } from "./NavigationHeader";
 export { AuthNavigator } from "./AuthNavigator";
 export { Header } from "./Header";
 export { NotificationToast } from "./NotificationToast";
+export { FloatingFavoritesButton } from "./FloatingFavoritesButton";

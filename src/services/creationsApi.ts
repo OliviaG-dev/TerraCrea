@@ -1031,76 +1031,8 @@ export class CreationsApi {
 // HOOKS PERSONNALISÉS POUR REACT
 // =============================================
 
-/**
- * Hook pour gérer les favoris
- */
-export const useFavorites = () => {
-  const [favorites, setFavorites] = useState<CreationWithArtisan[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadFavorites = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await CreationsApi.getUserFavorites();
-      setFavorites(data);
-    } catch (err) {
-      setError("Erreur lors du chargement des favoris");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addToFavorites = async (creationId: string) => {
-    try {
-      const success = await CreationsApi.addToFavorites(creationId);
-      if (success) {
-        await loadFavorites(); // Recharger les favoris
-      }
-      return success;
-    } catch (err) {
-      setError("Erreur lors de l'ajout aux favoris");
-      return false;
-    }
-  };
-
-  const removeFromFavorites = async (creationId: string) => {
-    try {
-      const success = await CreationsApi.removeFromFavorites(creationId);
-      if (success) {
-        await loadFavorites(); // Recharger les favoris
-      }
-      return success;
-    } catch (err) {
-      setError("Erreur lors de la suppression des favoris");
-      return false;
-    }
-  };
-
-  const toggleFavorite = async (creationId: string) => {
-    const isFav = await CreationsApi.isFavorite(creationId);
-    if (isFav) {
-      return await removeFromFavorites(creationId);
-    } else {
-      return await addToFavorites(creationId);
-    }
-  };
-
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
-  return {
-    favorites,
-    loading,
-    error,
-    addToFavorites,
-    removeFromFavorites,
-    toggleFavorite,
-    refetch: loadFavorites,
-  };
-};
+// Le hook useFavorites a été déplacé vers src/context/FavoritesContext.tsx
+// pour permettre un partage global de l'état des favoris entre tous les composants
 
 // =============================================
 // FONCTION POUR CRÉER LA FONCTION POSTGRESQL
