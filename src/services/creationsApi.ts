@@ -289,6 +289,121 @@ export class CreationsApi {
   }
 
   /**
+   * Recherche des créateurs par terme de recherche
+   */
+  static async searchCreators(searchQuery: string): Promise<any[]> {
+    try {
+      let query = supabase
+        .from("creations_full")
+        .select(
+          "artisan_id, artisan_name, artisan_location, artisan_profile_image_url, artisan_bio, artisan_is_verified, artisan_joined_at, artisan_established_year, artisan_specialties, artisan_total_sales, rating"
+        )
+        .not("artisan_id", "is", null);
+
+      // Filtre par terme de recherche si fourni
+      if (searchQuery.trim()) {
+        query = query.or(
+          `artisan_name.ilike.%${searchQuery}%,artisan_bio.ilike.%${searchQuery}%,artisan_specialties.cs.{${searchQuery}}`
+        );
+      }
+
+      const { data, error } = await query.order("rating", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // Grouper par artisan et calculer les statistiques
+      const artisansMap = new Map();
+
+      data?.forEach((item) => {
+        if (!artisansMap.has(item.artisan_id)) {
+          artisansMap.set(item.artisan_id, {
+            id: item.artisan_id,
+            displayName: item.artisan_name || "Artisan",
+            profileImage: item.artisan_profile_image_url,
+            artisanProfile: {
+              businessName: item.artisan_name,
+              location: item.artisan_location,
+              verified: item.artisan_is_verified || false,
+              rating: item.rating || 0,
+              joinedAt: item.artisan_joined_at,
+              description: item.artisan_bio,
+              establishedYear: item.artisan_established_year,
+              specialties: item.artisan_specialties || [],
+              totalSales: item.artisan_total_sales || 0,
+            },
+            creationCount: 1,
+            totalRating: item.rating || 0,
+          });
+        } else {
+          const existing = artisansMap.get(item.artisan_id);
+          existing.creationCount += 1;
+          existing.totalRating += item.rating || 0;
+          existing.artisanProfile.rating =
+            existing.totalRating / existing.creationCount;
+        }
+      });
+
+      return Array.from(artisansMap.values());
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
+   * Recherche par ville - retourne les statistiques et les créations
+   */
+  static async searchByCity(cityQuery: string): Promise<{
+    cityStats: { city: string; creatorCount: number; creationCount: number };
+    creations: CreationWithArtisan[];
+  }> {
+    try {
+      if (!cityQuery.trim()) {
+        return {
+          cityStats: { city: "", creatorCount: 0, creationCount: 0 },
+          creations: [],
+        };
+      }
+
+      const { data, error } = await supabase
+        .from("creations_full")
+        .select("*")
+        .ilike("artisan_location", `%${cityQuery}%`)
+        .not("artisan_id", "is", null);
+
+      if (error) {
+        throw error;
+      }
+
+      // Calculer les statistiques de la ville
+      const creators = new Set();
+      let creationCount = 0;
+
+      data?.forEach((item) => {
+        creators.add(item.artisan_id);
+        creationCount++;
+      });
+
+      const cityStats = {
+        city: cityQuery,
+        creatorCount: creators.size,
+        creationCount: creationCount,
+      };
+
+      // Transformer les données en CreationWithArtisan
+      const creations = data?.map(transformSupabaseCreationWithUser) || [];
+
+      return { cityStats, creations };
+    } catch (error) {
+      return {
+        cityStats: { city: "", creatorCount: 0, creationCount: 0 },
+        creations: [],
+      };
+    }
+  }
+
+  /**
    * Filtre les créations par catégorie
    */
   static async getCreationsByCategory(
