@@ -8,7 +8,11 @@ import {
   Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { CommonButton, FloatingFavoritesButton } from "../components";
+import {
+  CommonButton,
+  FloatingFavoritesButton,
+  FloatingSearchButton,
+} from "../components";
 import { useUserContext } from "../context/UserContext";
 import { ScreenNavigationProp } from "../types/Navigation";
 
@@ -155,6 +159,9 @@ export const HomeScreen: React.FC = () => {
 
       {/* Bouton flottant des favoris pour les utilisateurs connectés */}
       {isAuthenticated && <FloatingFavoritesButton />}
+
+      {/* Bouton flottant de recherche pour les utilisateurs connectés */}
+      {isAuthenticated && <FloatingSearchButton />}
     </View>
   );
 };

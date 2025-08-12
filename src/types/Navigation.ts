@@ -2,6 +2,7 @@ export type RootStackParamList = {
   Home: undefined;
   Login: { mode?: string };
   Explore: undefined;
+  Search: undefined;
   Profil: undefined;
   Creations: undefined;
   AddCreation: undefined;

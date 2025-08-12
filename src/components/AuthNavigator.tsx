@@ -4,6 +4,7 @@ import { useUserContext } from "../context/UserContext";
 import { HomeScreen } from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import ExploreScreen from "../screens/ExploreScreen";
+import { SearchScreen } from "../screens/SearchScreen";
 import { ProfilScreen } from "../screens/ProfilScreen";
 import { EmailConfirmationScreen } from "../screens/EmailConfirmationScreen";
 import { EmailConfirmedScreen } from "../screens/EmailConfirmedScreen";
@@ -73,6 +74,14 @@ export const AuthNavigator: React.FC = () => {
         component={ExploreScreen}
         options={{
           title: "Explorer",
+          headerRight: () => <NavigationHeader />,
+        }}
+      />
+      <Stack.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{
+          title: "Recherche",
           headerRight: () => <NavigationHeader />,
         }}
       />

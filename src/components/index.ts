@@ -6,3 +6,4 @@ export { AuthNavigator } from "./AuthNavigator";
 export { Header } from "./Header";
 export { NotificationToast } from "./NotificationToast";
 export { FloatingFavoritesButton } from "./FloatingFavoritesButton";
+export { FloatingSearchButton } from "./FloatingSearchButton";

@@ -13,7 +13,11 @@ import {
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { CommonHeader, FloatingFavoritesButton } from "../components";
+import {
+  CommonHeader,
+  FloatingFavoritesButton,
+  FloatingSearchButton,
+} from "../components";
 import {
   CreationWithArtisan,
   CreationCategory,
@@ -475,6 +479,9 @@ const ExploreScreen: React.FC = () => {
 
       {/* Bouton flottant des favoris pour les utilisateurs connectés */}
       {isAuthenticated && <FloatingFavoritesButton />}
+
+      {/* Bouton flottant de recherche pour les utilisateurs connectés */}
+      {isAuthenticated && <FloatingSearchButton />}
     </SafeAreaView>
   );
 };

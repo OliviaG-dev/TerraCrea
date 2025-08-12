@@ -25,6 +25,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       Home: "",
       Login: "login",
       Explore: "explore",
+      Search: "search",
       Profil: "profil",
       EmailConfirmation: "email-confirmation",
       EmailConfirmed: "email-confirmed",
