@@ -59,7 +59,44 @@ export const SearchScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+
+  // Charger les données par défaut au montage du composant
+  useEffect(() => {
+    loadDefaultData();
+  }, []);
+
+  // Charger les données par défaut selon le type sélectionné
+  const loadDefaultData = async () => {
+    setLoading(true);
+    setError(null);
+    setHasSearched(false);
+
+    try {
+      let data: any[] = [];
+
+      switch (selectedSearchType) {
+        case "creations":
+          // Utiliser searchCreations avec la catégorie sélectionnée pour le filtrage
+          data = await CreationsApi.searchCreations("", selectedCategory);
+          setSearchResults({ type: selectedSearchType, data });
+          break;
+        case "creators":
+          data = await CreationsApi.getAllCreators();
+          setSearchResults({ type: selectedSearchType, data });
+          break;
+        case "cities":
+          // Pour les villes, on garde un état vide par défaut
+          setSearchResults({ type: selectedSearchType, data: [] });
+          break;
+      }
+    } catch (err) {
+      setError("Impossible de charger les données. Vérifiez votre connexion.");
+      setSearchResults({ type: selectedSearchType, data: [] });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Composant SVG pour la loupe personnalisée
   const SearchIcon = () => (
@@ -89,11 +126,18 @@ export const SearchScreen: React.FC = () => {
   ];
 
   const performSearch = async () => {
+    // Si pas de terme de recherche et catégorie "all", charger les données par défaut
     if (
       !searchQuery.trim() &&
       selectedCategory === "all" &&
-      selectedSearchType === "creations"
+      selectedSearchType !== "cities"
     ) {
+      loadDefaultData();
+      return;
+    }
+
+    // Si recherche par ville sans terme, ne rien faire
+    if (selectedSearchType === "cities" && !searchQuery.trim()) {
       setSearchResults({ type: selectedSearchType, data: [] });
       setHasSearched(false);
       return;
@@ -115,7 +159,11 @@ export const SearchScreen: React.FC = () => {
           setSearchResults({ type: selectedSearchType, data });
           break;
         case "creators":
-          data = await CreationsApi.searchCreators(searchQuery);
+          if (searchQuery.trim()) {
+            data = await CreationsApi.searchCreators(searchQuery);
+          } else {
+            data = await CreationsApi.getAllCreators();
+          }
           setSearchResults({ type: selectedSearchType, data });
           break;
         case "cities":
@@ -140,11 +188,19 @@ export const SearchScreen: React.FC = () => {
   useEffect(() => {
     if (hasSearched) {
       performSearch();
+    } else {
+      // Si pas de recherche active, charger les données par défaut
+      loadDefaultData();
     }
   }, [selectedCategory, selectedSearchType]);
 
   const handleSearch = () => {
-    performSearch();
+    if (!searchQuery.trim() && selectedSearchType !== "cities") {
+      // Si pas de terme de recherche, charger les données par défaut
+      loadDefaultData();
+    } else {
+      performSearch();
+    }
   };
 
   const handleToggleFavorite = async (creationId: string) => {
@@ -181,12 +237,12 @@ export const SearchScreen: React.FC = () => {
   };
 
   const renderCreationResult = ({ item }: { item: CreationWithArtisan }) => {
-    const isFavorite = favorites.includes(item.id);
+    const isItemFavorite = isFavorite(item.id);
 
     return (
       <CreationCard
         item={item}
-        isFavorite={isFavorite}
+        isFavorite={isItemFavorite}
         onToggleFavorite={handleToggleFavorite}
         onPress={handleCreationPress}
         isAuthenticated={isAuthenticated}
@@ -246,7 +302,7 @@ export const SearchScreen: React.FC = () => {
             <View style={styles.specialtiesContainer}>
               {item.artisanProfile?.specialties
                 ?.slice(0, 2)
-                .map((specialty, index) => (
+                .map((specialty: string, index: number) => (
                   <View key={index} style={styles.specialtyTag}>
                     <Text style={styles.specialtyText}>{specialty}</Text>
                   </View>
@@ -282,7 +338,7 @@ export const SearchScreen: React.FC = () => {
   const renderCityResult = ({ item }: { item: any }) => {
     return (
       <TouchableOpacity
-        style={styles.cityCard}
+        style={styles.cityResultCard}
         onPress={() => {
           // Naviguer vers une vue des créations de cette ville
           setSelectedSearchType("creations");
@@ -291,7 +347,7 @@ export const SearchScreen: React.FC = () => {
         }}
         activeOpacity={0.95}
       >
-        <View style={styles.cityCardContent}>
+        <View style={styles.cityResultCardContent}>
           <View style={styles.cityHeader}>
             <View style={styles.cityIconContainer}>
               <Text style={styles.cityIcon}>🏙️</Text>
@@ -337,24 +393,23 @@ export const SearchScreen: React.FC = () => {
   };
 
   const renderEmptyState = () => {
-    if (!hasSearched) {
+    if (!hasSearched && searchResults.data.length === 0) {
       return (
         <View style={emptyStyles.container}>
           <Text style={emptyStyles.title}>
-            Recherchez vos{" "}
+            Chargement des{" "}
             {selectedSearchType === "creations"
               ? "créations"
               : selectedSearchType === "creators"
               ? "créateurs"
               : "villes"}
           </Text>
-          <Text style={emptyStyles.subtitle}>
-            Utilisez la barre de recherche ci-dessus pour trouver des{" "}
+          <Text style={emptyStyles.description}>
             {selectedSearchType === "creations"
-              ? "créations uniques"
+              ? "Toutes les créations disponibles sont en cours de chargement..."
               : selectedSearchType === "creators"
-              ? "créateurs talentueux"
-              : "créations par ville"}
+              ? "Tous les créateurs disponibles sont en cours de chargement..."
+              : "Recherchez une ville pour voir les créations disponibles"}
           </Text>
         </View>
       );
@@ -373,7 +428,7 @@ export const SearchScreen: React.FC = () => {
       return (
         <View style={emptyStyles.container}>
           <Text style={emptyStyles.title}>Erreur de recherche</Text>
-          <Text style={emptyStyles.subtitle}>{error}</Text>
+          <Text style={emptyStyles.description}>{error}</Text>
         </View>
       );
     }
@@ -386,7 +441,7 @@ export const SearchScreen: React.FC = () => {
               ? `Aucune création trouvée à ${searchQuery}`
               : "Aucun résultat trouvé"}
           </Text>
-          <Text style={emptyStyles.subtitle}>
+          <Text style={emptyStyles.description}>
             {selectedSearchType === "cities"
               ? "Essayez une autre ville ou vérifiez l'orthographe"
               : "Essayez de modifier vos critères de recherche"}
@@ -475,7 +530,9 @@ export const SearchScreen: React.FC = () => {
                   selectedCategory === category.key &&
                     styles.categoryButtonActive,
                 ]}
-                onPress={() => setSelectedCategory(category.key)}
+                onPress={() =>
+                  setSelectedCategory(category.key as CreationCategory | "all")
+                }
                 activeOpacity={0.8}
               >
                 <Text
@@ -892,8 +949,8 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
 
-  // Styles pour les cartes villes
-  cityCard: {
+  // Styles pour les cartes villes (résultats de recherche)
+  cityResultCard: {
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 20,
@@ -905,7 +962,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  cityCardContent: {
+  cityResultCardContent: {
     alignItems: "center",
   },
   cityHeader: {

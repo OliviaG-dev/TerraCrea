@@ -18,10 +18,6 @@ import { CreatorProfileScreen } from "../screens/CreatorProfileScreen";
 import { FavoritesScreen } from "../screens/FavoritesScreen";
 import { NavigationHeader } from "./NavigationHeader";
 import { RootStackParamList } from "../types/Navigation";
-import {
-  useEmailConfirmationHandler,
-  handleEmailConfirmationLink,
-} from "../utils/emailConfirmationHandler";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

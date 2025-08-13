@@ -44,6 +44,18 @@ export const CreationCard: React.FC<CreationCardProps> = ({
     return date.toLocaleDateString("fr-FR", options);
   };
 
+  // Fonction utilitaire pour nettoyer et valider les tags
+  const getValidTags = (tags: any[] | null | undefined): string[] => {
+    if (!tags || !Array.isArray(tags)) return [];
+    const validTags = tags
+      .filter((tag) => tag && typeof tag === "string" && tag.trim().length > 0)
+      .map((tag) => tag.trim());
+
+    return validTags;
+  };
+
+  const validTags = getValidTags(item.tags);
+
   return (
     <View style={styles.cardWrapper}>
       <View style={styles.cardBorderContainer}>
@@ -83,7 +95,7 @@ export const CreationCard: React.FC<CreationCardProps> = ({
           {/* Prix - Haut droite */}
           <View style={styles.priceOverlay}>
             <Text style={styles.priceOverlayText}>
-              {item.price.toFixed(2)} €
+              {(item.price || 0).toFixed(2)} €
             </Text>
           </View>
 
@@ -91,10 +103,10 @@ export const CreationCard: React.FC<CreationCardProps> = ({
           <View style={styles.ratingOverlay}>
             <View style={styles.ratingOverlayContainer}>
               <Text style={styles.ratingOverlayText}>
-                ⭐ {item.rating.toFixed(1)}
+                ⭐ {(item.rating || 0).toFixed(1)}
               </Text>
               <Text style={styles.reviewOverlayText}>
-                ({item.reviewCount} avis)
+                ({item.reviewCount || 0} avis)
               </Text>
             </View>
           </View>
@@ -102,7 +114,9 @@ export const CreationCard: React.FC<CreationCardProps> = ({
           {/* Date de création - Bas gauche */}
           <View style={styles.dateOverlay}>
             <Text style={styles.dateOverlayText}>
-              {formatCreationDate(item.createdAt)}
+              {item.createdAt
+                ? formatCreationDate(item.createdAt)
+                : "Date inconnue"}
             </Text>
           </View>
         </View>
@@ -118,12 +132,18 @@ export const CreationCard: React.FC<CreationCardProps> = ({
               style={[
                 styles.availabilityDot,
                 {
-                  backgroundColor: item.isAvailable ? "#22c55e" : COLORS.danger,
+                  backgroundColor: (
+                    item.isAvailable !== undefined ? item.isAvailable : true
+                  )
+                    ? "#22c55e"
+                    : COLORS.danger,
                 },
               ]}
               accessible={true}
               accessibilityLabel={
-                item.isAvailable ? "Disponible" : "Non disponible"
+                (item.isAvailable !== undefined ? item.isAvailable : true)
+                  ? "Disponible"
+                  : "Non disponible"
               }
             />
           </View>
@@ -146,15 +166,15 @@ export const CreationCard: React.FC<CreationCardProps> = ({
           <View style={styles.tagsContainer}>
             <Text style={styles.tagsLabel}>Tags:</Text>
             <View style={styles.tagsList}>
-              {item.tags && item.tags.length > 0 ? (
+              {validTags.length > 0 ? (
                 <>
-                  {item.tags.slice(0, 4).map((tag: string, index: number) => (
+                  {validTags.slice(0, 4).map((tag: string, index: number) => (
                     <View key={index} style={styles.tagItem}>
                       <Text style={styles.tagText}>#{tag}</Text>
                     </View>
                   ))}
-                  {item.tags.length > 4 && (
-                    <Text style={styles.moreTags}>+{item.tags.length - 4}</Text>
+                  {validTags.length > 4 && (
+                    <Text style={styles.moreTags}>+{validTags.length - 4}</Text>
                   )}
                 </>
               ) : (
@@ -177,9 +197,9 @@ export const CreationCard: React.FC<CreationCardProps> = ({
                   <View style={styles.tagItem}>
                     <Text style={styles.tagText}>
                       #
-                      {item.price < 50
+                      {(item.price || 0) < 50
                         ? "abordable"
-                        : item.price > 100
+                        : (item.price || 0) > 100
                         ? "premium"
                         : "qualité"}
                     </Text>
@@ -208,7 +228,9 @@ export const CreationCard: React.FC<CreationCardProps> = ({
               onPress={() => onPress(item)}
               accessible={true}
               accessibilityRole="button"
-              accessibilityLabel={`Voir les détails de ${item.title}`}
+              accessibilityLabel={`Voir les détails de ${
+                item.title || "création"
+              }`}
             >
               <Text style={styles.viewDetailsText}>Voir plus</Text>
             </TouchableOpacity>

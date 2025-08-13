@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
@@ -20,7 +19,7 @@ type ForgotPasswordScreenNavigationProp =
 export const ForgotPasswordScreen = () => {
   const navigation = useNavigation<ForgotPasswordScreenNavigationProp>();
   const { resetPassword } = useUserContext();
-  
+
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<{

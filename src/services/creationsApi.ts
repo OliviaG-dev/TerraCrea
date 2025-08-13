@@ -1,5 +1,9 @@
 import { supabase } from "./supabase";
-import { CreationCategory, CreationWithArtisan } from "../types/Creation";
+import {
+  CreationCategory,
+  CreationWithArtisan,
+  CATEGORY_LABELS,
+} from "../types/Creation";
 
 // =============================================
 // INTERFACES POUR LES RÉPONSES SUPABASE
@@ -89,7 +93,61 @@ const transformSupabaseCreationWithUser = (
     reviewCount: supabaseCreation.review_count,
     createdAt: supabaseCreation.created_at,
     updatedAt: supabaseCreation.updated_at,
-    tags: supabaseCreation.creation_tags || supabaseCreation.tags || [],
+    tags: (() => {
+      // Fonction pour nettoyer et valider les tags
+      const cleanTags = (tagArray: any[] | null | undefined): string[] => {
+        if (!tagArray || !Array.isArray(tagArray)) {
+          return [];
+        }
+
+        // Version plus robuste qui gère différents types
+        const validTags: string[] = [];
+
+        for (let i = 0; i < tagArray.length; i++) {
+          const tag = tagArray[i];
+
+          // Convertir en string si ce n'est pas déjà le cas
+          let tagString: string;
+          if (typeof tag === "string") {
+            tagString = tag;
+          } else if (tag && typeof tag === "object" && tag.toString) {
+            tagString = tag.toString();
+          } else if (tag !== null && tag !== undefined) {
+            tagString = String(tag);
+          } else {
+            continue;
+          }
+
+          // Nettoyer et valider
+          const trimmedTag = tagString.trim();
+          if (trimmedTag.length > 0) {
+            validTags.push(trimmedTag);
+          }
+        }
+
+        return validTags;
+      };
+
+      // Priorité: creation_tags, puis tags, puis tableau vide
+      let tags: string[] = [];
+
+      if (
+        supabaseCreation.creation_tags &&
+        Array.isArray(supabaseCreation.creation_tags)
+      ) {
+        tags = cleanTags(supabaseCreation.creation_tags);
+      }
+
+      if (
+        tags.length === 0 &&
+        supabaseCreation.tags &&
+        Array.isArray(supabaseCreation.tags)
+      ) {
+        tags = cleanTags(supabaseCreation.tags);
+      }
+
+      return tags;
+    })(),
     artisan: {
       id: supabaseCreation.artisan_id,
       username: supabaseCreation.artisan_email?.split("@")[0], // Généré à partir de l'email
@@ -264,7 +322,11 @@ export class CreationsApi {
 
       // Filtre par catégorie si spécifié et différent de 'all'
       if (category && category !== "all") {
-        query = query.eq("category_id", category);
+        // Utiliser category_label au lieu de category_id car les valeurs de CreationCategory correspondent aux labels
+        const categoryLabel = CATEGORY_LABELS[category as CreationCategory];
+        if (categoryLabel) {
+          query = query.eq("category_label", categoryLabel);
+        }
       }
 
       // Filtre par terme de recherche si fourni
@@ -283,6 +345,61 @@ export class CreationsApi {
       }
 
       return data?.map(transformSupabaseCreationWithUser) || [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
+   * Récupère tous les créateurs disponibles
+   */
+  static async getAllCreators(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from("creations_full")
+        .select(
+          "artisan_id, artisan_name, artisan_location, artisan_profile_image_url, artisan_bio, artisan_is_verified, artisan_joined_at, artisan_established_year, artisan_specialties, artisan_total_sales, rating"
+        )
+        .not("artisan_id", "is", null)
+        .order("rating", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // Grouper par artisan et calculer les statistiques
+      const artisansMap = new Map();
+
+      data?.forEach((item) => {
+        if (!artisansMap.has(item.artisan_id)) {
+          artisansMap.set(item.artisan_id, {
+            id: item.artisan_id,
+            displayName: item.artisan_name || "Artisan",
+            profileImage: item.artisan_profile_image_url,
+            artisanProfile: {
+              businessName: item.artisan_name,
+              location: item.artisan_location,
+              verified: item.artisan_is_verified || false,
+              rating: item.rating || 0,
+              joinedAt: item.artisan_joined_at,
+              description: item.artisan_bio,
+              establishedYear: item.artisan_established_year,
+              specialties: item.artisan_specialties || [],
+              totalSales: item.artisan_total_sales || 0,
+            },
+            creationCount: 1,
+            totalRating: item.rating || 0,
+          });
+        } else {
+          const existing = artisansMap.get(item.artisan_id);
+          existing.creationCount += 1;
+          existing.totalRating += item.rating || 0;
+          existing.artisanProfile.rating =
+            existing.totalRating / existing.creationCount;
+        }
+      });
+
+      return Array.from(artisansMap.values());
     } catch (error) {
       return [];
     }

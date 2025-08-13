@@ -78,53 +78,6 @@ export const headerStyles = StyleSheet.create({
   },
 });
 
-// Styles communs pour les textes
-export const textStyles = StyleSheet.create({
-  primary: {
-    color: COLORS.primary,
-    fontFamily: "System",
-  },
-  secondary: {
-    color: COLORS.textSecondary,
-    fontFamily: "System",
-  },
-  light: {
-    color: COLORS.textLight,
-    fontFamily: "System",
-  },
-  white: {
-    color: COLORS.white,
-    fontFamily: "System",
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: COLORS.primary,
-    fontFamily: "System",
-  },
-  subheading: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.primary,
-    fontFamily: "System",
-  },
-  body: {
-    fontSize: 16,
-    color: COLORS.primary,
-    fontFamily: "System",
-  },
-  caption: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    fontFamily: "System",
-  },
-  small: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    fontFamily: "System",
-  },
-});
-
 // Styles communs pour les inputs
 export const inputStyles = StyleSheet.create({
   container: {

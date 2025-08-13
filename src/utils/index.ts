@@ -1,7 +1,6 @@
 export { COLORS } from "./colors";
 export {
   headerStyles,
-  textStyles,
   inputStyles,
   buttonStyles,
   cardStyles,
