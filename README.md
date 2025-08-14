@@ -41,6 +41,19 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Dates de création** et statut de disponibilité
 - ✅ **Bouton "Voir plus"** pour accéder aux détails complets
 
+### 🔍 **Système de recherche avancé**
+
+- ✅ **Recherche multi-types** : Créations, Artisans et Villes
+- ✅ **Autocomplétion intelligente** avec suggestions contextuelles
+- ✅ **Recherche par ville** avec statistiques locales (nombre d'artisans et créations)
+- ✅ **Recherche d'artisans** par nom, spécialités et localisation
+- ✅ **Recherche de créations** par titre, description, matériaux et tags
+- ✅ **Filtrage par catégorie** pour les créations
+- ✅ **Suggestions en temps réel** basées sur les données disponibles
+- ✅ **Interface de recherche unifiée** avec onglets dédiés
+- ✅ **Résultats contextuels** selon le type de recherche sélectionné
+- ✅ **Navigation fluide** entre les différents types de résultats
+
 ### 📖 **Détails des créations**
 
 - ✅ **Écran de détail complet** accessible à tous les utilisateurs
@@ -129,6 +142,7 @@ src/
 │   ├── CommonHeader.tsx      # Header réutilisable avec navigation
 │   ├── CommonInput.tsx       # Input standardisé avec validation
 │   ├── CommonButton.tsx      # Bouton avec variantes (primary, secondary, danger)
+│   ├── AutoSuggestInput.tsx  # Input avec autocomplétion et suggestions
 │   ├── AuthNavigator.tsx     # Navigation d'authentification
 │   ├── Header.tsx            # Header principal
 │   ├── NavigationHeader.tsx  # Header de navigation
@@ -144,6 +158,7 @@ src/
 │   ├── HomeScreen.tsx         # Écran d'accueil adaptatif
 │   ├── LoginScreen.tsx        # Écran de connexion/inscription
 │   ├── ExploreScreen.tsx      # Écran d'exploration des créations
+│   ├── SearchScreen.tsx       # Écran de recherche avancée multi-types
 │   ├── ProfilScreen.tsx       # Écran de profil utilisateur/artisan
 │   ├── CreationsScreen.tsx    # Gestion des créations utilisateur
 │   ├── AddCreationScreen.tsx  # Ajout de nouvelles créations
@@ -161,7 +176,8 @@ src/
 │   ├── creationsApi.ts        # API complète pour les créations
 │   ├── favoritesApi.ts        # API pour la gestion des favoris
 │   ├── ratingsApi.ts          # API pour les évaluations
-│   └── reviewsApi.ts          # API pour les avis et commentaires
+│   ├── reviewsApi.ts          # API pour les avis et commentaires
+│   └── suggestionsService.ts  # Service d'autocomplétion et suggestions
 ├── types/          # Types TypeScript
 │   ├── User.ts                # Types utilisateur et artisan
 │   ├── Creation.ts            # Types créations et catégories
@@ -353,6 +369,17 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **Pagination automatique** pour de meilleures performances
 - **Bouton "Voir plus"** pour accéder aux détails complets
 
+### 🔍 **Recherche avancée multi-types**
+
+- **Interface unifiée** avec onglets dédiés (Créations, Artisans, Villes)
+- **Recherche de créations** avec filtrage par catégorie et autocomplétion
+- **Recherche d'artisans** par nom, spécialités et localisation
+- **Recherche par ville** avec statistiques locales et suggestions
+- **Autocomplétion intelligente** basée sur les données disponibles
+- **Suggestions contextuelles** selon le type de recherche sélectionné
+- **Résultats en temps réel** avec interface adaptative
+- **Navigation fluide** entre les différents types de résultats
+
 ### 📖 **Détails des créations**
 
 - **Écran détaillé** accessible à tous les utilisateurs
@@ -504,6 +531,7 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **`FavoritesApi`** : Gestion complète des favoris
 - **`RatingsApi`** : Gestion des évaluations par étoiles
 - **`ReviewsApi`** : Gestion des commentaires et avis
+- **`SuggestionsService`** : Service d'autocomplétion et suggestions
 - **`useAuth`** : Hook de gestion complète de l'authentification
 - **`UserContext`** : État global utilisateur avec profils artisan
 - **`FavoritesContext`** : État global des favoris avec synchronisation
@@ -529,7 +557,6 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - [ ] **Photos multiples** par création
 - [ ] **Gestion de stock** pour les artisans
 - [ ] **Tableau de bord artisan** avec statistiques
-- [ ] **Système de recherche avancée** avec filtres multiples
 - [ ] **Partage de créations** sur les réseaux sociaux
 
 ## 🤝 Contribution

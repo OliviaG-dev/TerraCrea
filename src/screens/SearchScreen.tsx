@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Image,
   Dimensions,
   SafeAreaView,
@@ -24,13 +25,12 @@ import { CreationsApi } from "../services/creationsApi";
 import { useFavorites } from "../context/FavoritesContext";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
-import { COLORS, cardStyles, emptyStyles, loadingStyles } from "../utils";
+import { COLORS, emptyStyles, loadingStyles } from "../utils";
 import Svg, { Path } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
 const HORIZONTAL_PADDING = 16;
 const CARD_WIDTH = width - HORIZONTAL_PADDING * 2;
-const CARD_HEIGHT = 460;
 
 type SearchScreenNavigationProp = ScreenNavigationProp<"Search">;
 
@@ -59,11 +59,164 @@ export const SearchScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  // États pour l'autocomplétion
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [allData, setAllData] = useState<any[]>([]);
+
+  const { toggleFavorite, isFavorite } = useFavorites();
+
+  // Générer les suggestions d'autocomplétion
+  const generateSuggestions = (data: any[], query: string) => {
+    if (!query.trim() || allData.length === 0) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const queryLower = query.toLowerCase();
+    const suggestionsSet = new Set<string>();
+
+    // Utiliser allData qui contient toutes les données chargées
+    allData.forEach((item) => {
+      // Suggestions basées sur le type de recherche
+      switch (selectedSearchType) {
+        case "creations":
+          if (item.title?.toLowerCase().includes(queryLower)) {
+            suggestionsSet.add(item.title);
+          }
+          if (item.description?.toLowerCase().includes(queryLower)) {
+            // Extraire des mots-clés de la description
+            const words = item.description.toLowerCase().split(/\s+/);
+            words.forEach((word: string) => {
+              if (word.includes(queryLower) && word.length > 2) {
+                suggestionsSet.add(word);
+              }
+            });
+          }
+          if (item.tags && Array.isArray(item.tags)) {
+            item.tags.forEach((tag: string) => {
+              if (tag.toLowerCase().includes(queryLower)) {
+                suggestionsSet.add(tag);
+              }
+            });
+          }
+          if (item.materials && Array.isArray(item.materials)) {
+            item.materials.forEach((material: string) => {
+              if (material.toLowerCase().includes(queryLower)) {
+                suggestionsSet.add(material);
+              }
+            });
+          }
+          break;
+        case "creators":
+          // Pour les artisans, les données viennent de getAllCreators
+          if (item.businessName?.toLowerCase().includes(queryLower)) {
+            suggestionsSet.add(item.businessName);
+          }
+          if (item.displayName?.toLowerCase().includes(queryLower)) {
+            suggestionsSet.add(item.displayName);
+          }
+          if (item.location?.toLowerCase().includes(queryLower)) {
+            suggestionsSet.add(item.location);
+          }
+          if (item.specialties && Array.isArray(item.specialties)) {
+            item.specialties.forEach((specialty: string) => {
+              if (specialty.toLowerCase().includes(queryLower)) {
+                suggestionsSet.add(specialty);
+              }
+            });
+          }
+          break;
+        case "cities":
+          // Pour les villes, extraire uniquement les noms de villes uniques
+          // Extraire les villes des profils d'artisans (structure unifiée)
+          if (item.artisanProfile?.location) {
+            const location = item.artisanProfile.location;
+            if (location.toLowerCase().includes(queryLower)) {
+              suggestionsSet.add(location);
+            }
+          }
+
+          // Essayer d'autres champs possibles selon le type
+          if (item.type === "creator" && item.location) {
+            if (item.location.toLowerCase().includes(queryLower)) {
+              suggestionsSet.add(item.location);
+            }
+          }
+
+          if (
+            item.type === "creation" &&
+            item.artisan?.artisanProfile?.location
+          ) {
+            if (
+              item.artisan.artisanProfile.location
+                .toLowerCase()
+                .includes(queryLower)
+            ) {
+              suggestionsSet.add(item.artisan.artisanProfile.location);
+            }
+          }
+          break;
+      }
+    });
+
+    // Filtrer et trier les suggestions par pertinence
+    const suggestionsArray = Array.from(suggestionsSet)
+      .filter((suggestion) => {
+        // Pour les villes, être moins restrictif - accepter les suggestions qui contiennent la requête
+        if (selectedSearchType === "cities") {
+          return suggestion.toLowerCase().includes(queryLower);
+        }
+        // Pour les autres types, garder le comportement strict
+        return suggestion.toLowerCase().startsWith(queryLower);
+      })
+      .sort((a, b) => {
+        // Prioriser les suggestions qui commencent par la requête
+        const aStartsWith = a.toLowerCase().startsWith(queryLower);
+        const bStartsWith = b.toLowerCase().startsWith(queryLower);
+
+        if (aStartsWith && !bStartsWith) return -1;
+        if (!aStartsWith && bStartsWith) return 1;
+
+        // Puis par longueur (plus court = plus pertinent)
+        return a.length - b.length;
+      })
+      .slice(0, 5);
+
+    setSuggestions(suggestionsArray);
+    setShowSuggestions(suggestionsArray.length > 0);
+  };
+
+  // Sélectionner une suggestion
+  const selectSuggestion = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    setShowSuggestions(false);
+    // Lancer la recherche automatiquement
+    setTimeout(() => {
+      performSearch();
+    }, 100);
+  };
+
+  // Masquer les suggestions
+  const hideSuggestions = () => {
+    setShowSuggestions(false);
+  };
+
+  // Gérer le changement de type de recherche
+  const handleSearchTypeChange = (type: SearchType) => {
+    setSelectedSearchType(type);
+    setSearchQuery("");
+    setSuggestions([]);
+    setShowSuggestions(false);
+    // Recharger les données pour l'autocomplétion du nouveau type
+    loadDefaultData();
+  };
 
   // Charger les données par défaut au montage du composant
   useEffect(() => {
-    loadDefaultData();
+    // Ne pas charger de données au montage initial
+    // Les données seront chargées lors du premier changement de type ou de la première recherche
   }, []);
 
   // Charger les données par défaut selon le type sélectionné
@@ -86,10 +239,33 @@ export const SearchScreen: React.FC = () => {
           setSearchResults({ type: selectedSearchType, data });
           break;
         case "cities":
-          // Pour les villes, on garde un état vide par défaut
-          setSearchResults({ type: selectedSearchType, data: [] });
+          // Pour les villes, charger les créateurs qui ont des informations de localisation
+          // et aussi quelques créations pour avoir plus de données de localisation
+          const creatorsData = await CreationsApi.getAllCreators();
+          const creationsData = await CreationsApi.searchCreations("", "all");
+
+          // Combiner les données pour avoir accès aux localisations
+          const combinedData = [
+            ...creatorsData.map((creator) => ({
+              ...creator,
+              type: "creator",
+              artisanProfile: creator.artisanProfile,
+            })),
+            ...creationsData.map((creation) => ({
+              ...creation,
+              type: "creation",
+              artisanProfile: creation.artisan?.artisanProfile,
+            })),
+          ];
+
+          data = combinedData;
+          setSearchResults({ type: selectedSearchType, data: [] }); // Pas de résultats par défaut
           break;
       }
+
+      // Stocker toutes les données pour l'autocomplétion
+      setAllData(data);
+      generateSuggestions(data, "");
     } catch (err) {
       setError("Impossible de charger les données. Vérifiez votre connexion.");
       setSearchResults({ type: selectedSearchType, data: [] });
@@ -121,7 +297,7 @@ export const SearchScreen: React.FC = () => {
 
   const searchTypes = [
     { key: "creations", label: "Créations", icon: "" },
-    { key: "creators", label: "Créateurs", icon: "" },
+    { key: "creators", label: "Artisans", icon: "" },
     { key: "cities", label: "Villes", icon: "" },
   ];
 
@@ -136,7 +312,7 @@ export const SearchScreen: React.FC = () => {
       return;
     }
 
-    // Si recherche par ville sans terme, ne rien faire
+    // Si recherche par ville sans terme, ne rien faire et vider les résultats
     if (selectedSearchType === "cities" && !searchQuery.trim()) {
       setSearchResults({ type: selectedSearchType, data: [] });
       setHasSearched(false);
@@ -190,14 +366,42 @@ export const SearchScreen: React.FC = () => {
       performSearch();
     } else {
       // Si pas de recherche active, charger les données par défaut
-      loadDefaultData();
+      // Mais seulement si ce n'est pas le montage initial
+      if (selectedSearchType || selectedCategory !== "all") {
+        loadDefaultData();
+      }
     }
   }, [selectedCategory, selectedSearchType]);
+
+  // Masquer les suggestions quand on change de type de recherche ou de catégorie
+  useEffect(() => {
+    setShowSuggestions(false);
+    setSuggestions([]);
+  }, [selectedSearchType, selectedCategory]);
+
+  // Régénérer les suggestions quand les données de recherche changent
+  useEffect(() => {
+    if (searchQuery.trim() && allData.length > 0) {
+      generateSuggestions(allData, searchQuery);
+    }
+  }, [allData, searchQuery]);
+
+  // Recharger les données d'autocomplétion quand le type de recherche change
+  useEffect(() => {
+    // Ne charger que si on a déjà interagi avec l'interface
+    if (selectedSearchType && !hasSearched) {
+      loadDefaultData();
+    }
+  }, [selectedSearchType]);
 
   const handleSearch = () => {
     if (!searchQuery.trim() && selectedSearchType !== "cities") {
       // Si pas de terme de recherche, charger les données par défaut
       loadDefaultData();
+    } else if (selectedSearchType === "cities" && !searchQuery.trim()) {
+      // Pour les villes, ne rien faire si pas de terme
+      setSearchResults({ type: selectedSearchType, data: [] });
+      setHasSearched(false);
     } else {
       performSearch();
     }
@@ -335,49 +539,6 @@ export const SearchScreen: React.FC = () => {
     );
   };
 
-  const renderCityResult = ({ item }: { item: any }) => {
-    return (
-      <TouchableOpacity
-        style={styles.cityResultCard}
-        onPress={() => {
-          // Naviguer vers une vue des créations de cette ville
-          setSelectedSearchType("creations");
-          setSearchQuery(item.city);
-          performSearch();
-        }}
-        activeOpacity={0.95}
-      >
-        <View style={styles.cityResultCardContent}>
-          <View style={styles.cityHeader}>
-            <View style={styles.cityIconContainer}>
-              <Text style={styles.cityIcon}>🏙️</Text>
-            </View>
-            <Text style={styles.cityName}>{item.city}</Text>
-          </View>
-
-          <View style={styles.cityStatsContainer}>
-            <View style={styles.cityStat}>
-              <Text style={styles.cityStatIcon}>👨‍🎨</Text>
-              <Text style={styles.cityStatLabel}>Créateurs</Text>
-              <Text style={styles.cityStatValue}>{item.creatorCount}</Text>
-            </View>
-            <View style={styles.cityStatDivider} />
-            <View style={styles.cityStat}>
-              <Text style={styles.cityStatIcon}>🎨</Text>
-              <Text style={styles.cityStatLabel}>Créations</Text>
-              <Text style={styles.cityStatValue}>{item.creationCount}</Text>
-            </View>
-          </View>
-
-          <View style={styles.cityAction}>
-            <Text style={styles.cityActionText}>Voir les créations</Text>
-            <Text style={styles.cityActionArrow}>→</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
   const renderSearchResult = ({ item }: { item: any }) => {
     switch (selectedSearchType) {
       case "creations":
@@ -394,22 +555,28 @@ export const SearchScreen: React.FC = () => {
 
   const renderEmptyState = () => {
     if (!hasSearched && searchResults.data.length === 0) {
+      if (selectedSearchType === "cities") {
+        return (
+          <View style={emptyStyles.container}>
+            <Text style={emptyStyles.title}>Rechercher une ville</Text>
+            <Text style={emptyStyles.description}>
+              Entrez le nom d'une ville pour découvrir les créations et artisans
+              disponibles
+            </Text>
+          </View>
+        );
+      }
+
       return (
         <View style={emptyStyles.container}>
           <Text style={emptyStyles.title}>
             Chargement des{" "}
-            {selectedSearchType === "creations"
-              ? "créations"
-              : selectedSearchType === "creators"
-              ? "créateurs"
-              : "villes"}
+            {selectedSearchType === "creations" ? "créations" : "créateurs"}
           </Text>
           <Text style={emptyStyles.description}>
             {selectedSearchType === "creations"
               ? "Toutes les créations disponibles sont en cours de chargement..."
-              : selectedSearchType === "creators"
-              ? "Tous les créateurs disponibles sont en cours de chargement..."
-              : "Recherchez une ville pour voir les créations disponibles"}
+              : "Tous les créateurs disponibles sont en cours de chargement..."}
           </Text>
         </View>
       );
@@ -457,144 +624,183 @@ export const SearchScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <CommonHeader title="Recherche" onBack={handleBackToHome} />
 
-      {/* Types de recherche */}
-      <View style={styles.searchTypesContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.searchTypesScroll}
-        >
-          {searchTypes.map((type) => (
-            <TouchableOpacity
-              key={type.key}
-              style={[
-                styles.searchTypeButton,
-                selectedSearchType === type.key &&
-                  styles.searchTypeButtonActive,
-              ]}
-              onPress={() => setSelectedSearchType(type.key as SearchType)}
-              activeOpacity={0.8}
+      <TouchableWithoutFeedback onPress={hideSuggestions}>
+        <View style={styles.mainContent}>
+          {/* Types de recherche */}
+          <View style={styles.searchTypesContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.searchTypesScroll}
             >
-              <Text style={styles.searchTypeIcon}>{type.icon}</Text>
-              <Text
-                style={[
-                  styles.searchTypeText,
-                  selectedSearchType === type.key &&
-                    styles.searchTypeTextActive,
-                ]}
-              >
-                {type.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+              {searchTypes.map((type) => (
+                <TouchableOpacity
+                  key={type.key}
+                  style={[
+                    styles.searchTypeButton,
+                    selectedSearchType === type.key &&
+                      styles.searchTypeButtonActive,
+                  ]}
+                  onPress={() => handleSearchTypeChange(type.key as SearchType)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.searchTypeIcon}>{type.icon}</Text>
+                  <Text
+                    style={[
+                      styles.searchTypeText,
+                      selectedSearchType === type.key &&
+                        styles.searchTypeTextActive,
+                    ]}
+                  >
+                    {type.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
-      {/* Barre de recherche */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder={
-              selectedSearchType === "creations"
-                ? "Rechercher une création..."
-                : selectedSearchType === "creators"
-                ? "Rechercher un créateur..."
-                : "Rechercher une ville (ex: Lyon, Paris)..."
-            }
-            placeholderTextColor="#8a9a8a"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-          <TouchableOpacity
-            style={styles.searchButton}
-            onPress={handleSearch}
-            activeOpacity={0.8}
-          >
-            <SearchIcon />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Catégories (uniquement pour les créations) */}
-      {selectedSearchType === "creations" && (
-        <View style={styles.categoriesContainer}>
-          <View style={styles.categoriesGrid}>
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.key}
-                style={[
-                  styles.categoryButton,
-                  selectedCategory === category.key &&
-                    styles.categoryButtonActive,
-                ]}
-                onPress={() =>
-                  setSelectedCategory(category.key as CreationCategory | "all")
+          {/* Barre de recherche */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder={
+                  selectedSearchType === "creations"
+                    ? "Rechercher une création..."
+                    : selectedSearchType === "creators"
+                    ? "Rechercher un artisan..."
+                    : "Rechercher une ville (ex: Lyon, Paris)..."
                 }
+                placeholderTextColor="#8a9a8a"
+                value={searchQuery}
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  generateSuggestions(allData, text);
+                }}
+                onFocus={() => {
+                  if (searchQuery.trim() && suggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+              />
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={handleSearch}
                 activeOpacity={0.8}
               >
-                <Text
-                  style={[
-                    styles.categoryButtonText,
-                    selectedCategory === category.key &&
-                      styles.categoryButtonTextActive,
-                  ]}
-                >
-                  {category.label}
-                </Text>
+                <SearchIcon />
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )}
+            </View>
 
-      {/* Résultats */}
-      <FlatList
-        data={searchResults.data}
-        renderItem={renderSearchResult}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.resultsContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={renderEmptyState}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListHeaderComponent={
-          selectedSearchType === "cities" &&
-          searchQuery.trim() &&
-          searchResults.cityStats ? (
-            <View style={styles.cityCardContainer}>
-              <View style={styles.cityCard}>
-                <View style={styles.cityCardContent}>
-                  <View style={styles.cityCardHeader}>
-                    <Text style={styles.cityCardIcon}>🏙️</Text>
-                    <Text style={styles.cityCardTitle}>
-                      {searchResults.cityStats.city}
+            {/* Suggestions d'autocomplétion */}
+            {showSuggestions && suggestions.length > 0 && (
+              <View style={styles.suggestionsContainer}>
+                {suggestions.map((suggestion, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.suggestionItem,
+                      index === suggestions.length - 1 &&
+                        styles.suggestionItemLast,
+                    ]}
+                    onPress={() => selectSuggestion(suggestion)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.suggestionText} numberOfLines={1}>
+                      {suggestion}
                     </Text>
-                  </View>
-                  <View style={styles.cityCardStats}>
-                    <View style={styles.cityCardStat}>
-                      <Text style={styles.cityCardStatIcon}>👨‍🎨</Text>
-                      <Text style={styles.cityCardStatLabel}>Artisans</Text>
-                      <Text style={styles.cityCardStatValue}>
-                        {searchResults.cityStats.creatorCount}
-                      </Text>
-                    </View>
-                    <View style={styles.cityCardStatDivider} />
-                    <View style={styles.cityCardStat}>
-                      <Text style={styles.cityCardStatIcon}>🎨</Text>
-                      <Text style={styles.cityCardStatLabel}>Créations</Text>
-                      <Text style={styles.cityCardStatValue}>
-                        {searchResults.cityStats.creationCount}
-                      </Text>
+                    <Text style={styles.suggestionHint}>↵</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Catégories (uniquement pour les créations) */}
+          {selectedSearchType === "creations" && (
+            <View style={styles.categoriesContainer}>
+              <View style={styles.categoriesGrid}>
+                {categories.map((category) => (
+                  <TouchableOpacity
+                    key={category.key}
+                    style={[
+                      styles.categoryButton,
+                      selectedCategory === category.key &&
+                        styles.categoryButtonActive,
+                    ]}
+                    onPress={() =>
+                      setSelectedCategory(
+                        category.key as CreationCategory | "all"
+                      )
+                    }
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryButtonText,
+                        selectedCategory === category.key &&
+                          styles.categoryButtonTextActive,
+                      ]}
+                    >
+                      {category.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Résultats */}
+          <FlatList
+            data={searchResults.data}
+            renderItem={renderSearchResult}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.resultsContainer}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={renderEmptyState}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListHeaderComponent={
+              selectedSearchType === "cities" &&
+              searchQuery.trim() &&
+              searchResults.cityStats ? (
+                <View style={styles.cityCardContainer}>
+                  <View style={styles.cityCard}>
+                    <View style={styles.cityCardContent}>
+                      <View style={styles.cityCardHeader}>
+                        <Text style={styles.cityCardIcon}>🏙️</Text>
+                        <Text style={styles.cityCardTitle}>
+                          {searchResults.cityStats.city}
+                        </Text>
+                      </View>
+                      <View style={styles.cityCardStats}>
+                        <View style={styles.cityCardStat}>
+                          <Text style={styles.cityCardStatIcon}>👨‍🎨</Text>
+                          <Text style={styles.cityCardStatLabel}>Artisans</Text>
+                          <Text style={styles.cityCardStatValue}>
+                            {searchResults.cityStats.creatorCount}
+                          </Text>
+                        </View>
+                        <View style={styles.cityCardStatDivider} />
+                        <View style={styles.cityCardStat}>
+                          <Text style={styles.cityCardStatIcon}>🎨</Text>
+                          <Text style={styles.cityCardStatLabel}>
+                            Créations
+                          </Text>
+                          <Text style={styles.cityCardStatValue}>
+                            {searchResults.cityStats.creationCount}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
                   </View>
                 </View>
-              </View>
-            </View>
-          ) : null
-        }
-      />
+              ) : null
+            }
+          />
+        </View>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 };
@@ -603,6 +809,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fafaf9",
+  },
+  mainContent: {
+    flex: 1,
   },
   searchTypesContainer: {
     paddingVertical: 8,
@@ -949,99 +1158,42 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
 
-  // Styles pour les cartes villes (résultats de recherche)
-  cityResultCard: {
+  // Styles pour les suggestions d'autocomplétion
+  suggestionsContainer: {
     backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    width: CARD_WIDTH,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  cityResultCardContent: {
-    alignItems: "center",
-  },
-  cityHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  cityIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  cityIcon: {
-    fontSize: 24,
-  },
-  cityName: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
-    flex: 1,
-  },
-  cityStatsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  cityStat: {
-    alignItems: "center",
-    flex: 1,
-  },
-  cityStatIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
-  cityStatLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
-    marginBottom: 2,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  cityStatValue: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.primary,
-  },
-  cityStatDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: COLORS.gray,
-    marginHorizontal: 20,
-  },
-  cityAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
+    borderRadius: 12,
+    marginTop: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
+    maxHeight: 200,
   },
-  cityActionText: {
-    color: COLORS.white,
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  suggestionItemLast: {
+    borderBottomWidth: 0,
+  },
+  suggestionText: {
     fontSize: 14,
-    fontWeight: "600",
-    marginRight: 8,
+    color: COLORS.textPrimary,
+    fontWeight: "500",
+    flex: 1,
   },
-  cityActionArrow: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "700",
+  suggestionHint: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
   },
 });

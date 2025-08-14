@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   Image,
   Dimensions,
@@ -18,6 +17,7 @@ import {
   FloatingFavoritesButton,
   FloatingSearchButton,
   CreationCard,
+  AutoSuggestInput,
 } from "../components";
 import {
   CreationWithArtisan,
@@ -25,6 +25,7 @@ import {
   CATEGORY_LABELS,
 } from "../types/Creation";
 import { CreationsApi } from "../services/creationsApi";
+import { suggestionsService, SuggestionItem } from "../services/suggestionsService";
 import { useFavorites } from "../context/FavoritesContext";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
@@ -37,7 +38,7 @@ const CARD_HEIGHT = 460; // Réduit pour équilibrer image/contenu
 
 type ExploreScreenNavigationProp = ScreenNavigationProp<"Explore">;
 
-const ExploreScreen: React.FC = () => {
+export const ExploreScreen: React.FC = () => {
   const navigation = useNavigation<ExploreScreenNavigationProp>();
   const { isAuthenticated } = useUserContext();
   const [searchQuery, setSearchQuery] = useState("");
@@ -47,6 +48,7 @@ const ExploreScreen: React.FC = () => {
   const [allCreations, setAllCreations] = useState<CreationWithArtisan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
 
   const { favorites, toggleFavorite } = useFavorites();
 
@@ -92,6 +94,30 @@ const ExploreScreen: React.FC = () => {
       loadCreations();
     }
   }, [searchQuery, selectedCategory]);
+
+  // Charger les suggestions quand la requête change
+  useEffect(() => {
+    if (searchQuery.trim().length > 2) {
+      loadSuggestions();
+    } else {
+      setSuggestions([]);
+    }
+  }, [searchQuery]);
+
+  // Charger les suggestions
+  const loadSuggestions = async () => {
+    if (searchQuery.trim().length > 2) {
+      try {
+        const suggestions = await suggestionsService.getSuggestions(searchQuery, "creations");
+        setSuggestions(suggestions);
+      } catch (error) {
+        console.error("Erreur lors du chargement des suggestions:", error);
+        setSuggestions([]);
+      }
+    } else {
+      setSuggestions([]);
+    }
+  };
 
   const handleToggleFavorite = async (creationId: string) => {
     try {
@@ -224,15 +250,23 @@ const ExploreScreen: React.FC = () => {
 
       {/* Barre de recherche */}
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
+        <AutoSuggestInput
           placeholder="Rechercher des créations..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          accessible={true}
-          accessibilityRole="search"
-          accessibilityLabel="Champ de recherche"
-          accessibilityHint="Tapez pour rechercher des créations"
+          onSuggestionSelect={(suggestion) => {
+            setSearchQuery(suggestion.text);
+          }}
+          suggestions={suggestions}
+          onSuggestionsFetchRequested={async (query) => {
+            if (query.length > 2) {
+              const suggestions = await suggestionsService.getSuggestions(query, "creations");
+              setSuggestions(suggestions);
+            } else {
+              setSuggestions([]);
+            }
+          }}
+          onSuggestionsClearRequested={() => setSuggestions([])}
         />
       </View>
 
