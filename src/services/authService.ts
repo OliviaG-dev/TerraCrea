@@ -293,4 +293,153 @@ export class AuthService {
       };
     }
   }
+
+  // Alias pour compatibilité avec les tests
+  static async signInWithPassword(email: string, password: string) {
+    return this.signInWithEmailPassword(email, password);
+  }
+
+  // Déconnexion
+  static async signOut(): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    } catch (error) {
+      return { error: { message: "Erreur lors de la déconnexion" } };
+    }
+  }
+
+  // Récupérer l'utilisateur actuel
+  static async getCurrentUser(): Promise<any> {
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (error) throw error;
+      return user;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Mettre à jour le profil utilisateur
+  static async updateUserProfile(updateData: {
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+  }): Promise<{ data: any; error: any }> {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        data: updateData,
+      });
+      return { data, error };
+    } catch (error) {
+      return {
+        data: null,
+        error: { message: "Erreur lors de la mise à jour du profil" },
+      };
+    }
+  }
+
+  // Créer un profil artisan
+  static async createArtisanProfile(artisanData: {
+    businessName: string;
+    location: string;
+    description: string;
+    specialties: string[];
+    establishedYear: number;
+  }): Promise<{ data: any; error: any }> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: null, error: { message: "Utilisateur non connecté" } };
+      }
+
+      const { data, error } = await supabase
+        .from("artisans")
+        .insert({
+          id: user.id,
+          business_name: artisanData.businessName,
+          location: artisanData.location,
+          description: artisanData.description,
+          specialties: artisanData.specialties,
+          established_year: artisanData.establishedYear,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return {
+        data: null,
+        error: { message: "Erreur lors de la création du profil artisan" },
+      };
+    }
+  }
+
+  // Récupérer le profil artisan
+  static async getArtisanProfile(userId: string): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from("artisans")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Mettre à jour le profil artisan
+  static async updateArtisanProfile(
+    userId: string,
+    updateData: {
+      businessName?: string;
+      location?: string;
+      description?: string;
+      specialties?: string[];
+      establishedYear?: number;
+    }
+  ): Promise<{ data: any; error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from("artisans")
+        .update({
+          business_name: updateData.businessName,
+          location: updateData.location,
+          description: updateData.description,
+          specialties: updateData.specialties,
+          established_year: updateData.establishedYear,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return {
+        data: null,
+        error: { message: "Erreur lors de la mise à jour du profil artisan" },
+      };
+    }
+  }
+
+  // Écouter les changements d'état d'authentification
+  static onAuthStateChange(callback: (event: string, session: any) => void): {
+    data: { subscription: any };
+  } {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(callback);
+    return { data: { subscription } };
+  }
 }

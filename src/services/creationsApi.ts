@@ -1106,6 +1106,41 @@ export class CreationsApi {
   }
 
   /**
+   * Récupérer une création par son ID
+   */
+  static async getCreationById(
+    creationId: string
+  ): Promise<CreationWithArtisan | null> {
+    try {
+      const { data, error } = await supabase
+        .from("creations_full")
+        .select("*")
+        .eq("id", creationId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          // Aucune création trouvée
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data) {
+        return null;
+      }
+
+      return transformSupabaseCreationWithUser(data);
+    } catch (error) {
+      throw new Error(
+        `Erreur lors de la récupération de la création: ${
+          error instanceof Error ? error.message : "Erreur inconnue"
+        }`
+      );
+    }
+  }
+
+  /**
    * Mettre à jour une création existante
    */
   static async updateCreation(

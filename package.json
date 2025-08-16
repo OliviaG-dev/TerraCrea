@@ -12,12 +12,12 @@
     "web": "expo start --web",
     "check-node": "node -v && npm -v",
     "preinstall": "node -e \"const v=process.versions.node; if(parseInt(v.split('.')[0])<22) throw new Error('Node.js version 22 or higher is required')\"",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --watchAll=false",
-    "test:update": "jest --updateSnapshot",
-    "test:debug": "jest --detectOpenHandles --forceExit"
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:debug": "vitest --reporter=verbose"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
@@ -45,20 +45,15 @@
     "@babel/preset-env": "^7.28.3",
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
-    "@testing-library/jest-native": "^5.4.3",
-    "@testing-library/react-native": "^13.2.2",
+    "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/jest": "^30.0.0",
     "@types/react": "~19.0.10",
-    "@types/react-test-renderer": "^19.1.0",
-    "babel-jest": "^30.0.5",
+    "@vitest/ui": "^3.2.4",
     "depcheck": "^1.4.7",
-    "jest": "^30.0.5",
-    "jest-environment-jsdom": "^30.0.5",
-    "jest-mock-extended": "^4.0.0",
-    "msw": "^2.10.5",
-    "react-test-renderer": "^19.1.1",
-    "typescript": "~5.8.3"
+    "happy-dom": "^18.0.1",
+    "jsdom": "^26.1.0",
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4"
   },
   "private": true
 }
