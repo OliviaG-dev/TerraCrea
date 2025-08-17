@@ -189,7 +189,7 @@ export class AuthService {
       // Vérification des données avant envoi
       if (!email || !password) {
         return {
-          data: null,
+          data: { user: null, session: null },
           error: { message: "Email et mot de passe requis" },
           needsConfirmation: false,
         };
@@ -199,7 +199,7 @@ export class AuthService {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return {
-          data: null,
+          data: { user: null, session: null },
           error: { message: "Format d'email invalide" },
           needsConfirmation: false,
         };
@@ -278,7 +278,7 @@ export class AuthService {
         }
 
         return {
-          data: null,
+          data: { user: null, session: null },
           error: { ...error, message: errorMessage },
           needsConfirmation: false,
         };
@@ -287,7 +287,7 @@ export class AuthService {
       return { data, error: null, needsConfirmation: false };
     } catch (error) {
       return {
-        data: null,
+        data: { user: null, session: null },
         error: { message: "Erreur inattendue lors de la connexion" },
         needsConfirmation: false,
       };
@@ -310,16 +310,15 @@ export class AuthService {
   }
 
   // Récupérer l'utilisateur actuel
-  static async getCurrentUser(): Promise<any> {
+  static async getCurrentUser(): Promise<{ data: { user: any }; error: any }> {
     try {
       const {
         data: { user },
         error,
       } = await supabase.auth.getUser();
-      if (error) throw error;
-      return user;
+      return { data: { user }, error };
     } catch (error) {
-      return null;
+      return { data: { user: null }, error: null };
     }
   }
 
@@ -383,7 +382,9 @@ export class AuthService {
   }
 
   // Récupérer le profil artisan
-  static async getArtisanProfile(userId: string): Promise<any> {
+  static async getArtisanProfile(
+    userId: string
+  ): Promise<{ data: any; error: any }> {
     try {
       const { data, error } = await supabase
         .from("artisans")
@@ -392,9 +393,9 @@ export class AuthService {
         .single();
 
       if (error) throw error;
-      return data;
+      return { data, error: null };
     } catch (error) {
-      return null;
+      return { data: null, error };
     }
   }
 

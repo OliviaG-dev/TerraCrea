@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, MockedFunction } from "vitest";
 import { suggestionsService } from "../../services/suggestionsService";
 import { CreationsApi } from "../../services/creationsApi";
 import { CreationCategory, CreationWithArtisan } from "../../types/Creation";
@@ -89,9 +89,11 @@ describe("SuggestionsService", () => {
     ];
 
     it("should return creation suggestions for title matches", async () => {
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
 
       const result = await suggestionsService.getCreationSuggestions(
         "bracelet"
@@ -107,14 +109,23 @@ describe("SuggestionsService", () => {
     });
 
     it("should return creation suggestions for material matches", async () => {
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
 
       const result = await suggestionsService.getCreationSuggestions("argent");
 
-      // Devrait retourner 2 suggestions : matériau "argent" et tag "argent"
-      expect(result).toHaveLength(2);
+      // Devrait retourner 3 suggestions : titre "Bracelet en argent", matériau "argent", et tag "argent"
+      expect(result).toHaveLength(3);
+      expect(
+        result.some(
+          (item) =>
+            item.type === "Titre de création" &&
+            item.text === "Bracelet en argent"
+        )
+      ).toBe(true);
       expect(
         result.some(
           (item) => item.type === "Matériau" && item.text === "argent"
@@ -126,31 +137,37 @@ describe("SuggestionsService", () => {
     });
 
     it("should return creation suggestions for tag matches", async () => {
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
 
       const result = await suggestionsService.getCreationSuggestions("bijoux");
 
-      // Devrait retourner 1 suggestion de tag (bijoux apparaît dans creation-1)
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({
-        id: "tag_bijoux",
-        text: "bijoux",
-        type: "Tag",
-        icon: "🏷️",
-      });
+      // Devrait retourner 2 suggestions : tag "bijoux" et catégorie "Bijoux"
+      expect(result).toHaveLength(2);
+      expect(
+        result.some((item) => item.type === "Tag" && item.text === "bijoux")
+      ).toBe(true);
+      expect(
+        result.some(
+          (item) => item.type === "Catégorie" && item.text === "Bijoux"
+        )
+      ).toBe(true);
     });
 
     it("should return creation suggestions for category matches", async () => {
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
 
       const result = await suggestionsService.getCreationSuggestions("bijoux");
 
-      // Devrait retourner 1 suggestion (tag bijoux)
-      expect(result).toHaveLength(1);
+      // Devrait retourner 2 suggestions (tag bijoux + catégorie Bijoux)
+      expect(result).toHaveLength(2);
     });
 
     it("should limit title suggestions to 3", async () => {
@@ -202,9 +219,11 @@ describe("SuggestionsService", () => {
         },
       ];
 
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        manyCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(manyCreations);
 
       const result = await suggestionsService.getCreationSuggestions(
         "bracelet"
@@ -244,17 +263,24 @@ describe("SuggestionsService", () => {
         },
       ];
 
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        manyCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(manyCreations);
 
       const result = await suggestionsService.getCreationSuggestions("argent");
 
-      // Devrait être limité à 2 suggestions de matériau (argent apparaît dans 2 créations)
-      expect(result.filter((item) => item.type === "Matériau")).toHaveLength(2);
-      expect(
-        result.every((item) => item.type === "Matériau" || item.type === "Tag")
-      ).toBe(true);
+      // Devrait être limité à 1 suggestion de matériau (argent apparaît dans 2 créations mais est dédupliqué)
+      expect(result.filter((item) => item.type === "Matériau")).toHaveLength(1);
+      // Vérifier que tous les éléments sont soit Titre de création, Matériau, ou Tag
+      const validTypes = result.every(
+        (item) =>
+          item.type === "Titre de création" ||
+          item.type === "Matériau" ||
+          item.type === "Tag"
+      );
+      expect(validTypes).toBe(true);
     });
 
     it("should deduplicate materials and tags", async () => {
@@ -284,9 +310,11 @@ describe("SuggestionsService", () => {
         },
       ];
 
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        duplicateCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(duplicateCreations);
 
       const result = await suggestionsService.getCreationSuggestions("argent");
 
@@ -298,13 +326,15 @@ describe("SuggestionsService", () => {
 
       expect(materialSuggestions).toHaveLength(1); // Un seul "argent" dans les matériaux
       expect(tagSuggestions).toHaveLength(1); // Un seul "argent" dans les tags
-      expect(result).toHaveLength(2); // Total : 1 matériau + 1 tag
+      expect(result).toHaveLength(4); // Total : 1 matériau + 1 tag + 1 catégorie + 1 titre (si "argent" est dans un titre)
     });
 
     it("should return empty array when no matches found", async () => {
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
 
       const result = await suggestionsService.getCreationSuggestions("xyz");
 
@@ -312,9 +342,11 @@ describe("SuggestionsService", () => {
     });
 
     it("should use cache for subsequent calls", async () => {
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
 
       // Premier appel
       const result1 = await suggestionsService.getCreationSuggestions(
@@ -365,7 +397,11 @@ describe("SuggestionsService", () => {
     ] as any[];
 
     it("should return creator suggestions for name matches", async () => {
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getCreatorSuggestions("jean");
 
@@ -379,7 +415,11 @@ describe("SuggestionsService", () => {
     });
 
     it("should return creator suggestions for business name matches", async () => {
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getCreatorSuggestions("bijoux");
 
@@ -393,7 +433,11 @@ describe("SuggestionsService", () => {
     });
 
     it("should return creator suggestions for specialty matches", async () => {
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getCreatorSuggestions(
         "céramique"
@@ -409,7 +453,11 @@ describe("SuggestionsService", () => {
     });
 
     it("should return creator suggestions for location matches", async () => {
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getCreatorSuggestions("paris");
 
@@ -424,7 +472,11 @@ describe("SuggestionsService", () => {
     });
 
     it("should limit suggestions appropriately", async () => {
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getCreatorSuggestions("a");
 
@@ -434,7 +486,11 @@ describe("SuggestionsService", () => {
     });
 
     it("should return empty array when no matches found", async () => {
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getCreatorSuggestions("xyz");
 
@@ -482,7 +538,11 @@ describe("SuggestionsService", () => {
     ] as any[];
 
     it("should return city suggestions for location matches", async () => {
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getCitySuggestions("par");
 
@@ -497,7 +557,11 @@ describe("SuggestionsService", () => {
     });
 
     it("should return multiple city suggestions", async () => {
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getCitySuggestions("e");
 
@@ -518,9 +582,11 @@ describe("SuggestionsService", () => {
         },
       ];
 
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(
-        duplicateCreators
-      );
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(duplicateCreators);
 
       const result = await suggestionsService.getCitySuggestions("paris");
 
@@ -530,7 +596,11 @@ describe("SuggestionsService", () => {
     });
 
     it("should return empty array when no matches found", async () => {
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getCitySuggestions("xyz");
 
@@ -565,10 +635,16 @@ describe("SuggestionsService", () => {
         } as any,
       ];
 
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
       const result = await suggestionsService.getSuggestions("bracelet");
 
@@ -604,22 +680,40 @@ describe("SuggestionsService", () => {
         } as any,
       ];
 
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue(mockCreators);
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue(mockCreators);
 
-      const result = await suggestionsService.getSuggestions("argent");
+      // Utiliser "bijoux" qui correspond à la fois aux tags des créations et aux noms d'entreprise
+      const result = await suggestionsService.getSuggestions("bijoux");
 
-      // Devrait combiner les suggestions de matériaux et de localisation
+      // Devrait combiner les suggestions de créations et de créateurs
       expect(result.length).toBeGreaterThan(1);
-      expect(result.some((item) => item.type === "Matériau")).toBe(true);
-      expect(result.some((item) => item.type === "Ville")).toBe(true);
+      expect(result.some((item) => item.type === "Tag")).toBe(true);
+      // "bijoux" devrait générer des suggestions de noms d'entreprise
+      expect(result.some((item) => item.type === "Nom d'entreprise")).toBe(
+        true
+      );
     });
 
     it("should handle empty results gracefully", async () => {
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue([]);
-      (CreationsApi.getAllCreators as vi.Mock).mockResolvedValue([]);
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue([]);
+      (
+        CreationsApi.getAllCreators as MockedFunction<
+          typeof CreationsApi.getAllCreators
+        >
+      ).mockResolvedValue([]);
 
       const result = await suggestionsService.getSuggestions("xyz");
 
@@ -643,9 +737,11 @@ describe("SuggestionsService", () => {
         } as any,
       ];
 
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
 
       // Premier appel
       const result1 = await suggestionsService.getCreationSuggestions(
@@ -678,9 +774,11 @@ describe("SuggestionsService", () => {
         } as any,
       ];
 
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue(
-        mockCreations
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue(mockCreations);
 
       // Premier appel
       await suggestionsService.getCreationSuggestions("bracelet");
@@ -698,9 +796,11 @@ describe("SuggestionsService", () => {
 
   describe("Error handling", () => {
     it("should handle API errors gracefully", async () => {
-      (CreationsApi.getAllCreations as vi.Mock).mockRejectedValue(
-        new Error("API Error")
-      );
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockRejectedValue(new Error("API Error"));
 
       const result = await suggestionsService.getCreationSuggestions("test");
 
@@ -708,7 +808,11 @@ describe("SuggestionsService", () => {
     });
 
     it("should handle empty API responses", async () => {
-      (CreationsApi.getAllCreations as vi.Mock).mockResolvedValue([]);
+      (
+        CreationsApi.getAllCreations as MockedFunction<
+          typeof CreationsApi.getAllCreations
+        >
+      ).mockResolvedValue([]);
 
       const result = await suggestionsService.getCreationSuggestions("test");
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, MockedFunction } from "vitest";
 import { AuthService } from "../../services/authService";
 import { supabase } from "../../services/supabase";
 import { isTimeSyncError, getTimeSyncHelpMessage } from "../../utils/timeUtils";
@@ -48,7 +48,7 @@ describe("AuthService", () => {
         email_confirmed_at: null,
       };
 
-      (supabase.auth.signUp as vi.Mock).mockResolvedValue({
+      (supabase.auth.signUp as MockedFunction<any>).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
@@ -76,7 +76,7 @@ describe("AuthService", () => {
 
     it("should handle signup error", async () => {
       const mockError = new Error("Signup failed");
-      (supabase.auth.signUp as vi.Mock).mockResolvedValue({
+      (supabase.auth.signUp as MockedFunction<any>).mockResolvedValue({
         data: { user: null },
         error: mockError,
       });
@@ -96,7 +96,7 @@ describe("AuthService", () => {
         lastName: "Doe",
       };
 
-      (supabase.auth.signUp as vi.Mock).mockResolvedValue({
+      (supabase.auth.signUp as MockedFunction<any>).mockResolvedValue({
         data: { user: null },
         error: null,
       });
@@ -122,7 +122,7 @@ describe("AuthService", () => {
 
   describe("resendConfirmation", () => {
     it("should resend confirmation email successfully", async () => {
-      (supabase.auth.resend as vi.Mock).mockResolvedValue({
+      (supabase.auth.resend as MockedFunction<any>).mockResolvedValue({
         error: null,
       });
 
@@ -137,7 +137,7 @@ describe("AuthService", () => {
 
     it("should handle resend error", async () => {
       const mockError = new Error("Resend failed");
-      (supabase.auth.resend as vi.Mock).mockResolvedValue({
+      (supabase.auth.resend as MockedFunction<any>).mockResolvedValue({
         error: mockError,
       });
 
@@ -153,7 +153,7 @@ describe("AuthService", () => {
         email_confirmed_at: "2023-01-01T00:00:00Z",
       };
 
-      (supabase.auth.getUser as vi.Mock).mockResolvedValue({
+      (supabase.auth.getUser as MockedFunction<any>).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
@@ -169,7 +169,7 @@ describe("AuthService", () => {
         email_confirmed_at: null,
       };
 
-      (supabase.auth.getUser as vi.Mock).mockResolvedValue({
+      (supabase.auth.getUser as MockedFunction<any>).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
@@ -180,7 +180,7 @@ describe("AuthService", () => {
     });
 
     it("should return false when no user", async () => {
-      (supabase.auth.getUser as vi.Mock).mockResolvedValue({
+      (supabase.auth.getUser as MockedFunction<any>).mockResolvedValue({
         data: { user: null },
         error: null,
       });
@@ -193,7 +193,9 @@ describe("AuthService", () => {
 
   describe("resetPassword", () => {
     it("should reset password successfully", async () => {
-      (supabase.auth.resetPasswordForEmail as vi.Mock).mockResolvedValue({
+      (
+        supabase.auth.resetPasswordForEmail as MockedFunction<any>
+      ).mockResolvedValue({
         data: {},
         error: null,
       });
@@ -214,19 +216,21 @@ describe("AuthService", () => {
       const result = await AuthService.resetPassword("");
 
       expect(result.success).toBe(false);
-      expect(result.error.message).toBe("Email requis");
+      expect(result.error?.message).toBe("Email requis");
     });
 
     it("should handle invalid email format", async () => {
       const result = await AuthService.resetPassword("invalid-email");
 
       expect(result.success).toBe(false);
-      expect(result.error.message).toBe("Format d'email invalide");
+      expect(result.error?.message).toBe("Format d'email invalide");
     });
 
     it("should handle user not found error", async () => {
       const mockError = { message: "User not found" };
-      (supabase.auth.resetPasswordForEmail as vi.Mock).mockResolvedValue({
+      (
+        supabase.auth.resetPasswordForEmail as MockedFunction<any>
+      ).mockResolvedValue({
         data: {},
         error: mockError,
       });
@@ -234,12 +238,14 @@ describe("AuthService", () => {
       const result = await AuthService.resetPassword("test@example.com");
 
       expect(result.success).toBe(false);
-      expect(result.error.message).toBe("Aucun compte trouvé avec cet email");
+      expect(result.error?.message).toBe("Aucun compte trouvé avec cet email");
     });
 
     it("should handle too many requests error", async () => {
       const mockError = { message: "Too many requests" };
-      (supabase.auth.resetPasswordForEmail as vi.Mock).mockResolvedValue({
+      (
+        supabase.auth.resetPasswordForEmail as MockedFunction<any>
+      ).mockResolvedValue({
         data: {},
         error: mockError,
       });
@@ -247,42 +253,46 @@ describe("AuthService", () => {
       const result = await AuthService.resetPassword("test@example.com");
 
       expect(result.success).toBe(false);
-      expect(result.error.message).toBe(
+      expect(result.error?.message).toBe(
         "Trop de tentatives. Veuillez réessayer plus tard"
       );
     });
 
     it("should handle time sync error", async () => {
       const mockError = { message: "Time sync error" };
-      (supabase.auth.resetPasswordForEmail as vi.Mock).mockResolvedValue({
+      (
+        supabase.auth.resetPasswordForEmail as MockedFunction<any>
+      ).mockResolvedValue({
         data: {},
         error: mockError,
       });
 
-      (isTimeSyncError as vi.Mock).mockReturnValue(true);
-      (getTimeSyncHelpMessage as vi.Mock).mockReturnValue(
+      (isTimeSyncError as MockedFunction<any>).mockReturnValue(true);
+      (getTimeSyncHelpMessage as MockedFunction<any>).mockReturnValue(
         "Time sync help message"
       );
 
       const result = await AuthService.resetPassword("test@example.com");
 
       expect(result.success).toBe(false);
-      expect(result.error.message).toBe("Time sync help message");
+      expect(result.error?.message).toBe("Time sync help message");
     });
 
     it("should handle generic error", async () => {
       const mockError = { message: "Generic error" };
-      (supabase.auth.resetPasswordForEmail as vi.Mock).mockResolvedValue({
+      (
+        supabase.auth.resetPasswordForEmail as MockedFunction<any>
+      ).mockResolvedValue({
         data: {},
         error: mockError,
       });
 
-      (isTimeSyncError as vi.Mock).mockReturnValue(false);
+      (isTimeSyncError as MockedFunction<any>).mockReturnValue(false);
 
       const result = await AuthService.resetPassword("test@example.com");
 
       expect(result.success).toBe(false);
-      expect(result.error.message).toBe("Generic error");
+      expect(result.error?.message).toBe("Generic error");
     });
   });
 
@@ -293,7 +303,9 @@ describe("AuthService", () => {
         email: "test@example.com",
       };
 
-      (supabase.auth.signInWithPassword as vi.Mock).mockResolvedValue({
+      (
+        supabase.auth.signInWithPassword as MockedFunction<any>
+      ).mockResolvedValue({
         data: { user: mockUser, session: {} },
         error: null,
       });
@@ -303,7 +315,7 @@ describe("AuthService", () => {
         "password123"
       );
 
-      expect(result.data.user).toEqual(mockUser);
+      expect((result as any).data.user).toEqual(mockUser);
       expect(result.error).toBeNull();
       expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
         email: "test@example.com",
@@ -313,7 +325,9 @@ describe("AuthService", () => {
 
     it("should handle sign in error", async () => {
       const mockError = new Error("Invalid credentials");
-      (supabase.auth.signInWithPassword as vi.Mock).mockResolvedValue({
+      (
+        supabase.auth.signInWithPassword as MockedFunction<any>
+      ).mockResolvedValue({
         data: { user: null, session: null },
         error: mockError,
       });
@@ -323,14 +337,14 @@ describe("AuthService", () => {
         "password123"
       );
 
-      expect(result.data.user).toBeNull();
-      expect(result.error).toBe(mockError);
+      expect((result as any).data.user).toBeNull();
+      expect(result.error?.message).toBe("Invalid credentials");
     });
   });
 
   describe("signOut", () => {
     it("should sign out successfully", async () => {
-      (supabase.auth.signOut as vi.Mock).mockResolvedValue({
+      (supabase.auth.signOut as MockedFunction<any>).mockResolvedValue({
         error: null,
       });
 
@@ -342,7 +356,7 @@ describe("AuthService", () => {
 
     it("should handle sign out error", async () => {
       const mockError = new Error("Sign out failed");
-      (supabase.auth.signOut as vi.Mock).mockResolvedValue({
+      (supabase.auth.signOut as MockedFunction<any>).mockResolvedValue({
         error: mockError,
       });
 
@@ -359,7 +373,7 @@ describe("AuthService", () => {
         email: "test@example.com",
       };
 
-      (supabase.auth.getUser as vi.Mock).mockResolvedValue({
+      (supabase.auth.getUser as MockedFunction<any>).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
@@ -371,7 +385,7 @@ describe("AuthService", () => {
     });
 
     it("should handle no current user", async () => {
-      (supabase.auth.getUser as vi.Mock).mockResolvedValue({
+      (supabase.auth.getUser as MockedFunction<any>).mockResolvedValue({
         data: { user: null },
         error: null,
       });
@@ -390,7 +404,7 @@ describe("AuthService", () => {
         lastName: "Smith",
       };
 
-      (supabase.auth.updateUser as vi.Mock).mockResolvedValue({
+      (supabase.auth.updateUser as MockedFunction<any>).mockResolvedValue({
         data: { user: { ...updateData } },
         error: null,
       });
@@ -406,7 +420,7 @@ describe("AuthService", () => {
 
     it("should handle update error", async () => {
       const mockError = new Error("Update failed");
-      (supabase.auth.updateUser as vi.Mock).mockResolvedValue({
+      (supabase.auth.updateUser as MockedFunction<any>).mockResolvedValue({
         data: { user: null },
         error: mockError,
       });
@@ -423,7 +437,7 @@ describe("AuthService", () => {
       const mockCallback = vi.fn();
       const mockUnsubscribe = vi.fn();
 
-      (supabase.auth.onAuthStateChange as vi.Mock).mockReturnValue({
+      (supabase.auth.onAuthStateChange as MockedFunction<any>).mockReturnValue({
         data: { subscription: { unsubscribe: mockUnsubscribe } },
       });
 
@@ -439,10 +453,11 @@ describe("AuthService", () => {
   describe("createArtisanProfile", () => {
     it("should create artisan profile successfully", async () => {
       const artisanData = {
-        userId: "user-123",
-        specialty: "Pottery",
-        description: "Handmade pottery",
+        businessName: "Artisan Pottery",
         location: "Paris",
+        description: "Handmade pottery",
+        specialties: ["Pottery"],
+        establishedYear: 2020,
       };
 
       const mockResponse = {
@@ -450,9 +465,17 @@ describe("AuthService", () => {
         error: null,
       };
 
-      (supabase.from as vi.Mock).mockReturnValue({
+      // Mock de getUser pour simuler un utilisateur connecté
+      (supabase.auth.getUser as MockedFunction<any>).mockResolvedValue({
+        data: { user: { id: "user-123" } },
+        error: null,
+      });
+
+      (supabase.from as MockedFunction<any>).mockReturnValue({
         insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockResolvedValue(mockResponse),
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue(mockResponse),
+          }),
         }),
       });
 
@@ -464,18 +487,22 @@ describe("AuthService", () => {
 
     it("should handle creation error", async () => {
       const artisanData = {
-        userId: "user-123",
-        specialty: "Pottery",
-        description: "Handmade pottery",
+        businessName: "Artisan Pottery",
         location: "Paris",
+        description: "Handmade pottery",
+        specialties: ["Pottery"],
+        establishedYear: 2020,
       };
 
-      const mockError = new Error("Creation failed");
-      (supabase.from as vi.Mock).mockReturnValue({
+      (supabase.from as MockedFunction<any>).mockReturnValue({
         insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockResolvedValue({
-            data: null,
-            error: mockError,
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: null,
+              error: {
+                message: "Erreur lors de la création du profil artisan",
+              },
+            }),
           }),
         }),
       });
@@ -483,7 +510,9 @@ describe("AuthService", () => {
       const result = await AuthService.createArtisanProfile(artisanData);
 
       expect(result.data).toBeNull();
-      expect(result.error).toBe(mockError);
+      expect(result.error.message).toBe(
+        "Erreur lors de la création du profil artisan"
+      );
     });
   });
 
@@ -495,7 +524,7 @@ describe("AuthService", () => {
         specialty: "Pottery",
       };
 
-      (supabase.from as vi.Mock).mockReturnValue({
+      (supabase.from as MockedFunction<any>).mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({
@@ -513,7 +542,7 @@ describe("AuthService", () => {
     });
 
     it("should handle profile not found", async () => {
-      (supabase.from as vi.Mock).mockReturnValue({
+      (supabase.from as MockedFunction<any>).mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({
@@ -543,10 +572,12 @@ describe("AuthService", () => {
         error: null,
       };
 
-      (supabase.from as vi.Mock).mockReturnValue({
+      (supabase.from as MockedFunction<any>).mockReturnValue({
         update: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            select: vi.fn().mockResolvedValue(mockResponse),
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue(mockResponse),
+            }),
           }),
         }),
       });
@@ -562,16 +593,17 @@ describe("AuthService", () => {
 
     it("should handle update error", async () => {
       const updateData = {
-        specialty: "Ceramics",
+        description: "Updated description",
       };
 
-      const mockError = new Error("Update failed");
-      (supabase.from as vi.Mock).mockReturnValue({
+      (supabase.from as MockedFunction<any>).mockReturnValue({
         update: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             select: vi.fn().mockReturnValue({
               data: null,
-              error: mockError,
+              error: {
+                message: "Erreur lors de la mise à jour du profil artisan",
+              },
             }),
           }),
         }),
@@ -583,7 +615,9 @@ describe("AuthService", () => {
       );
 
       expect(result.data).toBeNull();
-      expect(result.error).toBe(mockError);
+      expect(result.error?.message).toBe(
+        "Erreur lors de la mise à jour du profil artisan"
+      );
     });
   });
 });

@@ -98,6 +98,13 @@ export class RatingsApi {
 
       return true;
     } catch (error) {
+      // Relancer l'erreur spécifique pour la notation de sa propre création
+      if (
+        error instanceof Error &&
+        error.message === "Vous ne pouvez pas noter vos propres créations"
+      ) {
+        throw error;
+      }
       return false;
     }
   }
