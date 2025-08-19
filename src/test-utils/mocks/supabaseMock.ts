@@ -1,5 +1,79 @@
 import { vi } from "vitest";
 
+// Mock robuste de Supabase qui gère les chaînes de méthodes
+export const createMockSupabaseChain = (response: any) => {
+  const mockMaybeSingle = vi.fn().mockResolvedValue(response);
+  const mockSingle = vi.fn().mockResolvedValue(response);
+  const mockLimit = vi.fn().mockResolvedValue(response);
+  const mockOrder = vi.fn().mockResolvedValue(response);
+  const mockIn = vi.fn().mockResolvedValue(response);
+
+  const mockEq2 = vi.fn().mockReturnValue({
+    maybeSingle: mockMaybeSingle,
+    single: mockSingle,
+    limit: mockLimit,
+    order: mockOrder,
+  });
+  const mockEq1 = vi.fn().mockReturnValue({
+    eq: mockEq2,
+    single: mockSingle,
+    limit: mockLimit,
+    order: mockOrder,
+  });
+  const mockSelect = vi.fn().mockReturnValue({
+    eq: mockEq1,
+    single: mockSingle,
+    limit: mockLimit,
+    order: mockOrder,
+    in: mockIn,
+  });
+
+  const mockInsert = vi.fn().mockReturnValue({
+    select: vi.fn().mockResolvedValue(response),
+    error: response.error || null,
+  });
+
+  const mockUpdate = vi.fn().mockReturnValue({
+    eq: vi.fn().mockReturnValue({
+      select: vi.fn().mockResolvedValue(response),
+      error: response.error || null,
+    }),
+    error: response.error || null,
+  });
+
+  const mockDelete = vi.fn().mockReturnValue({
+    eq: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        error: response.error || null,
+      }),
+      error: response.error || null,
+    }),
+    error: response.error || null,
+  });
+
+  const mockFrom = vi.fn().mockReturnValue({
+    select: mockSelect,
+    insert: mockInsert,
+    update: mockUpdate,
+    delete: mockDelete,
+  });
+
+  return {
+    mockFrom,
+    mockSelect,
+    mockEq1,
+    mockEq2,
+    mockMaybeSingle,
+    mockSingle,
+    mockLimit,
+    mockOrder,
+    mockIn,
+    mockInsert,
+    mockUpdate,
+    mockDelete,
+  };
+};
+
 // Mock ultra-simple de Supabase pour éviter tous les conflits TypeScript
 const mockSupabase = {
   auth: {

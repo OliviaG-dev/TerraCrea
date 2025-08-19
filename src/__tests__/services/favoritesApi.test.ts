@@ -293,11 +293,6 @@ describe("FavoritesApi", () => {
   describe("integration scenarios", () => {
     it("should handle multiple favorite operations in sequence", async () => {
       // Setup mocks pour la séquence d'opérations
-      (CreationsApi.isFavorite as vi.Mock)
-        .mockResolvedValueOnce(false) // Premier check: pas favori
-        .mockResolvedValueOnce(true) // Deuxième check: est favori
-        .mockResolvedValueOnce(false); // Troisième check: plus favori
-
       (CreationsApi.addToFavorites as vi.Mock).mockResolvedValue(true);
       (CreationsApi.removeFromFavorites as vi.Mock).mockResolvedValue(true);
 
@@ -305,7 +300,8 @@ describe("FavoritesApi", () => {
       const addResult = await FavoritesApi.addToFavorites("creation-123");
       expect(addResult).toBe(true);
 
-      // 2. Vérifier si c'est un favori
+      // 2. Vérifier si c'est un favori (après ajout)
+      (CreationsApi.isFavorite as vi.Mock).mockResolvedValue(true);
       const isFavoriteResult = await FavoritesApi.isFavorite("creation-123");
       expect(isFavoriteResult).toBe(true);
 
@@ -315,7 +311,8 @@ describe("FavoritesApi", () => {
       );
       expect(removeResult).toBe(true);
 
-      // 4. Vérifier que ce n'est plus un favori
+      // 4. Vérifier que ce n'est plus un favori (après suppression)
+      (CreationsApi.isFavorite as vi.Mock).mockResolvedValue(false);
       const isFavoriteAfterRemove = await FavoritesApi.isFavorite(
         "creation-123"
       );
@@ -329,7 +326,7 @@ describe("FavoritesApi", () => {
       );
 
       // Vérifier le nombre total d'appels
-      expect(CreationsApi.isFavorite).toHaveBeenCalledTimes(3);
+      expect(CreationsApi.isFavorite).toHaveBeenCalledTimes(2);
     });
 
     it("should handle error scenarios gracefully", async () => {

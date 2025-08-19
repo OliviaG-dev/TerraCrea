@@ -1,263 +1,259 @@
-# Tests des Services API - TerraCréa
+# Tests - TerraCréa
 
-Ce dossier contient tous les tests unitaires et d'intégration pour les services API de l'application TerraCréa.
-
-## 📁 Structure des Tests
-
-```
-src/__tests__/
-├── services/                    # Tests unitaires des services
-│   ├── authService.test.ts     # Tests du service d'authentification
-│   ├── creationsApi.test.ts    # Tests du service des créations
-│   ├── favoritesApi.test.ts    # Tests du service des favoris
-│   ├── ratingsApi.test.ts      # Tests du service des notes
-│   ├── reviewsApi.test.ts      # Tests du service des avis
-│   ├── suggestionsService.test.ts # Tests du service de suggestions
-│   └── supabase.test.ts        # Tests de configuration Supabase
-├── integration/                 # Tests d'intégration
-│   └── services-integration.test.ts # Tests d'intégration des services
-└── README.md                   # Ce fichier
-```
-
-## 🚀 Exécution des Tests
-
-### Tous les tests
+## 🚀 Démarrage rapide
 
 ```bash
+# Installer les dépendances
+npm install
+
+# Lancer tous les tests
 npm test
+
+# Tests en mode watch
+npm test -- --watch
+
+# Tests avec couverture
+npm test -- --coverage
 ```
 
-### Tests en mode watch
+## 📁 Structure
 
-```bash
-npm run test:watch
+```
+__tests__/
+├── components/          # Tests des composants React Native
+├── context/             # Tests des contexts React
+├── hooks/               # Tests des hooks personnalisés
+├── integration/         # Tests d'intégration entre services
+├── services/            # Tests unitaires des services API
+└── utils/               # Tests des fonctions utilitaires
 ```
 
-### Tests avec couverture
+## 📊 Statistiques
 
-```bash
-npm run test:coverage
+- **Total** : 163+ tests
+- **Services** : 147 tests (AuthService, CreationsApi, FavoritesApi, etc.)
+- **Intégration** : 14 tests (Flux de données, sécurité, performance)
+- **Utilitaires** : 2 tests
+
+## 🎯 Tests par service
+
+### Services API (147 tests)
+
+| Service                      | Tests | Description                        |
+| ---------------------------- | ----- | ---------------------------------- |
+| `authService.test.ts`        | 30    | Authentification, profils artisan  |
+| `creationsApi.test.ts`       | 18    | CRUD créations, recherche, favoris |
+| `favoritesApi.test.ts`       | 16    | Gestion des favoris utilisateur    |
+| `ratingsApi.test.ts`         | 17    | Système de notation                |
+| `reviewsApi.test.ts`         | 22    | Avis et commentaires               |
+| `suggestionsService.test.ts` | 26    | Suggestions de recherche           |
+| `supabase.test.ts`           | 5     | Configuration base de données      |
+
+### Intégration (14 tests)
+
+| Catégorie             | Tests | Description                             |
+| --------------------- | ----- | --------------------------------------- |
+| Workflow utilisateur  | 1     | Parcours complet inscription → création |
+| Gestion d'erreurs     | 2     | Erreurs auth et base de données         |
+| Cohérence des données | 2     | Synchronisation entre services          |
+| Performance           | 2     | Opérations concurrentes et cache        |
+| Sécurité              | 3     | Permissions et auto-actions             |
+| Flux de données       | 4     | Tests individuels par service           |
+
+## 🛠️ Configuration
+
+### Framework de test
+
+- **Vitest** : Framework de test rapide
+- **Node.js** : Environnement d'exécution
+- **Mocks** : Supabase, React Native
+
+### Fichiers de configuration
+
+- `vitest.config.ts` : Configuration principale
+- `src/test-utils/setup.ts` : Setup global
+- `src/test-utils/mocks/` : Mocks réutilisables
+
+## 🎭 Mocking
+
+### Supabase
+
+```typescript
+// Mock global configuré dans setup.ts
+const supabaseMock = {
+  auth: { getUser: vi.fn(), signUp: vi.fn() /* ... */ },
+  from: vi.fn(),
+  storage: { from: vi.fn() },
+  rpc: vi.fn(),
+};
 ```
 
-### Tests spécifiques aux services
+### React Native
 
-```bash
-# Tests des services uniquement
-npm test -- --testPathPattern="services"
-
-# Test d'un service spécifique
-npm test -- --testPathPattern="creationsApi"
-npm test -- --testPathPattern="authService"
+```typescript
+// Mock complet pour environnement Node.js
+// Configuré dans src/test-utils/mocks/reactNativeMock.ts
 ```
 
-## 🧪 Services Testés
+## 📝 Conventions
 
-### 1. **CreationsApi** (`creationsApi.test.ts`)
+### Nommage des fichiers
 
-- ✅ Récupération de toutes les créations
-- ✅ Recherche de créations par terme et catégorie
-- ✅ Récupération de tous les artisans
-- ✅ Recherche d'artisans
-- ✅ Recherche par ville
-- ✅ Filtrage par catégorie, matériaux, tags
-- ✅ Gestion des favoris (ajout/suppression)
-- ✅ CRUD des créations (création, lecture, mise à jour, suppression)
-- ✅ Upload d'images
-- ✅ Tests de permissions
-
-### 2. **AuthService** (`authService.test.ts`)
-
-- ✅ Inscription avec confirmation email
-- ✅ Connexion/déconnexion
-- ✅ Réinitialisation de mot de passe
-- ✅ Gestion des profils utilisateur
-- ✅ Création et gestion des profils artisan
-- ✅ Vérification des permissions
-
-### 3. **FavoritesApi** (`favoritesApi.test.ts`)
-
-- ✅ Récupération des favoris utilisateur
-- ✅ Ajout/suppression de favoris
-- ✅ Vérification du statut favori
-- ✅ Basculement du statut favori
-- ✅ Comptage des favoris
-
-### 4. **RatingsApi** (`ratingsApi.test.ts`)
-
-- ✅ Récupération des notes utilisateur
-- ✅ Sauvegarde/mise à jour des notes
-- ✅ Calcul des moyennes de notes
-- ✅ Récupération de toutes les notes d'une création
-- ✅ Vérification des permissions (pas de note sur ses propres créations)
-
-### 5. **ReviewsApi** (`reviewsApi.test.ts`)
-
-- ✅ Récupération des avis utilisateur
-- ✅ Sauvegarde/mise à jour des avis
-- ✅ Récupération de tous les avis d'une création
-- ✅ Suppression d'avis
-- ✅ Gestion des usernames et fallbacks
-- ✅ Vérification des permissions
-
-### 6. **SuggestionsService** (`suggestionsService.test.ts`)
-
-- ✅ Suggestions de créations (titres, matériaux, tags, catégories)
-- ✅ Suggestions d'artisans (noms, spécialités, localisations)
-- ✅ Suggestions de villes
-- ✅ Système de cache avec expiration
-- ✅ Gestion des erreurs et fallbacks
-
-### 7. **Supabase** (`supabase.test.ts`)
-
-- ✅ Configuration du client Supabase
-- ✅ Vérification des variables d'environnement
-- ✅ Disponibilité des méthodes (auth, database, storage, RPC)
-
-## 🔧 Configuration des Tests
-
-### Mocks
-
-Tous les services utilisent des mocks de Supabase pour éviter les appels réseau réels :
-
-- `supabase.auth.*` - Méthodes d'authentification
-- `supabase.from()` - Requêtes de base de données
-- `supabase.storage.*` - Gestion des fichiers
-- `supabase.rpc()` - Appels de fonctions PostgreSQL
-
-### Données de Test
-
-Chaque test utilise des données mockées réalistes :
-
-- Utilisateurs avec IDs et emails
-- Créations avec tous les champs requis
-- Artisans avec profils complets
-- Notes et avis avec timestamps
-
-### Gestion des Erreurs
-
-Les tests couvrent tous les scénarios d'erreur :
-
-- Erreurs de base de données
-- Utilisateurs non authentifiés
-- Permissions insuffisantes
-- Données manquantes ou invalides
-
-## 📊 Couverture des Tests
-
-### Objectifs de Couverture
-
-- **Services API** : 90%+ (critique)
-- **Gestion d'erreurs** : 95%+ (sécurité)
-- **Logique métier** : 85%+ (qualité)
-- **Intégration** : 80%+ (robustesse)
-
-### Métriques Mesurées
-
-- **Statements** : Instructions exécutées
-- **Branches** : Chemins conditionnels
-- **Functions** : Fonctions appelées
-- **Lines** : Lignes de code couvertes
-
-## 🚨 Scénarios Critiques Testés
-
-### 1. **Sécurité**
-
-- ✅ Utilisateurs ne peuvent pas noter leurs propres créations
-- ✅ Utilisateurs ne peuvent pas commenter leurs propres créations
-- ✅ Vérification des permissions avant modification/suppression
-- ✅ Gestion des utilisateurs non authentifiés
-
-### 2. **Robustesse**
-
-- ✅ Gestion gracieuse des erreurs de base de données
-- ✅ Fallbacks en cas d'échec des requêtes complexes
-- ✅ Validation des données d'entrée
-- ✅ Gestion des cas limites (données vides, null, undefined)
-
-### 3. **Performance**
-
-- ✅ Système de cache pour les suggestions
-- ✅ Requêtes optimisées avec pagination
-- ✅ Gestion des opérations concurrentes
-- ✅ Limitation des appels API
-
-## 🔍 Tests d'Intégration
-
-Le fichier `services-integration.test.ts` teste :
-
-- **Workflow complet utilisateur** : Inscription → Profil → Création → Favoris → Notes → Avis
-- **Gestion d'erreurs cohérente** : Tous les services gèrent les erreurs de la même manière
-- **Cohérence des données** : Vérification que les IDs et références sont cohérents
-- **Performance** : Tests des opérations concurrentes
-- **Cache** : Vérification du système de cache
-- **Sécurité** : Tests des permissions à travers tous les services
-
-## 🛠️ Développement
-
-### Ajouter de nouveaux tests
-
-1. Créer le fichier de test dans le bon dossier
-2. Suivre la convention de nommage : `serviceName.test.ts`
-3. Utiliser les mocks existants pour Supabase
-4. Tester les cas de succès ET d'échec
-5. Ajouter des tests d'intégration si nécessaire
-
-### Exécuter des tests spécifiques
-
-```bash
-# Test d'un fichier spécifique
-npm test -- src/__tests__/services/creationsApi.test.ts
-
-# Test avec pattern
-npm test -- --testNamePattern="should create creation successfully"
-
-# Test en mode debug
-npm run test:debug
+```
+[ServiceName].test.[ts|js]
 ```
 
-### Déboguer les tests
+### Structure des tests
 
-```bash
-# Mode verbose
-npm test -- --verbose
-
-# Mode debug avec Jest
-npm test -- --detectOpenHandles --forceExit
-
-# Tests avec console.log
-npm test -- --silent=false
+```typescript
+describe("ServiceName", () => {
+  describe("methodName", () => {
+    it("should [behavior] when [condition]", async () => {
+      // Arrange - Préparation
+      // Act - Action
+      // Assert - Vérification
+    });
+  });
+});
 ```
 
-## 📈 Améliorations Futures
+### Données de test
 
-### Tests à ajouter
+```typescript
+const mockUser = { id: "user-123", email: "test@example.com" };
+const mockCreation = { id: "creation-123", title: "Test Creation" };
+```
 
-- [ ] Tests de performance avec métriques de temps
-- [ ] Tests de charge avec de grandes quantités de données
-- [ ] Tests de sécurité avec injection SQL simulée
-- [ ] Tests de compatibilité navigateur (React Native)
-- [ ] Tests de migration de base de données
+## 🚨 Cas d'usage fréquents
 
-### Outils à intégrer
+### Tester une méthode d'API
 
-- [ ] Jest-extended pour assertions avancées
-- [ ] MSW pour mocking des API externes
-- [ ] TestCafe pour tests E2E
-- [ ] SonarQube pour analyse de qualité
+```typescript
+it("should fetch user data successfully", async () => {
+  // Mock de la réponse Supabase
+  supabaseMock.from.mockReturnValue({
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: mockUser,
+          error: null,
+        }),
+      }),
+    }),
+  });
 
-## 🆘 Dépannage
+  // Appel de la méthode
+  const result = await AuthService.getUserProfile("user-123");
 
-### Erreurs communes
+  // Vérifications
+  expect(result).toEqual(mockUser);
+  expect(supabaseMock.from).toHaveBeenCalledWith("users");
+});
+```
 
-1. **Mocks non définis** : Vérifier que tous les mocks sont configurés dans `beforeEach`
-2. **Tests qui échouent aléatoirement** : Ajouter `jest.setTimeout(10000)` pour les tests async
-3. **Erreurs de Supabase** : Vérifier que les mocks simulent correctement les réponses
+### Tester la gestion d'erreurs
 
-### Support
+```typescript
+it("should handle database errors gracefully", async () => {
+  // Mock d'une erreur
+  supabaseMock.from.mockReturnValue({
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockRejectedValue(new Error("Database error")),
+    }),
+  });
 
-Pour toute question sur les tests :
+  // Vérification que l'erreur est gérée
+  const result = await Service.getData();
+  expect(result).toEqual([]);
+});
+```
 
-1. Vérifier ce README
-2. Consulter la documentation Jest
-3. Examiner les tests existants comme exemples
-4. Créer un ticket avec le contexte d'erreur
+### Tester des transformations de données
+
+```typescript
+it("should transform Supabase data to app format", async () => {
+  const supabaseData = {
+    created_at: "2024-01-01T00:00:00Z",
+    user_id: "user-123",
+  };
+
+  const expectedAppData = {
+    createdAt: "2024-01-01T00:00:00Z",
+    userId: "user-123",
+  };
+
+  supabaseMock.from.mockReturnValue({
+    select: vi.fn().mockReturnValue({
+      single: vi.fn().mockResolvedValue({
+        data: supabaseData,
+        error: null,
+      }),
+    }),
+  });
+
+  const result = await Service.getData();
+  expect(result).toEqual(expectedAppData);
+});
+```
+
+## 🐛 Dépannage
+
+### Erreur : "Mock not applied"
+
+```typescript
+// Solution : Nettoyer les mocks avant chaque test
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+```
+
+### Erreur : "Cannot read property of undefined"
+
+```typescript
+// Solution : Vérifier la structure du mock
+supabaseMock.from.mockReturnValue({
+  select: vi.fn().mockReturnValue({
+    eq: vi.fn().mockReturnValue({
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+  }),
+});
+```
+
+### Tests asynchrones qui échouent
+
+```typescript
+// Solution : Toujours utiliser async/await
+it("should handle async operation", async () => {
+  const result = await service.asyncMethod();
+  expect(result).toBeDefined();
+});
+```
+
+## 📈 Bonnes pratiques
+
+### ✅ À faire
+
+- Noms de tests descriptifs
+- Données de test minimales
+- Tester les cas d'erreur
+- Nettoyer les mocks
+- Un concept par test
+
+### ❌ À éviter
+
+- Tests trop complexes
+- Données hardcodées
+- Mocks trop verbeux
+- Tests interdépendants
+- Noms de tests vagues
+
+## 🔗 Liens utiles
+
+- [Documentation complète](../../docs/TESTING.md)
+- [Vitest Documentation](https://vitest.dev/)
+- [Mock Functions Guide](https://vitest.dev/guide/mocking.html)
+
+---
+
+💡 **Conseil** : Commencez par lire la documentation complète dans `docs/TESTING.md` pour une compréhension approfondie du système de tests.
