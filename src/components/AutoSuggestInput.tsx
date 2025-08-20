@@ -47,19 +47,32 @@ export const AutoSuggestInput: React.FC<AutoSuggestInputProps> = ({
   onSuggestionsClearRequested,
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<SuggestionItem[]>([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<
+    SuggestionItem[]
+  >([]);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    if (value.trim().length > 0 && suggestions.length > 0) {
+    // Vérification de sécurité pour les suggestions
+    if (
+      value.trim().length > 0 &&
+      suggestions &&
+      Array.isArray(suggestions) &&
+      suggestions.length > 0
+    ) {
       const filtered = suggestions
-        .filter(item => 
-          item.text.toLowerCase().includes(value.toLowerCase())
+        .filter(
+          (item) =>
+            // Vérification de sécurité pour chaque item
+            item &&
+            typeof item.text === "string" &&
+            item.text.toLowerCase().includes(value.toLowerCase())
         )
         .slice(0, maxSuggestions);
       setFilteredSuggestions(filtered);
       setShowSuggestions(filtered.length > 0);
     } else {
+      setFilteredSuggestions([]);
       setShowSuggestions(false);
     }
   }, [value, suggestions, maxSuggestions]);
@@ -97,14 +110,10 @@ export const AutoSuggestInput: React.FC<AutoSuggestInputProps> = ({
       onPress={() => handleSuggestionSelect(item)}
       activeOpacity={0.7}
     >
-      {item.icon && (
-        <Text style={styles.suggestionIcon}>{item.icon}</Text>
-      )}
+      {item.icon && <Text style={styles.suggestionIcon}>{item.icon}</Text>}
       <View style={styles.suggestionContent}>
         <Text style={styles.suggestionText}>{item.text}</Text>
-        {item.type && (
-          <Text style={styles.suggestionType}>{item.type}</Text>
-        )}
+        {item.type && <Text style={styles.suggestionType}>{item.type}</Text>}
       </View>
     </TouchableOpacity>
   );
@@ -123,7 +132,7 @@ export const AutoSuggestInput: React.FC<AutoSuggestInputProps> = ({
         onFocus={handleInputFocus}
         onBlur={handleInputBlur}
       />
-      
+
       {showSuggestions && (
         <View style={styles.suggestionsContainer}>
           <FlatList
