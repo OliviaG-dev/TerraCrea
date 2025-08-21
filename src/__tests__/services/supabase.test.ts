@@ -2,6 +2,7 @@
 process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 
+import { describe, it, expect } from "vitest";
 import { supabase } from "../../services/supabase";
 
 describe("Supabase Client", () => {

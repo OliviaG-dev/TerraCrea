@@ -68,9 +68,7 @@ describe("FavoritesApi", () => {
         },
       ];
 
-      (CreationsApi.getUserFavorites as vi.Mock).mockResolvedValue(
-        mockFavorites
-      );
+      (CreationsApi.getUserFavorites as any).mockResolvedValue(mockFavorites);
 
       const result = await FavoritesApi.getUserFavorites();
 
@@ -81,7 +79,7 @@ describe("FavoritesApi", () => {
 
     it("should throw error when CreationsApi fails", async () => {
       const mockError = new Error("Database error");
-      (CreationsApi.getUserFavorites as vi.Mock).mockRejectedValue(mockError);
+      (CreationsApi.getUserFavorites as any).mockRejectedValue(mockError);
 
       await expect(FavoritesApi.getUserFavorites()).rejects.toThrow(
         "Impossible de récupérer vos favoris"
@@ -92,7 +90,7 @@ describe("FavoritesApi", () => {
 
   describe("addToFavorites", () => {
     it("should add creation to favorites successfully", async () => {
-      (CreationsApi.addToFavorites as vi.Mock).mockResolvedValue(true);
+      (CreationsApi.addToFavorites as any).mockResolvedValue(true);
 
       const result = await FavoritesApi.addToFavorites("creation-123");
 
@@ -102,7 +100,7 @@ describe("FavoritesApi", () => {
 
     it("should throw error when CreationsApi fails", async () => {
       const mockError = new Error("Database error");
-      (CreationsApi.addToFavorites as vi.Mock).mockRejectedValue(mockError);
+      (CreationsApi.addToFavorites as any).mockRejectedValue(mockError);
 
       await expect(FavoritesApi.addToFavorites("creation-123")).rejects.toThrow(
         "Impossible d'ajouter aux favoris"
@@ -113,7 +111,7 @@ describe("FavoritesApi", () => {
 
   describe("removeFromFavorites", () => {
     it("should remove creation from favorites successfully", async () => {
-      (CreationsApi.removeFromFavorites as vi.Mock).mockResolvedValue(true);
+      (CreationsApi.removeFromFavorites as any).mockResolvedValue(true);
 
       const result = await FavoritesApi.removeFromFavorites("creation-123");
 
@@ -125,9 +123,7 @@ describe("FavoritesApi", () => {
 
     it("should throw error when CreationsApi fails", async () => {
       const mockError = new Error("Database error");
-      (CreationsApi.removeFromFavorites as vi.Mock).mockRejectedValue(
-        mockError
-      );
+      (CreationsApi.removeFromFavorites as any).mockRejectedValue(mockError);
 
       await expect(
         FavoritesApi.removeFromFavorites("creation-123")
@@ -140,7 +136,7 @@ describe("FavoritesApi", () => {
 
   describe("isFavorite", () => {
     it("should return true when creation is favorite", async () => {
-      (CreationsApi.isFavorite as vi.Mock).mockResolvedValue(true);
+      (CreationsApi.isFavorite as any).mockResolvedValue(true);
 
       const result = await FavoritesApi.isFavorite("creation-123");
 
@@ -149,7 +145,7 @@ describe("FavoritesApi", () => {
     });
 
     it("should return false when creation is not favorite", async () => {
-      (CreationsApi.isFavorite as vi.Mock).mockResolvedValue(false);
+      (CreationsApi.isFavorite as any).mockResolvedValue(false);
 
       const result = await FavoritesApi.isFavorite("creation-123");
 
@@ -159,7 +155,7 @@ describe("FavoritesApi", () => {
 
     it("should return false when CreationsApi fails", async () => {
       const mockError = new Error("Database error");
-      (CreationsApi.isFavorite as vi.Mock).mockRejectedValue(mockError);
+      (CreationsApi.isFavorite as any).mockRejectedValue(mockError);
 
       const result = await FavoritesApi.isFavorite("creation-123");
 
@@ -170,7 +166,7 @@ describe("FavoritesApi", () => {
 
   describe("toggleFavorite", () => {
     it("should toggle favorite status successfully", async () => {
-      (CreationsApi.toggleFavorite as vi.Mock).mockResolvedValue(true);
+      (CreationsApi.toggleFavorite as any).mockResolvedValue(true);
 
       const result = await FavoritesApi.toggleFavorite("creation-123");
 
@@ -180,7 +176,7 @@ describe("FavoritesApi", () => {
 
     it("should throw error when CreationsApi fails", async () => {
       const mockError = new Error("Database error");
-      (CreationsApi.toggleFavorite as vi.Mock).mockRejectedValue(mockError);
+      (CreationsApi.toggleFavorite as any).mockRejectedValue(mockError);
 
       await expect(FavoritesApi.toggleFavorite("creation-123")).rejects.toThrow(
         "Impossible de modifier les favoris"
@@ -260,9 +256,7 @@ describe("FavoritesApi", () => {
         },
       ];
 
-      (CreationsApi.getUserFavorites as vi.Mock).mockResolvedValue(
-        mockFavorites
-      );
+      (CreationsApi.getUserFavorites as any).mockResolvedValue(mockFavorites);
 
       const result = await FavoritesApi.getFavoritesCount();
 
@@ -271,7 +265,7 @@ describe("FavoritesApi", () => {
     });
 
     it("should return 0 when no favorites", async () => {
-      (CreationsApi.getUserFavorites as vi.Mock).mockResolvedValue([]);
+      (CreationsApi.getUserFavorites as any).mockResolvedValue([]);
 
       const result = await FavoritesApi.getFavoritesCount();
 
@@ -281,7 +275,7 @@ describe("FavoritesApi", () => {
 
     it("should return 0 when CreationsApi fails", async () => {
       const mockError = new Error("Database error");
-      (CreationsApi.getUserFavorites as vi.Mock).mockRejectedValue(mockError);
+      (CreationsApi.getUserFavorites as any).mockRejectedValue(mockError);
 
       const result = await FavoritesApi.getFavoritesCount();
 
@@ -293,15 +287,15 @@ describe("FavoritesApi", () => {
   describe("integration scenarios", () => {
     it("should handle multiple favorite operations in sequence", async () => {
       // Setup mocks pour la séquence d'opérations
-      (CreationsApi.addToFavorites as vi.Mock).mockResolvedValue(true);
-      (CreationsApi.removeFromFavorites as vi.Mock).mockResolvedValue(true);
+      (CreationsApi.addToFavorites as any).mockResolvedValue(true);
+      (CreationsApi.removeFromFavorites as any).mockResolvedValue(true);
 
       // 1. Ajouter aux favoris
       const addResult = await FavoritesApi.addToFavorites("creation-123");
       expect(addResult).toBe(true);
 
       // 2. Vérifier si c'est un favori (après ajout)
-      (CreationsApi.isFavorite as vi.Mock).mockResolvedValue(true);
+      (CreationsApi.isFavorite as any).mockResolvedValue(true);
       const isFavoriteResult = await FavoritesApi.isFavorite("creation-123");
       expect(isFavoriteResult).toBe(true);
 
@@ -312,7 +306,7 @@ describe("FavoritesApi", () => {
       expect(removeResult).toBe(true);
 
       // 4. Vérifier que ce n'est plus un favori (après suppression)
-      (CreationsApi.isFavorite as vi.Mock).mockResolvedValue(false);
+      (CreationsApi.isFavorite as any).mockResolvedValue(false);
       const isFavoriteAfterRemove = await FavoritesApi.isFavorite(
         "creation-123"
       );
@@ -333,12 +327,10 @@ describe("FavoritesApi", () => {
       // Test que les erreurs sont correctement encapsulées avec des messages personnalisés
       const mockError = new Error("Database connection failed");
 
-      (CreationsApi.getUserFavorites as vi.Mock).mockRejectedValue(mockError);
-      (CreationsApi.addToFavorites as vi.Mock).mockRejectedValue(mockError);
-      (CreationsApi.removeFromFavorites as vi.Mock).mockRejectedValue(
-        mockError
-      );
-      (CreationsApi.toggleFavorite as vi.Mock).mockRejectedValue(mockError);
+      (CreationsApi.getUserFavorites as any).mockRejectedValue(mockError);
+      (CreationsApi.addToFavorites as any).mockRejectedValue(mockError);
+      (CreationsApi.removeFromFavorites as any).mockRejectedValue(mockError);
+      (CreationsApi.toggleFavorite as any).mockRejectedValue(mockError);
 
       // Test des messages d'erreur
       await expect(FavoritesApi.getUserFavorites()).rejects.toThrow(

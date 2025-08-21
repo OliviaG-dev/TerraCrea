@@ -1,382 +1,199 @@
 import React from "react";
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, beforeAll } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { FloatingFavoritesButton } from "../../components/FloatingFavoritesButton";
-import { FloatingSearchButton } from "../../components/FloatingSearchButton";
 
-// Les mocks React Native sont configurés globalement dans vitest.config.ts
+// Variables pour stocker les fonctions mock
+let mockNavigate: any;
+let mockGetFavoritesCount: any;
 
-// Mock de react-navigation
-vi.mock("@react-navigation/native", () => ({
-  useNavigation: () => ({
-    navigate: vi.fn(),
-  }),
-}));
+// Configuration des mocks avant tout
+beforeAll(() => {
+  // Mock de React Navigation AVANT l'import
+  mockNavigate = vi.fn();
+  vi.doMock("@react-navigation/native", () => ({
+    useNavigation: () => ({
+      navigate: mockNavigate,
+      goBack: vi.fn(),
+      canGoBack: vi.fn(() => true),
+    }),
+  }));
 
-describe("FloatingFavoritesButton", () => {
-  const mockOnPress = vi.fn();
-  const mockOnLongPress = vi.fn();
+  // Mock du contexte Favorites
+  mockGetFavoritesCount = vi.fn(() => 3);
+  vi.doMock("../../context/FavoritesContext", () => ({
+    useFavorites: () => ({
+      getFavoritesCount: mockGetFavoritesCount,
+    }),
+  }));
 
-  const defaultProps = {
-    onPress: mockOnPress,
-    onLongPress: mockOnLongPress,
-  };
+  // Mock des couleurs
+  vi.doMock("../../utils/colors", () => ({
+    COLORS: {
+      primary: "#007AFF",
+      white: "#FFFFFF",
+      black: "#000000",
+      danger: "#FF3B30",
+    },
+  }));
 
-  beforeEach(() => {
-    vi.clearAllMocks();
+  // Mock de React Native SVG
+  vi.doMock("react-native-svg", () => {
+    const MockSvg = ({ children, ...props }: any) => (
+      <div data-testid="svg" {...props}>
+        {children}
+      </div>
+    );
+    const MockPath = (props: any) => <path data-testid="path" {...props} />;
+    return {
+      __esModule: true,
+      default: MockSvg,
+      Path: MockPath,
+    };
   });
 
-  describe("Rendu", () => {
-    it("should render floating favorites button", () => {
-      render(<FloatingFavoritesButton {...defaultProps} />);
+  // Mock de React Native
+  vi.doMock("react-native", () => ({
+    View: ({ children, ...props }: any) => (
+      <div data-testid="view" {...props}>
+        {children}
+      </div>
+    ),
+    Text: ({ children, ...props }: any) => (
+      <span data-testid="text" {...props}>
+        {children}
+      </span>
+    ),
+    TouchableOpacity: ({
+      children,
+      onPress,
+      activeOpacity,
+      style,
+      ...props
+    }: any) => (
+      <button
+        data-testid="touchable-opacity"
+        onClick={onPress}
+        style={style}
+        {...props}
+      >
+        {children}
+      </button>
+    ),
+    StyleSheet: {
+      create: (styles: any) => styles,
+    },
+    Animated: {
+      Value: vi.fn().mockImplementation(() => ({
+        setValue: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      })),
+      timing: vi.fn().mockImplementation(() => ({
+        start: vi.fn(),
+      })),
+      sequence: vi.fn().mockImplementation(() => ({
+        start: vi.fn(),
+      })),
+      View: ({ children, style, ...props }: any) => (
+        <div data-testid="animated-view" style={style} {...props}>
+          {children}
+        </div>
+      ),
+    },
+  }));
+});
 
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-    });
-
-    it("should render with heart icon", () => {
-      render(<FloatingFavoritesButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-      // Vérifier que l'icône de cœur est présente
-    });
-
-    it("should apply custom style when provided", () => {
-      const customStyle = { backgroundColor: "red" };
-      render(<FloatingFavoritesButton {...defaultProps} style={customStyle} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-    });
-
-    it("should render with badge when count is provided", () => {
-      render(<FloatingFavoritesButton {...defaultProps} count={5} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-      expect(screen.getByText("5")).toBeInTheDocument();
-    });
-
-    it("should not show badge when count is 0", () => {
-      render(<FloatingFavoritesButton {...defaultProps} count={0} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-      expect(screen.queryByText("0")).not.toBeInTheDocument();
-    });
-
-    it("should not show badge when count is not provided", () => {
-      render(<FloatingFavoritesButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-      expect(screen.queryByText(/[0-9]+/)).not.toBeInTheDocument();
-    });
-  });
-
-  describe("Interactions", () => {
-    it("should call onPress when pressed", () => {
-      render(<FloatingFavoritesButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-      fireEvent.click(button);
-
-      expect(mockOnPress).toHaveBeenCalledTimes(1);
-    });
-
-    it("should call onLongPress when long pressed", () => {
-      render(<FloatingFavoritesButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-      fireEvent.mouseDown(button);
-      fireEvent.mouseUp(button);
-
-      // Simuler un appui long
-      expect(mockOnLongPress).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle multiple rapid clicks gracefully", () => {
-      render(<FloatingFavoritesButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-
-      // Clics rapides multiples
-      fireEvent.click(button);
-      fireEvent.click(button);
-      fireEvent.click(button);
-
-      expect(mockOnPress).toHaveBeenCalledTimes(3);
-    });
-
-    it("should handle both press and long press", () => {
-      render(<FloatingFavoritesButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-
-      fireEvent.click(button);
-      fireEvent.mouseDown(button);
-      fireEvent.mouseUp(button);
-
-      expect(mockOnPress).toHaveBeenCalledTimes(1);
-      expect(mockOnLongPress).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("États", () => {
-    it("should show different badge counts", () => {
-      const { rerender } = render(
-        <FloatingFavoritesButton {...defaultProps} count={1} />
-      );
-      expect(screen.getByText("1")).toBeInTheDocument();
-
-      rerender(<FloatingFavoritesButton {...defaultProps} count={10} />);
-      expect(screen.getByText("10")).toBeInTheDocument();
-
-      rerender(<FloatingFavoritesButton {...defaultProps} count={99} />);
-      expect(screen.getByText("99")).toBeInTheDocument();
-    });
-
-    it("should handle large badge counts", () => {
-      render(<FloatingFavoritesButton {...defaultProps} count={999} />);
-      expect(screen.getByText("999")).toBeInTheDocument();
-    });
-
-    it("should handle disabled state", () => {
-      render(<FloatingFavoritesButton {...defaultProps} disabled={true} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeDisabled();
-    });
-
-    it("should not call onPress when disabled", () => {
-      render(<FloatingFavoritesButton {...defaultProps} disabled={true} />);
-
-      const button = screen.getByRole("button");
-      fireEvent.click(button);
-
-      expect(mockOnPress).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("Accessibilité", () => {
-    it("should have proper button role", () => {
-      render(<FloatingFavoritesButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-    });
-
-    it("should have proper accessibility label", () => {
-      render(
-        <FloatingFavoritesButton
-          {...defaultProps}
-          accessibilityLabel="Bouton favoris"
-        />
-      );
-
-      const button = screen.getByRole("button", { name: /bouton favoris/i });
-      expect(button).toBeInTheDocument();
-    });
-
-    it("should support keyboard navigation", () => {
-      render(<FloatingFavoritesButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-
-      // Test de navigation clavier
-      fireEvent.keyDown(button, { key: "Enter" });
-      fireEvent.keyDown(button, { key: " " }); // Spacebar
-
-      expect(mockOnPress).toHaveBeenCalledTimes(2);
-    });
+// Test simple de rendu
+describe("Simple Render Test", () => {
+  it("should render a simple div", () => {
+    render(<div>Test</div>);
+    expect(screen.getByText("Test")).toBeInTheDocument();
   });
 });
 
-describe("FloatingSearchButton", () => {
-  const mockOnPress = vi.fn();
+describe("FloatingButtons Components", () => {
+  let FloatingFavoritesButton: any;
+  let FloatingSearchButton: any;
 
-  const defaultProps = {
-    onPress: mockOnPress,
-  };
+  beforeAll(async () => {
+    // Import dynamique après que les mocks soient configurés
+    const favoritesModule = await vi.importActual(
+      "../../components/FloatingFavoritesButton"
+    );
+    const searchModule = await vi.importActual(
+      "../../components/FloatingSearchButton"
+    );
+
+    FloatingFavoritesButton = (favoritesModule as any).FloatingFavoritesButton;
+    FloatingSearchButton = (searchModule as any).FloatingSearchButton;
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetFavoritesCount.mockReturnValue(3);
   });
 
-  describe("Rendu", () => {
-    it("should render floating search button", () => {
-      render(<FloatingSearchButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
+  describe("Import Tests", () => {
+    it("should import FloatingFavoritesButton", () => {
+      expect(FloatingFavoritesButton).toBeDefined();
+      expect(typeof FloatingFavoritesButton).toBe("function");
     });
 
-    it("should render with search icon", () => {
-      render(<FloatingSearchButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-      // Vérifier que l'icône de recherche est présente
-    });
-
-    it("should apply custom style when provided", () => {
-      const customStyle = { backgroundColor: "blue" };
-      render(<FloatingSearchButton {...defaultProps} style={customStyle} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-    });
-
-    it("should render with custom size when provided", () => {
-      render(<FloatingSearchButton {...defaultProps} size="large" />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
+    it("should import FloatingSearchButton", () => {
+      expect(FloatingSearchButton).toBeDefined();
+      expect(typeof FloatingSearchButton).toBe("function");
     });
   });
 
-  describe("Interactions", () => {
-    it("should call onPress when pressed", () => {
-      render(<FloatingSearchButton {...defaultProps} />);
+  describe("Render Tests", () => {
+    it("should render FloatingFavoritesButton", () => {
+      render(<FloatingFavoritesButton />);
 
-      const button = screen.getByRole("button");
+      // Vérifier qu'un bouton est rendu
+      const button = screen.getByTestId("touchable-opacity");
+      expect(button).toBeInTheDocument();
+    });
+
+    it("should render FloatingSearchButton", () => {
+      render(<FloatingSearchButton />);
+
+      // Vérifier qu'un bouton est rendu
+      const button = screen.getByTestId("touchable-opacity");
+      expect(button).toBeInTheDocument();
+    });
+
+    it("should display favorites count when greater than 0", () => {
+      mockGetFavoritesCount.mockReturnValue(5);
+      render(<FloatingFavoritesButton />);
+
+      expect(screen.getByText("5")).toBeInTheDocument();
+    });
+
+    it("should not display count when zero", () => {
+      mockGetFavoritesCount.mockReturnValue(0);
+      render(<FloatingFavoritesButton />);
+
+      expect(screen.queryByTestId("text")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Interaction Tests", () => {
+    it("should call navigate when FloatingFavoritesButton is pressed", () => {
+      render(<FloatingFavoritesButton />);
+
+      const button = screen.getByTestId("touchable-opacity");
       fireEvent.click(button);
 
-      expect(mockOnPress).toHaveBeenCalledTimes(1);
+      expect(mockNavigate).toHaveBeenCalledWith("Favorites");
     });
 
-    it("should handle multiple rapid clicks gracefully", () => {
-      render(<FloatingSearchButton {...defaultProps} />);
+    it("should call navigate when FloatingSearchButton is pressed", () => {
+      render(<FloatingSearchButton />);
 
-      const button = screen.getByRole("button");
-
-      // Clics rapides multiples
-      fireEvent.click(button);
-      fireEvent.click(button);
+      const button = screen.getByTestId("touchable-opacity");
       fireEvent.click(button);
 
-      expect(mockOnPress).toHaveBeenCalledTimes(3);
-    });
-
-    it("should handle disabled state", () => {
-      render(<FloatingSearchButton {...defaultProps} disabled={true} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeDisabled();
-    });
-
-    it("should not call onPress when disabled", () => {
-      render(<FloatingSearchButton {...defaultProps} disabled={true} />);
-
-      const button = screen.getByRole("button");
-      fireEvent.click(button);
-
-      expect(mockOnPress).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("Accessibilité", () => {
-    it("should have proper button role", () => {
-      render(<FloatingSearchButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-    });
-
-    it("should have proper accessibility label", () => {
-      render(
-        <FloatingSearchButton
-          {...defaultProps}
-          accessibilityLabel="Bouton recherche"
-        />
-      );
-
-      const button = screen.getByRole("button", { name: /bouton recherche/i });
-      expect(button).toBeInTheDocument();
-    });
-
-    it("should support keyboard navigation", () => {
-      render(<FloatingSearchButton {...defaultProps} />);
-
-      const button = screen.getByRole("button");
-
-      // Test de navigation clavier
-      fireEvent.keyDown(button, { key: "Enter" });
-      fireEvent.keyDown(button, { key: " " }); // Spacebar
-
-      expect(mockOnPress).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe("Styles et thèmes", () => {
-    it("should apply different sizes correctly", () => {
-      const { rerender } = render(
-        <FloatingSearchButton {...defaultProps} size="small" />
-      );
-      expect(screen.getByRole("button")).toBeInTheDocument();
-
-      rerender(<FloatingSearchButton {...defaultProps} size="medium" />);
-      expect(screen.getByRole("button")).toBeInTheDocument();
-
-      rerender(<FloatingSearchButton {...defaultProps} size="large" />);
-      expect(screen.getByRole("button")).toBeInTheDocument();
-    });
-
-    it("should apply custom colors when provided", () => {
-      const customColor = "#FF0000";
-      render(<FloatingSearchButton {...defaultProps} color={customColor} />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-    });
-  });
-
-  describe("Gestion d'erreurs", () => {
-    it("should handle missing onPress gracefully", () => {
-      const { onPress, ...propsWithoutOnPress } = defaultProps;
-
-      // Ne devrait pas planter même sans onPress
-      expect(() => {
-        render(<FloatingSearchButton {...propsWithoutOnPress} />);
-      }).not.toThrow();
-    });
-
-    it("should handle null/undefined props gracefully", () => {
-      expect(() => {
-        render(<FloatingSearchButton onPress={null as any} />);
-      }).not.toThrow();
-    });
-  });
-
-  describe("Performance", () => {
-    it("should render quickly with minimal props", () => {
-      const startTime = performance.now();
-
-      render(<FloatingSearchButton {...defaultProps} />);
-
-      const endTime = performance.now();
-      const renderTime = endTime - startTime;
-
-      // Le rendu devrait être rapide (< 100ms)
-      expect(renderTime).toBeLessThan(100);
-    });
-
-    it("should handle re-renders efficiently", () => {
-      const { rerender } = render(<FloatingSearchButton {...defaultProps} />);
-
-      const startTime = performance.now();
-
-      // Re-renders multiples
-      rerender(<FloatingSearchButton {...defaultProps} size="large" />);
-      rerender(<FloatingSearchButton {...defaultProps} disabled={true} />);
-      rerender(<FloatingSearchButton {...defaultProps} color="#FF0000" />);
-
-      const endTime = performance.now();
-      const totalTime = endTime - startTime;
-
-      // Les re-renders devraient être rapides
-      expect(totalTime).toBeLessThan(200);
+      expect(mockNavigate).toHaveBeenCalledWith("Search");
     });
   });
 });

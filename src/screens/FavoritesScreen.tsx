@@ -34,10 +34,7 @@ export const FavoritesScreen = () => {
   }, [navigation, user, loadFavorites]);
 
   const handleViewCreation = (creation: Creation) => {
-    navigation.navigate(
-      "CreationDetail" as never,
-      { creationId: creation.id } as never
-    );
+    (navigation as any).navigate("CreationDetail", { creationId: creation.id });
   };
 
   const handleRemoveFavorite = async (creationId: string) => {

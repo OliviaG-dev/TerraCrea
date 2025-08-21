@@ -25,7 +25,10 @@ import {
   CATEGORY_LABELS,
 } from "../types/Creation";
 import { CreationsApi } from "../services/creationsApi";
-import { suggestionsService, SuggestionItem } from "../services/suggestionsService";
+import {
+  suggestionsService,
+  SuggestionItem,
+} from "../services/suggestionsService";
 import { useFavorites } from "../context/FavoritesContext";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
@@ -108,7 +111,9 @@ export const ExploreScreen: React.FC = () => {
   const loadSuggestions = async () => {
     if (searchQuery.trim().length > 2) {
       try {
-        const suggestions = await suggestionsService.getSuggestions(searchQuery, "creations");
+        const suggestions = await suggestionsService.getSuggestions(
+          searchQuery
+        );
         setSuggestions(suggestions);
       } catch (error) {
         console.error("Erreur lors du chargement des suggestions:", error);
@@ -260,7 +265,9 @@ export const ExploreScreen: React.FC = () => {
           suggestions={suggestions}
           onSuggestionsFetchRequested={async (query) => {
             if (query.length > 2) {
-              const suggestions = await suggestionsService.getSuggestions(query, "creations");
+              const suggestions = await suggestionsService.getSuggestions(
+                query
+              );
               setSuggestions(suggestions);
             } else {
               setSuggestions([]);

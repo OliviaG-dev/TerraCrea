@@ -109,7 +109,7 @@ describe("Services Integration Tests", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (supabase.auth.getUser as vi.Mock).mockResolvedValue({
+    (supabase.auth.getUser as any).mockResolvedValue({
       data: { user: mockUser },
     });
   });
@@ -117,7 +117,7 @@ describe("Services Integration Tests", () => {
   describe("Complete User Workflow", () => {
     it("should handle complete user journey from signup to creation management", async () => {
       // 1. User signs up
-      (supabase.auth.signUp as vi.Mock).mockResolvedValue({
+      (supabase.auth.signUp as any).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
@@ -143,7 +143,7 @@ describe("Services Integration Tests", () => {
           }),
         }),
       });
-      (supabase.from as vi.Mock).mockImplementationOnce(mockFrom);
+      (supabase.from as any).mockImplementationOnce(mockFrom);
 
       const artisanProfileResult = await AuthService.createArtisanProfile({
         businessName: "Test Artisan",
@@ -160,7 +160,7 @@ describe("Services Integration Tests", () => {
   describe("Error Handling Integration", () => {
     it("should handle authentication errors across services", async () => {
       // Simuler une erreur d'authentification
-      (supabase.auth.getUser as vi.Mock).mockResolvedValue({
+      (supabase.auth.getUser as any).mockResolvedValue({
         data: { user: null },
         error: new Error("Authentication failed"),
       });
@@ -177,7 +177,7 @@ describe("Services Integration Tests", () => {
 
     it("should handle database errors consistently", async () => {
       // Simuler une erreur de base de données
-      (supabase.from as vi.Mock).mockImplementation(() => ({
+      (supabase.from as any).mockImplementation(() => ({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             order: vi
@@ -221,7 +221,7 @@ describe("Services Integration Tests", () => {
         }),
       });
 
-      (supabase.from as vi.Mock)
+      (supabase.from as any)
         .mockImplementationOnce(mockCreationsFrom) // creations_full
         .mockImplementationOnce(mockRatingsFrom); // user_ratings
 
@@ -260,7 +260,7 @@ describe("Services Integration Tests", () => {
           }),
         }),
       });
-      (supabase.from as vi.Mock)
+      (supabase.from as any)
         .mockImplementationOnce(mockFetchOwnerFrom) // creations (select artisan_id)
         .mockImplementationOnce(mockUpdateFrom) // creations (update)
         .mockImplementationOnce(mockFetchUpdatedFrom); // creations_full (select updated)
@@ -275,7 +275,7 @@ describe("Services Integration Tests", () => {
   describe("Performance Integration", () => {
     it("should handle multiple concurrent operations efficiently", async () => {
       // Test simplifié : vérifier qu'une seule opération fonctionne
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as any).mockImplementation((table: string) => {
         if (table === "creations_full") {
           return {
             select: vi.fn().mockReturnValue({
@@ -317,7 +317,7 @@ describe("Services Integration Tests", () => {
         }),
       });
 
-      (supabase.from as vi.Mock).mockImplementation(mockFrom);
+      (supabase.from as any).mockImplementation(mockFrom);
 
       // Appeler plusieurs fois la même méthode
       const result1 = await CreationsApi.getCreationById("creation-123");
@@ -345,7 +345,7 @@ describe("Services Integration Tests", () => {
         }),
       });
 
-      (supabase.from as vi.Mock).mockImplementation(mockFrom);
+      (supabase.from as any).mockImplementation(mockFrom);
 
       // L'utilisateur ne devrait pas pouvoir modifier une création d'un autre artisan
       await expect(
@@ -366,7 +366,7 @@ describe("Services Integration Tests", () => {
         }),
       });
 
-      (supabase.from as vi.Mock).mockImplementation(mockFrom);
+      (supabase.from as any).mockImplementation(mockFrom);
 
       // L'utilisateur ne devrait pas pouvoir noter sa propre création
       await expect(
@@ -387,7 +387,7 @@ describe("Services Integration Tests", () => {
         }),
       });
 
-      (supabase.from as vi.Mock).mockImplementation(mockFrom);
+      (supabase.from as any).mockImplementation(mockFrom);
 
       // L'utilisateur ne devrait pas pouvoir commenter sa propre création
       const reviewAttempt = await ReviewsApi.saveUserReview(
@@ -401,7 +401,7 @@ describe("Services Integration Tests", () => {
   describe("Data Flow Integration", () => {
     it("should test creation service individually", async () => {
       // Test de création avec un mock simple
-      (supabase.from as vi.Mock).mockImplementation(() => ({
+      (supabase.from as any).mockImplementation(() => ({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({
@@ -435,7 +435,7 @@ describe("Services Integration Tests", () => {
 
     it("should test favorites service individually", async () => {
       // Test des favoris avec un mock simple
-      (supabase.from as vi.Mock).mockImplementation(() => ({
+      (supabase.from as any).mockImplementation(() => ({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({
@@ -461,7 +461,7 @@ describe("Services Integration Tests", () => {
 
     it("should test ratings service individually", async () => {
       // Test des notations avec un mock simple
-      (supabase.from as vi.Mock).mockImplementation(() => ({
+      (supabase.from as any).mockImplementation(() => ({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({
@@ -487,7 +487,7 @@ describe("Services Integration Tests", () => {
 
     it("should test reviews service individually", async () => {
       // Test des commentaires avec un mock simple
-      (supabase.from as vi.Mock).mockImplementation(() => ({
+      (supabase.from as any).mockImplementation(() => ({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({

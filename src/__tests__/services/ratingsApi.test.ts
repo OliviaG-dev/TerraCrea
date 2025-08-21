@@ -16,7 +16,11 @@ describe("RatingsApi", () => {
   const mockUser = {
     id: "user-123",
     email: "test@example.com",
-  };
+    app_metadata: {},
+    user_metadata: {},
+    aud: "authenticated",
+    created_at: "2023-01-01T00:00:00Z",
+  } as any;
 
   // Fonction helper pour configurer le mock de supabase.from
   const mockSupabaseFrom = (mockReturnValue: any) => {
@@ -31,6 +35,7 @@ describe("RatingsApi", () => {
       supabase.auth.getUser as MockedFunction<typeof supabase.auth.getUser>
     ).mockResolvedValue({
       data: { user: mockUser },
+      error: null,
     });
   });
 
@@ -80,7 +85,8 @@ describe("RatingsApi", () => {
         supabase.auth.getUser as MockedFunction<typeof supabase.auth.getUser>
       ).mockResolvedValue({
         data: { user: null },
-      });
+        error: null,
+      } as any);
 
       const result = await RatingsApi.getUserRating("creation-123");
 
@@ -310,7 +316,8 @@ describe("RatingsApi", () => {
         supabase.auth.getUser as MockedFunction<typeof supabase.auth.getUser>
       ).mockResolvedValue({
         data: { user: null },
-      });
+        error: null,
+      } as any);
 
       const result = await RatingsApi.saveUserRating("creation-123", 5);
 

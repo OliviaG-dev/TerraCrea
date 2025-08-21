@@ -1,5 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+
+// Mock du module supabase avec création directe dans la factory
+vi.mock("../../services/supabase", () => ({
+  supabase: {
+    auth: {
+      getUser: vi.fn(),
+    },
+    from: vi.fn(),
+  },
+}));
+
 import { ReviewsApi } from "../../services/reviewsApi";
+import { supabase } from "../../services/supabase";
+
+// Obtenir les références mockées
+const mockSupabase = vi.mocked(supabase);
 
 describe("ReviewsApi", () => {
   const mockUser = {
@@ -8,11 +23,10 @@ describe("ReviewsApi", () => {
   };
 
   beforeEach(() => {
-    // Utiliser les mocks globaux configurés dans setup.ts
-    const { supabaseMock } = global as any;
+    vi.clearAllMocks();
 
     // Configurer l'utilisateur par défaut
-    supabaseMock.auth.getUser.mockResolvedValue({
+    (mockSupabase.auth.getUser as any).mockResolvedValue({
       data: { user: mockUser },
       error: null,
     });
@@ -20,10 +34,8 @@ describe("ReviewsApi", () => {
 
   describe("getUserReview", () => {
     it("should return user review when it exists", async () => {
-      const { supabaseMock } = global as any;
-
       // Configurer le mock pour retourner un avis
-      supabaseMock.from.mockReturnValue({
+      (mockSupabase.from as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
@@ -39,13 +51,11 @@ describe("ReviewsApi", () => {
       const result = await ReviewsApi.getUserReview("creation-123");
 
       expect(result).toBe("Great creation!");
-      expect(supabaseMock.from).toHaveBeenCalledWith("user_reviews");
+      expect(mockSupabase.from).toHaveBeenCalledWith("user_reviews");
     });
 
     it("should return null when no review exists", async () => {
-      const { supabaseMock } = global as any;
-
-      supabaseMock.from.mockReturnValue({
+      (mockSupabase.from as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
@@ -64,9 +74,7 @@ describe("ReviewsApi", () => {
     });
 
     it("should return null when user is not authenticated", async () => {
-      const { supabaseMock } = global as any;
-
-      supabaseMock.auth.getUser.mockResolvedValue({
+      (mockSupabase.auth.getUser as any).mockResolvedValue({
         data: { user: null },
         error: null,
       });
@@ -74,13 +82,11 @@ describe("ReviewsApi", () => {
       const result = await ReviewsApi.getUserReview("creation-123");
 
       expect(result).toBeNull();
-      expect(supabaseMock.from).not.toHaveBeenCalled();
+      expect(mockSupabase.from).not.toHaveBeenCalled();
     });
 
     it("should return null when PGRST116 error occurs (no rows)", async () => {
-      const { supabaseMock } = global as any;
-
-      supabaseMock.from.mockReturnValue({
+      (mockSupabase.from as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
@@ -99,8 +105,6 @@ describe("ReviewsApi", () => {
     });
 
     it("should handle fallback query successfully", async () => {
-      const { supabaseMock } = global as any;
-
       // Premier appel échoue (main query)
       const mockFrom1 = {
         select: vi.fn().mockReturnValue({
@@ -124,7 +128,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockFrom1)
         .mockReturnValueOnce(mockFrom2);
 
@@ -134,9 +138,7 @@ describe("ReviewsApi", () => {
     });
 
     it("should return null when both queries fail", async () => {
-      const { supabaseMock } = global as any;
-
-      supabaseMock.from.mockReturnValue({
+      (mockSupabase.from as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockRejectedValue(new Error("Database error")),
@@ -152,8 +154,6 @@ describe("ReviewsApi", () => {
 
   describe("saveUserReview", () => {
     it("should create new review successfully", async () => {
-      const { supabaseMock } = global as any;
-
       // Mock pour la vérification de création (artisan_id différent de l'utilisateur)
       const mockCreationsFrom = {
         select: vi.fn().mockReturnValue({
@@ -183,7 +183,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockCreationsFrom) // creations
         .mockReturnValueOnce(mockReviewsFrom) // user_reviews (select)
         .mockReturnValueOnce(mockReviewsFrom); // user_reviews (insert)
@@ -194,13 +194,11 @@ describe("ReviewsApi", () => {
       );
 
       expect(result).toBe(true);
-      expect(supabaseMock.from).toHaveBeenCalledWith("creations");
-      expect(supabaseMock.from).toHaveBeenCalledWith("user_reviews");
+      expect(mockSupabase.from).toHaveBeenCalledWith("creations");
+      expect(mockSupabase.from).toHaveBeenCalledWith("user_reviews");
     });
 
     it("should update existing review successfully", async () => {
-      const { supabaseMock } = global as any;
-
       // Mock pour la vérification de création
       const mockCreationsFrom = {
         select: vi.fn().mockReturnValue({
@@ -232,7 +230,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockCreationsFrom) // creations
         .mockReturnValueOnce(mockReviewsFrom) // user_reviews (select)
         .mockReturnValueOnce(mockReviewsFrom); // user_reviews (update)
@@ -246,8 +244,6 @@ describe("ReviewsApi", () => {
     });
 
     it("should throw error when user tries to review their own creation", async () => {
-      const { supabaseMock } = global as any;
-
       const mockCreationsFrom = {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
@@ -259,7 +255,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from.mockReturnValue(mockCreationsFrom);
+      (mockSupabase.from as any).mockReturnValue(mockCreationsFrom);
 
       // Le service retourne false au lieu de lancer une exception à cause du try-catch global
       const result = await ReviewsApi.saveUserReview(
@@ -270,9 +266,7 @@ describe("ReviewsApi", () => {
     });
 
     it("should return false when user is not authenticated", async () => {
-      const { supabaseMock } = global as any;
-
-      supabaseMock.auth.getUser.mockResolvedValue({
+      (mockSupabase.auth.getUser as any).mockResolvedValue({
         data: { user: null },
         error: null,
       });
@@ -286,8 +280,6 @@ describe("ReviewsApi", () => {
     });
 
     it("should return false when creation check fails", async () => {
-      const { supabaseMock } = global as any;
-
       const mockCreationsFrom = {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
@@ -299,7 +291,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from.mockReturnValue(mockCreationsFrom);
+      (mockSupabase.from as any).mockReturnValue(mockCreationsFrom);
 
       const result = await ReviewsApi.saveUserReview(
         "creation-123",
@@ -310,8 +302,6 @@ describe("ReviewsApi", () => {
     });
 
     it("should return false when insert fails", async () => {
-      const { supabaseMock } = global as any;
-
       const mockCreationsFrom = {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
@@ -339,7 +329,7 @@ describe("ReviewsApi", () => {
           .mockResolvedValue({ data: null, error: new Error("Insert failed") }),
       };
 
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockCreationsFrom)
         .mockReturnValueOnce(mockReviewsFrom)
         .mockReturnValueOnce(mockReviewsFrom);
@@ -355,8 +345,6 @@ describe("ReviewsApi", () => {
 
   describe("getCreationReviews", () => {
     it("should return creation reviews successfully", async () => {
-      const { supabaseMock } = global as any;
-
       const mockReviews = [
         { id: "review-1", comment: "Great!", user_id: "user-1" },
         { id: "review-2", comment: "Amazing!", user_id: "user-2" },
@@ -389,7 +377,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockReviewsFrom) // user_reviews
         .mockReturnValueOnce(mockUsersFrom); // users
 
@@ -401,12 +389,10 @@ describe("ReviewsApi", () => {
       expect(result[0].userNickname).toBe("user1");
       expect(result[1].comment).toBe("Amazing!");
       expect(result[1].userNickname).toBe("user2");
-      expect(supabaseMock.from).toHaveBeenCalledWith("user_reviews");
+      expect(mockSupabase.from).toHaveBeenCalledWith("user_reviews");
     });
 
     it("should return empty array when no reviews", async () => {
-      const { supabaseMock } = global as any;
-
       const mockReviewsFrom = {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
@@ -418,7 +404,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from.mockReturnValue(mockReviewsFrom);
+      (mockSupabase.from as any).mockReturnValue(mockReviewsFrom);
 
       const result = await ReviewsApi.getCreationReviews("creation-123");
 
@@ -426,8 +412,6 @@ describe("ReviewsApi", () => {
     });
 
     it("should handle fallback query when main query fails", async () => {
-      const { supabaseMock } = global as any;
-
       // Premier appel échoue (main)
       const mockFrom1 = {
         select: vi.fn().mockReturnValue({
@@ -456,7 +440,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockFrom1)
         .mockReturnValueOnce(mockFrom2)
         // users query (ignored/fails gracefully)
@@ -473,8 +457,6 @@ describe("ReviewsApi", () => {
     });
 
     it("should generate fallback usernames when users query fails", async () => {
-      const { supabaseMock } = global as any;
-
       const mockReviews = [
         { id: "review-1", comment: "Great!", user_id: "user-1" },
         { id: "review-2", comment: "Amazing!", user_id: "user-2" },
@@ -504,7 +486,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockReviewsFrom) // user_reviews
         .mockReturnValueOnce(mockUsersFrom); // users
 
@@ -519,8 +501,6 @@ describe("ReviewsApi", () => {
     });
 
     it("should handle empty users array gracefully", async () => {
-      const { supabaseMock } = global as any;
-
       const mockReviews = [
         { id: "review-1", comment: "Great!", user_id: "user-1" },
       ];
@@ -549,7 +529,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockReviewsFrom) // user_reviews
         .mockReturnValueOnce(mockUsersFrom); // users
 
@@ -564,8 +544,6 @@ describe("ReviewsApi", () => {
 
   describe("deleteUserReview", () => {
     it("should delete user review successfully", async () => {
-      const { supabaseMock } = global as any;
-
       const mockFrom = {
         delete: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
@@ -576,18 +554,16 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from.mockReturnValue(mockFrom);
+      (mockSupabase.from as any).mockReturnValue(mockFrom);
 
       const result = await ReviewsApi.deleteUserReview("creation-123");
 
       expect(result).toBe(true);
-      expect(supabaseMock.from).toHaveBeenCalledWith("user_reviews");
+      expect(mockSupabase.from).toHaveBeenCalledWith("user_reviews");
     });
 
     it("should return false when user is not authenticated", async () => {
-      const { supabaseMock } = global as any;
-
-      supabaseMock.auth.getUser.mockResolvedValue({
+      (mockSupabase.auth.getUser as any).mockResolvedValue({
         data: { user: null },
         error: null,
       });
@@ -598,8 +574,6 @@ describe("ReviewsApi", () => {
     });
 
     it("should return false when deletion fails", async () => {
-      const { supabaseMock } = global as any;
-
       const mockFrom = {
         delete: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
@@ -610,7 +584,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from.mockReturnValue(mockFrom);
+      (mockSupabase.from as any).mockReturnValue(mockFrom);
 
       const result = await ReviewsApi.deleteUserReview("creation-123");
 
@@ -620,8 +594,6 @@ describe("ReviewsApi", () => {
 
   describe("Integration scenarios", () => {
     it("should handle complete review workflow", async () => {
-      const { supabaseMock } = global as any;
-
       // 1. Save review
       const mockCreationsFrom = {
         select: vi.fn().mockReturnValue({
@@ -645,7 +617,7 @@ describe("ReviewsApi", () => {
         }),
         insert: vi.fn().mockReturnValue({ error: null }),
       };
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockCreationsFrom)
         .mockReturnValueOnce(mockReviewsFrom)
         .mockReturnValueOnce(mockReviewsFrom);
@@ -680,7 +652,7 @@ describe("ReviewsApi", () => {
           in: vi.fn().mockResolvedValue({ data: [], error: null }),
         }),
       };
-      supabaseMock.from
+      (mockSupabase.from as any)
         .mockReturnValueOnce(mockGetReviewsFrom)
         .mockReturnValueOnce(mockUsersFrom);
       const reviews = await ReviewsApi.getCreationReviews("creation-123");
@@ -689,8 +661,6 @@ describe("ReviewsApi", () => {
     });
 
     it("should handle multiple reviews for same creation", async () => {
-      const { supabaseMock } = global as any;
-
       const mockReviews = [
         { id: "review-1", comment: "Great!", user_id: "user-1" },
         { id: "review-2", comment: "Amazing!", user_id: "user-2" },
@@ -708,7 +678,7 @@ describe("ReviewsApi", () => {
         }),
       };
 
-      supabaseMock.from.mockReturnValue(mockReviewsFrom);
+      (mockSupabase.from as any).mockReturnValue(mockReviewsFrom);
 
       const reviews = await ReviewsApi.getCreationReviews("creation-123");
 

@@ -239,8 +239,8 @@ describe("AutoSuggestInput", () => {
     it("should handle suggestions with missing text property", () => {
       const suggestions = [
         { id: "1", text: "Valid test suggestion" }, // Contient "test" pour correspondre à la valeur
-        { id: "2" }, // Missing text property
-      ];
+        { id: "2", text: "" }, // Empty text property
+      ] as any; // Cast to any to test handling of invalid data
 
       render(
         <AutoSuggestInput

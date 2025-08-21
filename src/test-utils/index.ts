@@ -90,11 +90,10 @@ export const createMockError = (message: string, code?: string) => ({
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-// Configuration des mocks Jest
-export const setupJestMocks = () => {
-  // Mock des modules externes
-  jest.mock("react-native/Libraries/Animated/NativeAnimatedHelper");
+import { vi } from "vitest";
 
+// Configuration des mocks Vitest
+export const setupVitestMocks = () => {
   // Mock des variables d'environnement
   process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
@@ -103,15 +102,15 @@ export const setupJestMocks = () => {
   // Mock de console pour les tests
   global.console = {
     ...console,
-    warn: jest.fn(),
-    error: jest.fn(),
-    log: jest.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    log: vi.fn(),
   };
 };
 
-// Nettoyage des mocks Jest
-export const cleanupJestMocks = () => {
-  jest.clearAllMocks();
-  jest.resetAllMocks();
-  jest.restoreAllMocks();
+// Nettoyage des mocks Vitest
+export const cleanupVitestMocks = () => {
+  vi.clearAllMocks();
+  vi.resetAllMocks();
+  vi.restoreAllMocks();
 };

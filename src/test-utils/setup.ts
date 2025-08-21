@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import { vi } from "vitest";
 
 // Mock global objects
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
@@ -39,13 +40,13 @@ global.matchMedia = vi.fn().mockImplementation((query) => ({
 }));
 
 // Mock requestAnimationFrame
-global.requestAnimationFrame = vi.fn((cb) => setTimeout(cb, 0));
+global.requestAnimationFrame = vi.fn((cb) => setTimeout(cb, 0)) as any;
 global.cancelAnimationFrame = vi.fn();
 
 // Mock getComputedStyle
 global.getComputedStyle = vi.fn(() => ({
   getPropertyValue: vi.fn(() => ""),
-}));
+})) as any;
 
 // Mock window.scrollTo
 global.scrollTo = vi.fn();
@@ -57,7 +58,7 @@ global.scroll = vi.fn();
 global.scrollBy = vi.fn();
 
 // Mock window.scrollIntoView
-global.scrollIntoView = vi.fn();
+(global as any).scrollIntoView = vi.fn();
 
 // Mock window.scrollTo
 global.scrollTo = vi.fn();
@@ -69,4 +70,4 @@ global.scroll = vi.fn();
 global.scrollBy = vi.fn();
 
 // Mock window.scrollIntoView
-global.scrollIntoView = vi.fn();
+(global as any).scrollIntoView = vi.fn();

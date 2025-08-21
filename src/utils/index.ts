@@ -9,7 +9,7 @@ export {
   modalStyles,
 } from "./commonStyles";
 export { formatDate, formatPrice } from "./timeUtils";
-export { validateEmail, validatePassword } from "./userUtils";
+export { validateArtisanProfile, validateUserProfile } from "./userUtils";
 export { handleEmailConfirmationLink } from "./emailConfirmationHandler";
 export { handlePasswordResetLink } from "./passwordResetHandler";
-export { accessibilityConfig } from "./accessibilityConfig";
+export { AccessibilityConfig } from "./accessibilityConfig";
