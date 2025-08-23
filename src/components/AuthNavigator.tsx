@@ -22,7 +22,8 @@ import { RootStackParamList } from "../types/Navigation";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AuthNavigator: React.FC = () => {
-  const { isAuthenticated, loading } = useUserContext();
+  const userContext = useUserContext();
+  const { isAuthenticated = false, loading = false } = userContext || {};
 
   // Ne pas utiliser useEmailConfirmationHandler ici pour éviter les redirections automatiques
   // useEmailConfirmationHandler();

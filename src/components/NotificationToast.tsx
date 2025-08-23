@@ -30,7 +30,6 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
 }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(-100));
-  
 
   useEffect(() => {
     if (visible) {
@@ -47,15 +46,18 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
+    }
+  }, [visible]);
 
-      // Auto-fermeture
+  useEffect(() => {
+    if (visible && duration > 0) {
       const timer = setTimeout(() => {
         hideToast();
       }, duration);
 
       return () => clearTimeout(timer);
     }
-  }, [visible]);
+  }, [visible, duration]);
 
   const hideToast = () => {
     Animated.parallel([
