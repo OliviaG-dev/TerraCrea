@@ -7,6 +7,16 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test-utils/setup.ts"],
     css: true,
+    transformMode: {
+      web: [/\.[jt]sx?$/],
+    },
+    deps: {
+      optimizer: {
+        web: {
+          include: ["react-native", "@testing-library/react-native"],
+        },
+      },
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
@@ -41,5 +51,8 @@ export default defineConfig({
     "process.env.EXPO_PUBLIC_SUPABASE_URL": '"https://test.supabase.co"',
     "process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY": '"test-anon-key"',
     "process.env.EXPO_PUBLIC_APP_URL": '"http://localhost:8081"',
+  },
+  esbuild: {
+    jsx: "automatic",
   },
 });
