@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { CommonInput, CommonButton } from "../components";
+import { CommonInput, CommonButton, ErrorDisplay } from "../components";
 import { useAuth } from "../hooks/useAuth";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
@@ -35,7 +35,7 @@ type LoginScreenProps = {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, error: authError } = useAuth();
   const { user, isAuthenticated } = useUserContext();
 
   // Utiliser le handler de confirmation d'email seulement sur cet écran
@@ -46,6 +46,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   const [lastName, setLastName] = useState("");
   const [isSignUp, setIsSignUp] = useState(route.params?.mode === "signup");
   const [loading, setLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
@@ -53,6 +54,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
     setPassword("");
     setFirstName("");
     setLastName("");
+    setLocalError(null); // Effacer les erreurs quand on change de mode
+  };
+
+  const handleRetry = () => {
+    setLocalError(null);
+    handleSubmit();
   };
 
   const handleClose = () => {
@@ -60,14 +67,29 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   };
 
   const handleSubmit = async () => {
+    setLocalError(null); // Effacer les erreurs précédentes
+
+    // Validation des credentials avant envoi
+    const validation = validateCredentials(email, password);
+
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs requis");
+      setLocalError("Veuillez remplir tous les champs requis");
+      return;
+    }
+
+    if (!validation.emailFormat) {
+      setLocalError("Format d'email invalide. Exemple: nom@domaine.com");
+      return;
+    }
+
+    if (!validation.passwordLength) {
+      setLocalError("Le mot de passe doit contenir au moins 6 caractères");
       return;
     }
 
     // Validation supplémentaire pour l'inscription
     if (isSignUp && (!firstName.trim() || !lastName.trim())) {
-      Alert.alert("Erreur", "Veuillez remplir votre prénom et nom");
+      setLocalError("Veuillez remplir votre prénom et nom");
       return;
     }
 
@@ -89,7 +111,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
             [{ text: "OK" }]
           );
         } else if (result?.error) {
-          Alert.alert("Erreur d'inscription", result.error);
+          setLocalError(result.error);
         } else if (result?.success) {
           // Inscription réussie sans confirmation nécessaire
           Alert.alert(
@@ -110,15 +132,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
             [{ text: "OK" }]
           );
         } else if (result?.error) {
-          Alert.alert("Erreur de connexion", result.error);
+          // Utiliser le composant ErrorDisplay au lieu d'Alert
+          setLocalError(result.error);
         } else if (result?.success) {
           // Connexion réussie - redirection directe
           navigation.navigate("Home");
         }
       }
     } catch (error) {
-      Alert.alert(
-        "Erreur",
+      setLocalError(
         "Une erreur inattendue s'est produite. Veuillez réessayer."
       );
     } finally {
@@ -147,6 +169,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
               : "Accédez à votre compte pour découvrir des créations artisanales"}
           </Text>
         </View>
+
+        {/* Error Display */}
+        <ErrorDisplay
+          error={localError || authError}
+          onRetry={handleRetry}
+          onDismiss={() => setLocalError(null)}
+        />
 
         {/* Form */}
         <View style={styles.formContainer}>

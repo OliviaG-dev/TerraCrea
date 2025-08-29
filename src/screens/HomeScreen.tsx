@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   View,
@@ -88,14 +89,7 @@ export const HomeScreen: React.FC = () => {
   // Boutons du footer adaptés
   const renderFooterButtons = () => {
     if (isAuthenticated) {
-      return (
-        <CommonButton
-          title="Explorez"
-          variant="primary"
-          onPress={handleGetStarted}
-          style={styles.getStartedButton}
-        />
-      );
+      return null; // Le bouton Explorez sera maintenant positionné de manière absolue
     }
 
     return (
@@ -162,6 +156,18 @@ export const HomeScreen: React.FC = () => {
 
       {/* Bouton flottant de recherche pour les utilisateurs connectés */}
       {isAuthenticated && <FloatingSearchButton />}
+
+      {/* Bouton Explorez centré entre les boutons flottants */}
+      {isAuthenticated && (
+        <View style={styles.exploreButtonContainer}>
+          <TouchableOpacity
+            style={styles.exploreButton}
+            onPress={handleGetStarted}
+          >
+            <Text style={styles.exploreButtonText}>Explorez</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -359,12 +365,44 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   // Footer buttons
-  getStartedButton: {
-    width: 200,
-    alignSelf: "center",
+  exploreButtonContainer: {
+    position: "absolute",
+    bottom: 30,
+    left: 0,
+    right: 0,
+    alignItems: "center", // Centre le bouton dans le conteneur
+    zIndex: 1000,
+  },
+  exploreButton: {
+    backgroundColor: "#4a5c4a",
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  exploreButtonText: {
+    color: "#fafaf9",
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "System",
+    textAlign: "center",
   },
   primaryButton: {
     width: 200,
     alignSelf: "center",
+  },
+  footerButtons: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+    paddingHorizontal: HORIZONTAL_PADDING,
+    marginTop: 20,
+    gap: 16,
   },
 });

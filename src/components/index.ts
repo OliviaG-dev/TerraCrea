@@ -3,9 +3,10 @@ export { CommonInput } from "./CommonInput";
 export { CommonButton } from "./CommonButton";
 export { NavigationHeader } from "./NavigationHeader";
 export { AuthNavigator } from "./AuthNavigator";
-export { Header } from "./Header";
+
 export { NotificationToast } from "./NotificationToast";
 export { FloatingFavoritesButton } from "./FloatingFavoritesButton";
 export { FloatingSearchButton } from "./FloatingSearchButton";
 export { CreationCard } from "./CreationCard";
 export { AutoSuggestInput } from "./AutoSuggestInput";
+export { ErrorDisplay } from "./ErrorDisplay";

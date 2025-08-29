@@ -370,8 +370,8 @@ describe("useAuth Hook", () => {
       });
 
       expect(signInResult.success).toBe(false);
-      expect(signInResult.error).toBe("Erreur lors de la connexion");
-      expect(result.current.error).toBe("Erreur lors de la connexion");
+      expect(signInResult.error).toBe("Erreur: Network error");
+      expect(result.current.error).toBe("Erreur: Network error");
       expect(result.current.loading).toBe(false);
     });
   });

@@ -80,7 +80,7 @@ export class AuthService {
         email.trim(),
         {
           redirectTo: `${
-            process.env.EXPO_PUBLIC_APP_URL || "http://localhost:8081"
+            process.env.EXPO_PUBLIC_APP_URL || "http://localhost:19006"
           }/reset-password`,
         }
       );
@@ -183,6 +183,21 @@ export class AuthService {
     }
   }
 
+  // Fonction pour vérifier si un utilisateur existe
+  static async checkUserExists(email: string) {
+    try {
+      // Tenter une récupération de mot de passe pour voir si l'utilisateur existe
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: "http://localhost:3000/reset-password",
+      });
+
+      // Si pas d'erreur ou erreur "Email rate limit", l'utilisateur existe probablement
+      return !error || !error.message.includes("User not found");
+    } catch {
+      return false;
+    }
+  }
+
   // Connexion sans vérification de confirmation obligatoire
   static async signInWithEmailPassword(email: string, password: string) {
     try {
@@ -205,11 +220,41 @@ export class AuthService {
         };
       }
 
+      // Vérification de la force du mot de passe
+      if (password.length < 6) {
+        return {
+          data: { user: null, session: null },
+          error: {
+            message: "Le mot de passe doit contenir au moins 6 caractères",
+          },
+          needsConfirmation: false,
+        };
+      }
+
+      // Debug: Afficher les données de connexion (sans le mot de passe)
+      console.log("🔍 Tentative de connexion avec:", {
+        email: email.trim(),
+        passwordLength: password.length,
+        hasPassword: !!password,
+        emailValid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
+      });
+
       // Essayer d'abord la connexion normale
       let { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
       });
+
+      // Debug: Afficher les détails de l'erreur
+      if (error) {
+        console.log("❌ Erreur de connexion détaillée:", {
+          status: error.status,
+          statusCode: error.statusCode,
+          message: error.message,
+          code: error.code,
+          details: error,
+        });
+      }
 
       // Si la connexion par mot de passe échoue, essayer avec OTP
       if (error && (error.status === 400 || error.status === 422)) {
@@ -266,9 +311,18 @@ export class AuthService {
               error: null,
               needsConfirmation: false,
             };
-          } else {
+          } else if (error.message.includes("Invalid login credentials")) {
+            errorMessage = "Email ou mot de passe incorrect";
+          } else if (error.message.includes("User not found")) {
             errorMessage =
-              "Données de connexion invalides. Vérifiez vos informations.";
+              "Aucun compte trouvé avec cet email. Vérifiez l'email ou créez un compte.";
+          } else if (error.message.includes("Invalid email")) {
+            errorMessage = "L'email fourni n'est pas valide";
+          } else if (error.message.includes("Password")) {
+            errorMessage =
+              "Le mot de passe ne respecte pas les critères requis (minimum 6 caractères)";
+          } else {
+            errorMessage = `Erreur de connexion (400): ${error.message}. Vérifiez vos informations de connexion.`;
           }
         } else if (error.status === 422) {
           errorMessage =
@@ -285,10 +339,30 @@ export class AuthService {
       }
       // Ne pas bloquer la connexion si l'email n'est pas confirmé
       return { data, error: null, needsConfirmation: false };
-    } catch (error) {
+    } catch (error: any) {
+      // Gestion détaillée des erreurs catch
+      let errorMessage = "Erreur inattendue lors de la connexion";
+
+      if (error?.name === "NetworkError" || error?.code === "NETWORK_ERROR") {
+        errorMessage =
+          "Problème de connexion internet. Vérifiez votre connexion.";
+      } else if (
+        error?.name === "TimeoutError" ||
+        error?.message?.includes("timeout")
+      ) {
+        errorMessage = "La connexion a pris trop de temps. Veuillez réessayer.";
+      } else if (error?.message?.includes("fetch")) {
+        errorMessage =
+          "Erreur de connexion au serveur. Vérifiez votre connexion internet.";
+      } else if (error?.message?.includes("CORS")) {
+        errorMessage = "Erreur de configuration réseau. Contactez le support.";
+      } else if (error?.message) {
+        errorMessage = `Erreur de connexion: ${error.message}`;
+      }
+
       return {
         data: { user: null, session: null },
-        error: { message: "Erreur inattendue lors de la connexion" },
+        error: { message: errorMessage, originalError: error },
         needsConfirmation: false,
       };
     }

@@ -89,34 +89,79 @@ export const useAuth = () => {
     setError(null);
 
     try {
-      const result = await AuthService.signInWithEmailPassword(email, password);
-
-      // Gestion de l'OTP
-      if (result.needsOtp) {
+      // Validation côté client
+      if (!email.trim() || !password.trim()) {
+        const errorMessage = "Email et mot de passe requis";
+        setError(errorMessage);
         return {
           success: false,
-          error: "Un lien de connexion a été envoyé à votre email",
-          needsOtp: true,
-        };
-      }
-
-      // Ne plus bloquer la connexion si l'email n'est pas confirmé
-      if (result.error) {
-        setError(result.error.message);
-        return {
-          success: false,
-          error: result.error.message,
+          error: errorMessage,
           needsConfirmation: false,
         };
       }
 
+      const result = await AuthService.signInWithEmailPassword(email, password);
+
+      // Gestion de l'OTP
+      if (result.needsOtp) {
+        const message = "Un lien de connexion a été envoyé à votre email";
+        return {
+          success: false,
+          error: message,
+          needsOtp: true,
+        };
+      }
+
+      // Gestion des erreurs avec messages détaillés
+      if (result.error) {
+        let enhancedError = result.error.message;
+
+        // Ajouter des conseils selon le type d'erreur
+        if (result.error.message.includes("Email ou mot de passe incorrect")) {
+          enhancedError =
+            "Email ou mot de passe incorrect. Vérifiez vos informations ou utilisez 'Mot de passe oublié'.";
+        } else if (result.error.message.includes("Trop de tentatives")) {
+          enhancedError =
+            "Trop de tentatives de connexion. Veuillez attendre quelques minutes avant de réessayer.";
+        } else if (result.error.message.includes("Format d'email invalide")) {
+          enhancedError =
+            "Le format de l'email n'est pas valide. Exemple: nom@domaine.com";
+        } else if (
+          result.error.message.includes("network") ||
+          result.error.message.includes("fetch")
+        ) {
+          enhancedError =
+            "Problème de connexion internet. Vérifiez votre connexion et réessayez.";
+        }
+
+        setError(enhancedError);
+        return {
+          success: false,
+          error: enhancedError,
+          needsConfirmation: false,
+        };
+      }
+
+      // Connexion réussie
+      setError(null);
       return {
         success: true,
         data: result.data,
         needsConfirmation: false,
       };
-    } catch (error) {
-      const errorMessage = "Erreur lors de la connexion";
+    } catch (error: any) {
+      let errorMessage = "Erreur inattendue lors de la connexion";
+
+      // Gestion des erreurs spécifiques
+      if (error?.name === "NetworkError" || error?.message?.includes("fetch")) {
+        errorMessage =
+          "Problème de connexion internet. Vérifiez votre connexion.";
+      } else if (error?.message?.includes("timeout")) {
+        errorMessage = "La connexion a pris trop de temps. Veuillez réessayer.";
+      } else if (error?.message) {
+        errorMessage = `Erreur: ${error.message}`;
+      }
+
       setError(errorMessage);
       return {
         success: false,

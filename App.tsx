@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { Linking } from "react-native";
+import { Linking, View, Text } from "react-native";
 
 import { NavigationContainer, LinkingOptions } from "@react-navigation/native";
 import { UserProvider } from "./src/context/UserContext";
@@ -16,10 +16,15 @@ import {
 } from "./src/utils/passwordResetHandler";
 import { RootStackParamList } from "./src/types/Navigation";
 import { AuthNavigator } from "./src/components/AuthNavigator";
+import {
+  checkForPasswordReset,
+  extractTokensFromUrl,
+  handleResetPasswordUrl,
+} from "./src/utils/urlHandler";
 
 // Configuration des liens profonds
 const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ["terracrea://", "http://localhost:8081", "https://yourapp.com"],
+  prefixes: ["terracrea://", "http://localhost:19006", "https://yourapp.com"],
   config: {
     screens: {
       Home: "",
@@ -88,17 +93,32 @@ const RootNavigator = () => {
 };
 
 export default function App() {
-  // Initialiser la configuration d'accessibilité
-  useEffect(() => {
-    AccessibilityConfig.configureOverlayAccessibility();
-  }, []);
+  // Version simplifiée pour diagnostic
+  try {
+    // Initialiser la configuration d'accessibilité
+    useEffect(() => {
+      try {
+        AccessibilityConfig.configureOverlayAccessibility();
+      } catch (error) {
+        console.log("Erreur AccessibilityConfig:", error);
+      }
+    }, []);
 
-  return (
-    <UserProvider>
-      <FavoritesProvider>
-        <RootNavigator />
-        <StatusBar style="auto" />
-      </FavoritesProvider>
-    </UserProvider>
-  );
+    return (
+      <UserProvider>
+        <FavoritesProvider>
+          <RootNavigator />
+          <StatusBar style="auto" />
+        </FavoritesProvider>
+      </UserProvider>
+    );
+  } catch (error) {
+    console.error("Erreur dans App.tsx:", error);
+    // Fallback en cas d'erreur
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>Erreur de chargement: {error?.message || "Erreur inconnue"}</Text>
+      </View>
+    );
+  }
 }

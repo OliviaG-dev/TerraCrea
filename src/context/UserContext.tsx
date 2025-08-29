@@ -28,7 +28,25 @@ interface UserContextProps {
 const UserContext = createContext<UserContextProps | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const auth = useAuth();
+  // Version simplifiée pour diagnostic
+  let auth;
+  try {
+    auth = useAuth();
+  } catch (error) {
+    console.error("Erreur useAuth:", error);
+    // Fallback auth object
+    auth = {
+      user: null,
+      loading: false,
+      error: null,
+      signIn: async () => ({ error: "Service indisponible" }),
+      signUp: async () => ({ error: "Service indisponible" }),
+      signOut: async () => ({ error: "Service indisponible" }),
+      isAuthenticated: false,
+      resetPassword: async () => ({ error: "Service indisponible" }),
+      updatePassword: async () => ({ error: "Service indisponible" }),
+    };
+  }
 
   // Fonction pour récupérer les données utilisateur complètes
   const fetchUserData = async (userId: string) => {
