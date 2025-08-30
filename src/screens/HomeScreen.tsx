@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   View,
@@ -21,7 +20,6 @@ const { width } = Dimensions.get("window");
 
 // Constantes pour éviter le débordement horizontal
 const HORIZONTAL_PADDING = 16;
-const CARD_SPACING = 12;
 
 type HomeScreenNavigationProp = ScreenNavigationProp<"Home">;
 
@@ -117,34 +115,12 @@ export const HomeScreen: React.FC = () => {
             : "Achetez des bijoux, poterie,\ndécorations et plus encore fabriqués localement."}
         </Text>
 
-        <View style={styles.productsContainer}>
-          <View style={styles.productCard}>
-            <View style={styles.productImage1}>
-              <View style={styles.jewelryDisplay}>
-                <View style={styles.earringSet}>
-                  <View style={[styles.earring, styles.earringGold]} />
-                  <View style={[styles.earring, styles.earringPink]} />
-                  <View style={[styles.earring, styles.earringGold]} />
-                </View>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.productCard}>
-            <View style={styles.productImage2}>
-              <View style={styles.ceramicVase} />
-              <View style={styles.frameDecor} />
-            </View>
-          </View>
-
-          <View style={styles.productCard}>
-            <View style={styles.productImage3}>
-              <View style={styles.basketContainer}>
-                <View style={styles.basket} />
-                <View style={styles.utensils} />
-              </View>
-            </View>
-          </View>
+        <View style={styles.heroImageContainer}>
+          <Image
+            source={require("../../assets/image-home.jpg")}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
         </View>
       </View>
 
@@ -175,18 +151,16 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafaf9",
+    backgroundColor: "#f8f9fa",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 0,
   },
   headerSection: {
-    flex: 0.3,
-    justifyContent: "space-between",
+    flex: 0.2,
+    justifyContent: "center",
     alignItems: "center",
     width: "100%",
-    paddingTop: 40,
-    paddingBottom: 20,
   },
 
   // Styles pour visiteur
@@ -195,7 +169,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: "100%",
     paddingHorizontal: HORIZONTAL_PADDING,
-    marginBottom: 25,
+    marginBottom: 15,
     gap: 16,
   },
   loginButton: {
@@ -205,24 +179,23 @@ const styles = StyleSheet.create({
     width: 120,
   },
   contentSection: {
-    flex: 0.56,
+    flex: 0.66,
     justifyContent: "space-around",
     alignItems: "center",
     width: "100%",
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
   footerSection: {
-    flex: 0.14,
+    flex: 0.08,
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
-    paddingBottom: 25,
+    paddingBottom: 10,
   },
   logoContainer: {
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
-    marginBottom: 10,
   },
   logoImage: {
     width: 300,
@@ -230,139 +203,45 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   mainTitle: {
-    fontSize: 32,
-    fontWeight: "600",
-    color: "#4a5c4a",
+    fontSize: 36,
+    fontWeight: "700",
+    color: "#2d3748",
     textAlign: "center",
-    lineHeight: 38,
-    letterSpacing: 0.5,
+    lineHeight: 42,
+    letterSpacing: 0.8,
     paddingHorizontal: HORIZONTAL_PADDING + 10,
     fontFamily: "System",
-    marginBottom: 15,
+    marginBottom: 20,
+    textShadowColor: "rgba(0, 0, 0, 0.1)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 16,
-    fontWeight: "400",
-    color: "#7a8a7a",
+    fontSize: 18,
+    fontWeight: "500",
+    color: "#4a5568",
     textAlign: "center",
-    lineHeight: 24,
-    letterSpacing: 0.3,
+    lineHeight: 26,
+    letterSpacing: 0.4,
     paddingHorizontal: HORIZONTAL_PADDING + 20,
     fontFamily: "System",
-    marginBottom: 20,
+    marginBottom: 30,
+    opacity: 0.9,
   },
-  productsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: HORIZONTAL_PADDING,
+  heroImageContainer: {
     width: "100%",
-    marginTop: 10,
+    paddingHorizontal: HORIZONTAL_PADDING,
+    marginTop: 20,
   },
-  productCard: {
-    width: Math.min(
-      (width - HORIZONTAL_PADDING * 2 - CARD_SPACING * 2 - 4) / 3,
-      width * 0.28
-    ), // Limite la largeur maximale
-    height: 70,
-  },
-  productImage1: {
-    flex: 1,
-    backgroundColor: "#f5f5f4",
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 2,
+  heroImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 16,
+    elevation: 6,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    borderWidth: 1.5,
-    borderColor: "#e0e0e0",
-  },
-  productImage2: {
-    flex: 1,
-    backgroundColor: "#f5f5f4",
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    borderWidth: 1.5,
-    borderColor: "#e0e0e0",
-  },
-  productImage3: {
-    flex: 1,
-    backgroundColor: "#f5f5f4",
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    borderWidth: 1.5,
-    borderColor: "#e0e0e0",
-  },
-  jewelryDisplay: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#d4a574",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  earringSet: {
-    flexDirection: "row",
-    gap: 3,
-  },
-  earring: {
-    width: 8,
-    height: 12,
-    borderRadius: 4,
-  },
-  earringGold: {
-    backgroundColor: "#c49969",
-  },
-  earringPink: {
-    backgroundColor: "#d4a574",
-  },
-  ceramicVase: {
-    width: 30,
-    height: 40,
-    backgroundColor: "#b8a892",
-    borderRadius: 15,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-  },
-  frameDecor: {
-    position: "absolute",
-    top: 10,
-    width: 25,
-    height: 20,
-    backgroundColor: "#ddd5c7",
-    borderRadius: 2,
-  },
-  basketContainer: {
-    alignItems: "center",
-  },
-  basket: {
-    width: 35,
-    height: 25,
-    backgroundColor: "#c4a068",
-    borderRadius: 4,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-  },
-  utensils: {
-    marginTop: 5,
-    width: 20,
-    height: 2,
-    backgroundColor: "#8b6f47",
-    borderRadius: 1,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
   },
   // Footer buttons
   exploreButtonContainer: {
