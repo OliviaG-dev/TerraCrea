@@ -12,7 +12,9 @@ import {
   validateArtisanProfile,
   validateUserProfile,
   getUserCapabilities,
+  validateCredentials,
   type UserCapabilities,
+  type CredentialValidation,
 } from "../../utils/userUtils";
 import { User, ArtisanProfile } from "../../types/User";
 
@@ -547,6 +549,102 @@ describe("userUtils", () => {
         // Vérifier que toutes les propriétés sont des booléens
         Object.values(capabilities).forEach((value) => {
           expect(typeof value).toBe("boolean");
+        });
+      });
+    });
+
+    describe("Validation des credentials", () => {
+      describe("validateCredentials", () => {
+        it("devrait valider des credentials corrects", () => {
+          const result = validateCredentials("test@example.com", "password123");
+
+          expect(result.emailFormat).toBe(true);
+          expect(result.passwordLength).toBe(true);
+          expect(result.isValid).toBe(true);
+        });
+
+        it("devrait détecter un format d'email invalide", () => {
+          const result = validateCredentials("invalid-email", "password123");
+
+          expect(result.emailFormat).toBe(false);
+          expect(result.passwordLength).toBe(true);
+          expect(result.isValid).toBe(false);
+        });
+
+        it("devrait détecter un mot de passe trop court", () => {
+          const result = validateCredentials("test@example.com", "123");
+
+          expect(result.emailFormat).toBe(true);
+          expect(result.passwordLength).toBe(false);
+          expect(result.isValid).toBe(false);
+        });
+
+        it("devrait détecter des credentials invalides (email et mot de passe)", () => {
+          const result = validateCredentials("invalid-email", "123");
+
+          expect(result.emailFormat).toBe(false);
+          expect(result.passwordLength).toBe(false);
+          expect(result.isValid).toBe(false);
+        });
+
+        it("devrait gérer les espaces dans l'email", () => {
+          const result = validateCredentials(
+            "  test@example.com  ",
+            "password123"
+          );
+
+          expect(result.emailFormat).toBe(true);
+          expect(result.passwordLength).toBe(true);
+          expect(result.isValid).toBe(true);
+        });
+
+        it("devrait accepter un mot de passe de 6 caractères exactement", () => {
+          const result = validateCredentials("test@example.com", "123456");
+
+          expect(result.emailFormat).toBe(true);
+          expect(result.passwordLength).toBe(true);
+          expect(result.isValid).toBe(true);
+        });
+
+        it("devrait rejeter un mot de passe de 5 caractères", () => {
+          const result = validateCredentials("test@example.com", "12345");
+
+          expect(result.emailFormat).toBe(true);
+          expect(result.passwordLength).toBe(false);
+          expect(result.isValid).toBe(false);
+        });
+
+        it("devrait valider différents formats d'email valides", () => {
+          const validEmails = [
+            "test@example.com",
+            "user.name@domain.co.uk",
+            "user+tag@example.org",
+            "123@domain.net",
+          ];
+
+          validEmails.forEach((email) => {
+            const result = validateCredentials(email, "password123");
+            expect(result.emailFormat).toBe(true);
+            expect(result.isValid).toBe(true);
+          });
+        });
+
+        it("devrait rejeter des formats d'email invalides", () => {
+          const invalidEmails = [
+            "plainaddress",
+            "@missingdomain.com",
+            "missing@.com",
+            "missing.domain@.com",
+            "two@@domain.com",
+            "domain.com",
+            "",
+          ];
+
+          invalidEmails.forEach((email) => {
+            const result = validateCredentials(email, "password123");
+            expect(result.emailFormat).toBe(false);
+            expect(result.isValid).toBe(false);
+          });
         });
       });
     });

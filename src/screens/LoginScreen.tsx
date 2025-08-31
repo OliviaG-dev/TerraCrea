@@ -17,6 +17,7 @@ import { useAuth } from "../hooks/useAuth";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
 import { useEmailConfirmationHandler } from "../utils/emailConfirmationHandler";
+import { validateCredentials } from "../utils/userUtils";
 
 const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
 
@@ -69,13 +70,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   const handleSubmit = async () => {
     setLocalError(null); // Effacer les erreurs précédentes
 
-    // Validation des credentials avant envoi
-    const validation = validateCredentials(email, password);
-
+    // Validation des champs requis
     if (!email.trim() || !password.trim()) {
       setLocalError("Veuillez remplir tous les champs requis");
       return;
     }
+
+    // Validation des credentials avec la fonction utilitaire
+    const validation = validateCredentials(email, password);
 
     if (!validation.emailFormat) {
       setLocalError("Format d'email invalide. Exemple: nom@domaine.com");

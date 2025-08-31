@@ -4,6 +4,28 @@ import { User, ArtisanProfile } from "../types/User";
  * Utilitaires pour gérer les rôles et capacités utilisateur
  */
 
+// Validation des credentials de connexion
+export interface CredentialValidation {
+  emailFormat: boolean;
+  passwordLength: boolean;
+  isValid: boolean;
+}
+
+export const validateCredentials = (
+  email: string,
+  password: string
+): CredentialValidation => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailFormat = emailRegex.test(email.trim());
+  const passwordLength = password.length >= 6;
+
+  return {
+    emailFormat,
+    passwordLength,
+    isValid: emailFormat && passwordLength,
+  };
+};
+
 // Vérifications de rôles
 export const isArtisan = (user: User | null): boolean => {
   return user?.isArtisan === true;

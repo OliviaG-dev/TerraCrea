@@ -231,29 +231,14 @@ export class AuthService {
         };
       }
 
-      // Debug: Afficher les données de connexion (sans le mot de passe)
-      console.log("🔍 Tentative de connexion avec:", {
-        email: email.trim(),
-        passwordLength: password.length,
-        hasPassword: !!password,
-        emailValid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
-      });
-
       // Essayer d'abord la connexion normale
       let { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
       });
 
-      // Debug: Afficher les détails de l'erreur
       if (error) {
-        console.log("❌ Erreur de connexion détaillée:", {
-          status: error.status,
-          statusCode: error.statusCode,
-          message: error.message,
-          code: error.code,
-          details: error,
-        });
+        // Erreur de connexion
       }
 
       // Si la connexion par mot de passe échoue, essayer avec OTP

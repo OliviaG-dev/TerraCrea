@@ -250,7 +250,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center", // Centre le bouton dans le conteneur
-    zIndex: 1000,
+    zIndex: 999, // Inférieur aux floating buttons
+    pointerEvents: "box-none", // Permet aux touches de passer à travers le conteneur
   },
   exploreButton: {
     backgroundColor: "#4a5c4a",

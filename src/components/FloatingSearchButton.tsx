@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 30,
     left: 20,
-    zIndex: 1000,
+    zIndex: 1001,
   },
   button: {
     width: 56,

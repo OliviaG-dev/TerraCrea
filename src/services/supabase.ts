@@ -11,12 +11,6 @@ if (!supabaseUrl || !supabaseKey) {
   );
 }
 
-// Debug: Afficher la configuration Supabase (masquer une partie de la clé)
-console.log("🔧 Configuration Supabase:", {
-  url: supabaseUrl,
-  keyLength: supabaseKey.length,
-  keyPrefix: supabaseKey.substring(0, 20) + "...",
-  keyValid: supabaseKey.startsWith("eyJ") && supabaseKey.length > 100,
-});
+// Configuration Supabase validée
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
