@@ -13,6 +13,13 @@ import {
   FlatList,
   Platform,
 } from "react-native";
+
+// Déclaration TypeScript pour les APIs DOM sur web
+declare global {
+  interface Window {
+    document: any;
+  }
+}
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { NotificationToast } from "../components/NotificationToast";
@@ -82,16 +89,50 @@ export const EditCreationScreen = () => {
   }, []);
 
   const handleAddPhoto = async () => {
-    // Vérifier si nous sommes sur le web
+    // Gestion spécifique pour le web
     if (Platform.OS === "web") {
-      setNotification({
-        visible: true,
-        title: "⚠️ Fonctionnalité limitée",
-        message:
-          "La sélection de photo n'est pas disponible sur le web. Veuillez tester sur un appareil mobile.",
-        type: "warning",
-      });
-      return;
+      try {
+        // Sur le web, on utilise l'input file HTML natif
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+
+        input.onchange = (event: any) => {
+          const file = event.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e: any) => {
+              const imageUri = e.target.result;
+              setForm((prev) => ({
+                ...prev,
+                photo: imageUri,
+              }));
+              setHasNewPhoto(true);
+
+              setNotification({
+                visible: true,
+                title: form.photo ? "✅ Photo changée" : "✅ Photo ajoutée",
+                message: form.photo
+                  ? "Votre photo a été changée avec succès"
+                  : "Votre photo a été ajoutée avec succès",
+                type: "success",
+              });
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+        input.click();
+        return;
+      } catch (error) {
+        setNotification({
+          visible: true,
+          title: "❌ Erreur Web",
+          message:
+            "Impossible de sélectionner la photo sur le web. Essayez avec un navigateur moderne.",
+          type: "error",
+        });
+        return;
+      }
     }
 
     try {
@@ -121,32 +162,43 @@ export const EditCreationScreen = () => {
         return;
       }
 
+      // Message différent selon si on ajoute ou change une photo
+      const actionMessage = form.photo
+        ? "Changer la photo..."
+        : "Sélection de la photo...";
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
+        allowsMultipleSelection: false,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const newPhotoUri = result.assets[0].uri;
         setForm((prev) => ({
           ...prev,
-          photo: result.assets[0].uri,
+          photo: newPhotoUri,
         }));
         setHasNewPhoto(true);
+
         setNotification({
           visible: true,
-          title: "✅ Photo sélectionnée",
-          message: "Votre photo a été sélectionnée avec succès",
+          title: form.photo ? "✅ Photo changée" : "✅ Photo ajoutée",
+          message: form.photo
+            ? "Votre photo a été changée avec succès"
+            : "Votre photo a été ajoutée avec succès",
           type: "success",
         });
       }
     } catch (error) {
+      console.error("Erreur lors de la sélection de photo:", error);
       setNotification({
         visible: true,
         title: "❌ Erreur",
         message:
-          "Impossible d'accéder à la galerie. Veuillez vérifier les permissions.",
+          "Impossible d'accéder à la galerie. Veuillez vérifier les permissions et réessayer.",
         type: "error",
       });
     }
@@ -352,11 +404,9 @@ export const EditCreationScreen = () => {
         {/* Photo */}
         <View style={styles.photoSection}>
           <Text style={styles.sectionTitle}>Photo de la création</Text>
-          <TouchableOpacity
-            style={styles.photoContainer}
-            onPress={handleAddPhoto}
-          >
-            {form.photo ? (
+
+          {form.photo ? (
+            <View style={styles.photoContainer}>
               <View style={styles.photoPreview}>
                 <Image source={{ uri: form.photo }} style={styles.photo} />
                 <TouchableOpacity
@@ -366,15 +416,32 @@ export const EditCreationScreen = () => {
                   <Text style={styles.removePhotoText}>×</Text>
                 </TouchableOpacity>
               </View>
-            ) : (
+
+              {/* Boutons d'action pour photo existante */}
+              <View style={styles.photoActions}>
+                <TouchableOpacity
+                  style={styles.changePhotoButton}
+                  onPress={handleAddPhoto}
+                >
+                  <Text style={styles.changePhotoText}>
+                    📷 Changer la photo
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.photoContainer}
+              onPress={handleAddPhoto}
+            >
               <View style={styles.photoPlaceholder}>
                 <Text style={styles.photoPlaceholderText}>📷</Text>
                 <Text style={styles.photoPlaceholderSubtext}>
                   Ajouter une photo
                 </Text>
               </View>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Titre */}
@@ -681,15 +748,15 @@ const styles = StyleSheet.create({
   },
   photoContainer: {
     width: "100%",
-    height: 200,
     borderRadius: 12,
-    overflow: "hidden",
     backgroundColor: "#f5f5f5",
   },
   photoPreview: {
     width: "100%",
-    height: "100%",
+    height: 200,
     position: "relative",
+    borderRadius: 12,
+    overflow: "hidden",
   },
   photo: {
     width: "100%",
@@ -714,10 +781,11 @@ const styles = StyleSheet.create({
   },
   photoPlaceholder: {
     width: "100%",
-    height: "100%",
+    height: 200,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f5f5f5",
+    borderRadius: 12,
   },
   photoPlaceholderText: {
     fontSize: 48,
@@ -726,6 +794,29 @@ const styles = StyleSheet.create({
   photoPlaceholderSubtext: {
     fontSize: 16,
     color: "#7a8a7a",
+    fontFamily: "System",
+  },
+  photoActions: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#e8e9e8",
+  },
+  changePhotoButton: {
+    backgroundColor: "#4a5c4a",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  changePhotoText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
     fontFamily: "System",
   },
   inputSection: {

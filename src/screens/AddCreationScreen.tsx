@@ -10,6 +10,7 @@ import {
   Image,
   Modal,
   FlatList,
+  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useUserContext } from "../context/UserContext";
@@ -176,6 +177,44 @@ export const AddCreationScreen = () => {
   }, []);
 
   const handleAddPhoto = async () => {
+    // Gestion spécifique pour le web
+    if (Platform.OS === "web") {
+      try {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+
+        input.onchange = (event: any) => {
+          const file = event.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e: any) => {
+              const imageUri = e.target.result;
+              setForm((prev) => ({ ...prev, photo: imageUri }));
+              setNotification({
+                visible: true,
+                title: "✅ Photo ajoutée !",
+                message: "Votre photo a été ajoutée avec succès",
+                type: "success",
+              });
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+        input.click();
+        return;
+      } catch (error) {
+        setNotification({
+          visible: true,
+          title: "❌ Erreur Web",
+          message: "Impossible de sélectionner la photo sur le web.",
+          type: "error",
+        });
+        return;
+      }
+    }
+
+    // Code mobile (existant)
     try {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
