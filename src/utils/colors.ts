@@ -9,8 +9,8 @@ export const COLORS = {
   success: "#22c55e", // Vert pour les succès
   warning: "#f59e0b", // Orange pour les avertissements
 
-  // Couleur rouge pâle et harmonieuse avec la charte
-  danger: "#e11d48", // Rouge pâle et doux
+  // Couleur corail douce mais visible, harmonieuse avec la charte
+  danger: "#ef4444", // Corail doux mais suffisamment contrasté
 
   // Couleurs neutres
   white: "#fff",
@@ -31,7 +31,7 @@ export const COLORS = {
 
   // Couleurs de bordure
   border: "#e8e9e8",
-  borderError: "#dc2626",
+  borderError: "#ef4444", // Cohérent avec la nouvelle couleur danger
 
   // Couleurs d'overlay
   overlay: "rgba(0, 0, 0, 0.5)",

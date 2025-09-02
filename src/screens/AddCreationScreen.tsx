@@ -61,6 +61,9 @@ export const AddCreationScreen = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showMaterialsModal, setShowMaterialsModal] = useState(false);
   const [showTagsModal, setShowTagsModal] = useState(false);
+  const [showImageSourceModal, setShowImageSourceModal] = useState(false);
+  const [showUrlModal, setShowUrlModal] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
 
   // État pour les catégories depuis la base de données
   const [categories, setCategories] = useState<{ id: string; label: string }[]>(
@@ -158,6 +161,67 @@ export const AddCreationScreen = () => {
 
   const [materialInput, setMaterialInput] = useState("");
   const [tagInput, setTagInput] = useState("");
+
+  const validateImageUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      // Vérifier que l'URL finit par une extension d'image
+      const imageExtensions = [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".bmp",
+        ".webp",
+      ];
+      const urlLower = url.toLowerCase();
+      return (
+        imageExtensions.some((ext) => urlLower.includes(ext)) ||
+        urlLower.includes("image") ||
+        urlLower.includes("photo") ||
+        urlLower.includes("img")
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const handleImageFromUrl = () => {
+    if (!imageUrl.trim()) {
+      setNotification({
+        visible: true,
+        title: "⚠️ URL requise",
+        message: "Veuillez entrer une URL d'image",
+        type: "warning",
+      });
+      return;
+    }
+
+    if (!validateImageUrl(imageUrl)) {
+      setNotification({
+        visible: true,
+        title: "⚠️ URL invalide",
+        message: "Veuillez entrer une URL d'image valide",
+        type: "warning",
+      });
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, photo: imageUrl }));
+    setNotification({
+      visible: true,
+      title: "✅ Image ajoutée !",
+      message: "Votre image a été ajoutée depuis l'URL",
+      type: "success",
+    });
+    setImageUrl("");
+    setShowUrlModal(false);
+    setShowImageSourceModal(false);
+  };
+
+  const handleImageSourceSelection = () => {
+    setShowImageSourceModal(true);
+  };
 
   // Charger les catégories depuis la base de données
   useEffect(() => {
@@ -299,11 +363,20 @@ export const AddCreationScreen = () => {
 
       if (form.photo && !form.photo.includes("supabase.co")) {
         try {
-          const fileName = `creation_${Date.now()}.jpg`;
-          imageUrl = await CreationsApi.uploadCreationImage(
-            form.photo,
-            fileName
-          );
+          // Si c'est une URL externe, l'utiliser directement
+          if (
+            form.photo.startsWith("http://") ||
+            form.photo.startsWith("https://")
+          ) {
+            imageUrl = form.photo;
+          } else {
+            // Sinon, uploader l'image locale
+            const fileName = `creation_${Date.now()}.jpg`;
+            imageUrl = await CreationsApi.uploadCreationImage(
+              form.photo,
+              fileName
+            );
+          }
         } catch (uploadError) {
           imageUrl = null;
         }
@@ -338,7 +411,11 @@ export const AddCreationScreen = () => {
 
       let successMessage = "Votre création a été ajoutée avec succès";
       if (imageUrl) {
-        successMessage += " (avec image)";
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+          successMessage += " (avec image depuis URL)";
+        } else {
+          successMessage += " (avec image uploadée)";
+        }
       } else if (form.photo && !form.photo.includes("supabase.co")) {
         successMessage += " (sans image - upload échoué)";
       }
@@ -505,7 +582,7 @@ export const AddCreationScreen = () => {
           ) : (
             <TouchableOpacity
               style={styles.addPhotoButton}
-              onPress={handleAddPhoto}
+              onPress={handleImageSourceSelection}
             >
               <Text style={styles.addPhotoText}>📷 Ajouter une photo</Text>
             </TouchableOpacity>
@@ -750,6 +827,109 @@ export const AddCreationScreen = () => {
                 </TouchableOpacity>
               )}
             />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modale de sélection de source d'image */}
+      <Modal
+        visible={showImageSourceModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowImageSourceModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Ajouter une photo</Text>
+              <TouchableOpacity
+                onPress={() => setShowImageSourceModal(false)}
+                style={styles.modalCloseButton}
+              >
+                <Text style={styles.modalCloseText}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.imageSourceContainer}>
+              <TouchableOpacity
+                style={styles.imageSourceButton}
+                onPress={() => {
+                  setShowImageSourceModal(false);
+                  handleAddPhoto();
+                }}
+              >
+                <Text style={styles.imageSourceIcon}>📷</Text>
+                <Text style={styles.imageSourceText}>Galerie</Text>
+                <Text style={styles.imageSourceSubtext}>
+                  Choisir depuis vos photos
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.imageSourceButton}
+                onPress={() => {
+                  setShowImageSourceModal(false);
+                  setShowUrlModal(true);
+                }}
+              >
+                <Text style={styles.imageSourceIcon}>🔗</Text>
+                <Text style={styles.imageSourceText}>URL</Text>
+                <Text style={styles.imageSourceSubtext}>
+                  Entrer un lien d'image
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modale pour entrer une URL d'image */}
+      <Modal
+        visible={showUrlModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowUrlModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Ajouter depuis une URL</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowUrlModal(false);
+                  setImageUrl("");
+                }}
+                style={styles.modalCloseButton}
+              >
+                <Text style={styles.modalCloseText}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.urlInputContainer}>
+              <CommonInput
+                label="URL de l'image"
+                value={imageUrl}
+                onChangeText={setImageUrl}
+                placeholder="https://example.com/image.jpg"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <View style={styles.urlButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.urlButton, styles.urlButtonCancel]}
+                  onPress={() => {
+                    setShowUrlModal(false);
+                    setImageUrl("");
+                  }}
+                >
+                  <Text style={styles.urlButtonTextCancel}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.urlButton, styles.urlButtonConfirm]}
+                  onPress={handleImageFromUrl}
+                >
+                  <Text style={styles.urlButtonTextConfirm}>Ajouter</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1010,6 +1190,77 @@ const styles = StyleSheet.create({
   modalItemCheck: {
     fontSize: 16,
     color: "#4a5c4a",
+    fontWeight: "600",
+    fontFamily: "System",
+  },
+  imageSourceContainer: {
+    padding: 20,
+    gap: 16,
+  },
+  imageSourceButton: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e8e9e8",
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  imageSourceIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  imageSourceText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4a5c4a",
+    fontFamily: "System",
+    marginBottom: 4,
+  },
+  imageSourceSubtext: {
+    fontSize: 14,
+    color: "#7a8a7a",
+    fontFamily: "System",
+    textAlign: "center",
+  },
+  urlInputContainer: {
+    padding: 20,
+  },
+  urlButtonsContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+  },
+  urlButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  urlButtonCancel: {
+    backgroundColor: "#f5f5f5",
+    borderWidth: 1,
+    borderColor: "#e8e9e8",
+  },
+  urlButtonConfirm: {
+    backgroundColor: "#4a5c4a",
+  },
+  urlButtonTextCancel: {
+    fontSize: 16,
+    color: "#7a8a7a",
+    fontWeight: "500",
+    fontFamily: "System",
+  },
+  urlButtonTextConfirm: {
+    fontSize: 16,
+    color: "#fff",
     fontWeight: "600",
     fontFamily: "System",
   },

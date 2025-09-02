@@ -238,6 +238,14 @@ export class CreationsApi {
     fileName: string
   ): Promise<string> => {
     try {
+      // Si c'est une URL externe (commence par http), la retourner directement
+      if (
+        typeof file === "string" &&
+        (file.startsWith("http://") || file.startsWith("https://"))
+      ) {
+        return file;
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -251,7 +259,7 @@ export class CreationsApi {
 
       let fileToUpload: File | Blob;
 
-      // Si c'est une URI string (React Native), la convertir en Blob
+      // Si c'est une URI string locale (React Native), la convertir en Blob
       if (typeof file === "string") {
         const response = await fetch(file);
         fileToUpload = await response.blob();

@@ -83,7 +83,9 @@ TerraCréa est une application React Native moderne qui connecte les créateurs 
 - ✅ **Édition en temps réel** des créations existantes
 - ✅ **Validation automatique** des champs obligatoires
 - ✅ **Interface intuitive** pour la gestion du portfolio
-- ✅ **Sélection de photos** avec expo-image-picker
+- ✅ **Sélection de photos multiple** : galerie locale ET URLs externes
+- ✅ **Gestion avancée des images** avec validation d'URLs
+- ✅ **Support CORS** résolu pour les images externes
 - ✅ **Gestion des matériaux** et tags
 - ✅ **Catégorisation** avec labels traduits
 - ✅ **Mise à jour en temps réel** après modifications
@@ -490,7 +492,9 @@ Tous les styles sont centralisés dans `src/utils/commonStyles.ts` :
 - **Édition en temps réel** des créations existantes
 - **Validation automatique** des champs obligatoires
 - **Interface intuitive** pour la gestion du portfolio
-- **Sélection de photos** avec expo-image-picker
+- **Sélection de photos avancée** : galerie locale ET URLs externes
+- **Modales de sélection d'image** avec choix de source
+- **Validation d'URLs d'images** avec détection automatique
 - **Gestion des matériaux** et tags avec modales
 - **Catégorisation** avec labels traduits
 - **Mise à jour en temps réel** après modifications
@@ -710,13 +714,16 @@ npm run test:coverage
 - [ ] **Messagerie** créateur-acheteur
 - [ ] **Géolocalisation** des créateurs locaux
 - [ ] **Notifications push** pour nouveautés et favoris
-- [X] **Reset de mot de passe** par email
+- [x] **Reset de mot de passe** par email
+- [x] **Images par URL** avec gestion CORS optimisée
 - [ ] **Authentification sociale** (Google, Apple)
 - [ ] **Système de commandes** et panier
 - [ ] **Photos multiples** par création
 - [ ] **Gestion de stock** pour les artisans
 - [ ] **Tableau de bord artisan** avec statistiques
 - [ ] **Partage de créations** sur les réseaux sociaux
+- [ ] **Cache d'images** et compression automatique
+- [ ] **Support de formats vidéo** pour les créations
 
 ## 🤝 Contribution
 
