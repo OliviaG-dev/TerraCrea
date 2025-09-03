@@ -44,9 +44,11 @@ const linking = {
     const url = await Linking.getInitialURL();
     return url;
   },
+  // @ts-ignore
   subscribe(listener) {
     // Écouter les liens profonds pendant que l'app est active
-    const onReceiveURL = (event: any) => {
+    // @ts-ignore
+  const onReceiveURL = (event) => {
       listener(event.url);
     };
 
@@ -117,7 +119,9 @@ export default function App() {
     // Fallback en cas d'erreur
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Erreur de chargement: {error?.message || "Erreur inconnue"}</Text>
+        <Text>
+          Erreur de chargement: {(error as any)?.message || "Erreur inconnue"}
+        </Text>
       </View>
     );
   }
