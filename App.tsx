@@ -22,7 +22,7 @@ import {
   handleResetPasswordUrl,
 } from "./src/utils/urlHandler";
 
-// Configuration des liens profonds
+// Configuration des liens profonds - version simplifiée
 const linking = {
   prefixes: ["terracrea://", "http://localhost:19006", "https://yourapp.com"],
   config: {
@@ -38,23 +38,6 @@ const linking = {
       ResetPassword: "reset-password",
       Favorites: "favorites",
     },
-  },
-  getInitialURL: async function () {
-    // Vérifier s'il y a une URL de lancement (liens profonds)
-    const url = await Linking.getInitialURL();
-    return url;
-  },
-  subscribe: function (listener) {
-    // Écouter les liens profonds pendant que l'app est active
-    const onReceiveURL = function (event) {
-      listener(event.url);
-    };
-
-    const subscription = Linking.addEventListener("url", onReceiveURL);
-
-    return function () {
-      subscription?.remove();
-    };
   },
 };
 
