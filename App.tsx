@@ -39,22 +39,20 @@ const linking = {
       Favorites: "favorites",
     },
   },
-  async getInitialURL() {
+  getInitialURL: async function () {
     // Vérifier s'il y a une URL de lancement (liens profonds)
     const url = await Linking.getInitialURL();
     return url;
   },
-  // @ts-ignore
-  subscribe(listener) {
+  subscribe: function (listener: any) {
     // Écouter les liens profonds pendant que l'app est active
-    // @ts-ignore
-    const onReceiveURL = (event) => {
+    const onReceiveURL = function (event: any) {
       listener(event.url);
     };
 
     const subscription = Linking.addEventListener("url", onReceiveURL);
 
-    return () => {
+    return function () {
       subscription?.remove();
     };
   },
