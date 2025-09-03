@@ -1,0 +1,16 @@
+node_modules
+.expo
+.expo-shared
+src
+assets/data
+docs
+scripts/test-helper.js
+vitest.config.ts
+tsconfig.json
+babel.config.js
+webpack.config.js
+*.test.*
+__tests__
+.git
+.gitignore
+README.md

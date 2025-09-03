@@ -12,6 +12,7 @@
     "web": "expo start --web",
     "build:web": "npx expo export:web && node scripts/fix-paths.js",
     "vercel-build": "npx expo export:web && node scripts/fix-paths.js",
+    "serve": "npx serve web-build",
     "check-node": "node -v && npm -v",
     "preinstall": "node -e \"const v=process.versions.node; if(parseInt(v.split('.')[0])<22) throw new Error('Node.js version 22 or higher is required')\"",
     "test": "vitest",

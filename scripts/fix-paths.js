@@ -39,6 +39,11 @@ htmlContent = htmlContent
 // Écrire le fichier corrigé
 fs.writeFileSync(htmlPath, htmlContent, "utf8");
 
+// Créer le fichier _redirects pour le routing SPA
+const redirectsPath = path.join(__dirname, "..", "web-build", "_redirects");
+fs.writeFileSync(redirectsPath, "/*    /index.html   200\n", "utf8");
+console.log("✅ Fichier _redirects créé pour le routing SPA");
+
 // Vérifier le résultat
 const newBackslashCount =
   htmlContent.split('href="\\').length -
