@@ -48,7 +48,7 @@ const linking = {
   subscribe(listener) {
     // Écouter les liens profonds pendant que l'app est active
     // @ts-ignore
-  const onReceiveURL = (event) => {
+    const onReceiveURL = (event) => {
       listener(event.url);
     };
 
