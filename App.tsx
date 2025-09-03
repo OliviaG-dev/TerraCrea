@@ -44,9 +44,9 @@ const linking = {
     const url = await Linking.getInitialURL();
     return url;
   },
-  subscribe: function (listener: any) {
+  subscribe: function (listener) {
     // Écouter les liens profonds pendant que l'app est active
-    const onReceiveURL = function (event: any) {
+    const onReceiveURL = function (event) {
       listener(event.url);
     };
 
