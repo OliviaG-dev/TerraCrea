@@ -2,7 +2,8 @@ import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { Linking, View, Text } from "react-native";
 
-import { NavigationContainer, LinkingOptions } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
+import type { LinkingOptions } from "@react-navigation/native";
 import { UserProvider } from "./src/context/UserContext";
 import { FavoritesProvider } from "./src/context/FavoritesContext";
 import AccessibilityConfig from "./src/utils/accessibilityConfig";
