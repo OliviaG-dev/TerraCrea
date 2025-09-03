@@ -35,26 +35,21 @@ module.exports = async function (env, argv) {
   config.plugins = config.plugins || [];
 
   // Injection des variables d'environnement avec debug
+  const supabaseUrl =
+    process.env.EXPO_PUBLIC_SUPABASE_URL ||
+    "https://tdijehdgocbzrmbgbikl.supabase.co";
+  const supabaseKey =
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkaWplaGRnb2NienJtYmdiaWtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NTk4NDYsImV4cCI6MjA2OTAzNTg0Nn0.NdMnVRafNGfD9z1liixKXrpN7m5V5nvhlnwqtNZnWGs";
+
   console.log("Variables d'environnement détectées:");
-  console.log(
-    "SUPABASE_URL:",
-    process.env.EXPO_PUBLIC_SUPABASE_URL ? "✓ Définie" : "✗ Manquante"
-  );
-  console.log(
-    "SUPABASE_ANON_KEY:",
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? "✓ Définie" : "✗ Manquante"
-  );
+  console.log("SUPABASE_URL:", supabaseUrl ? "✓ Définie" : "✗ Manquante");
+  console.log("SUPABASE_ANON_KEY:", supabaseKey ? "✓ Définie" : "✗ Manquante");
 
   config.plugins.push(
     new webpack.DefinePlugin({
-      "process.env.EXPO_PUBLIC_SUPABASE_URL": JSON.stringify(
-        process.env.EXPO_PUBLIC_SUPABASE_URL ||
-          "https://tdijehdgocbzrmbgbikl.supabase.co"
-      ),
-      "process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY": JSON.stringify(
-        process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkaWplaGRnb2NienJtYmdiaWtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NTk4NDYsImV4cCI6MjA2OTAzNTg0Nn0.NdMnVRafNGfD9z1liixKXrpN7m5V5nvhlnwqtNZnWGs"
-      ),
+      "process.env.EXPO_PUBLIC_SUPABASE_URL": JSON.stringify(supabaseUrl),
+      "process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY": JSON.stringify(supabaseKey),
     })
   );
 
