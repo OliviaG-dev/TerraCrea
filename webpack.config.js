@@ -13,6 +13,11 @@ module.exports = async function (env, argv) {
     argv
   );
 
+  // Fix pour les chemins sur serveurs Linux - forcer les slashes avant
+  if (config.output) {
+    config.output.publicPath = "/";
+  }
+
   // Configuration des polyfills pour résoudre les erreurs crypto
   config.resolve.fallback = {
     ...config.resolve.fallback,
