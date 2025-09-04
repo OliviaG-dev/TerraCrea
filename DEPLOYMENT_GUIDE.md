@@ -7,6 +7,7 @@
 - [x] Configuration Netlify ajoutée (`netlify.toml`)
 - [x] Build web testée et fonctionnelle
 - [x] Variables d'environnement configurées
+- [x] **ERREUR CORRIGÉE** : `react-native-web` installé ✅
 
 ### 2. Étapes de déploiement
 
