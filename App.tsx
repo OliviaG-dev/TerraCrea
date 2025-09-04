@@ -22,8 +22,8 @@ import {
   handleResetPasswordUrl,
 } from "./src/utils/urlHandler";
 
-// Configuration des liens profonds - version simplifiée
-const linking = {
+// Configuration des liens profonds
+const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ["terracrea://", "http://localhost:19006", "https://yourapp.com"],
   config: {
     screens: {
@@ -38,6 +38,23 @@ const linking = {
       ResetPassword: "reset-password",
       Favorites: "favorites",
     },
+  },
+  async getInitialURL() {
+    // Vérifier s'il y a une URL de lancement (liens profonds)
+    const url = await Linking.getInitialURL();
+    return url;
+  },
+  subscribe(listener) {
+    // Écouter les liens profonds pendant que l'app est active
+    const onReceiveURL = ({ url }: { url: string }) => {
+      listener(url);
+    };
+
+    const subscription = Linking.addEventListener("url", onReceiveURL);
+
+    return () => {
+      subscription?.remove();
+    };
   },
 };
 
@@ -101,7 +118,8 @@ export default function App() {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text>
-          Erreur de chargement: {(error as any)?.message || "Erreur inconnue"}
+          Erreur de chargement:{" "}
+          {error instanceof Error ? error.message : "Erreur inconnue"}
         </Text>
       </View>
     );
