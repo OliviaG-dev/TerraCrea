@@ -31,6 +31,20 @@ module.exports = async function (env, argv) {
     path: false,
   };
 
+  // Forcer le mode production si non défini
+  if (!config.mode) {
+    config.mode =
+      process.env.NODE_ENV === "development" ? "development" : "production";
+  }
+
+  // Optimisations pour la production
+  if (config.mode === "production") {
+    config.optimization = {
+      ...config.optimization,
+      minimize: true,
+    };
+  }
+
   // Ajout de plugins pour ignorer les modules Node.js sur le web
   config.plugins = config.plugins || [];
 
@@ -48,6 +62,9 @@ module.exports = async function (env, argv) {
 
   config.plugins.push(
     new webpack.DefinePlugin({
+      "process.env.NODE_ENV": JSON.stringify(
+        process.env.NODE_ENV || "production"
+      ),
       "process.env.EXPO_PUBLIC_SUPABASE_URL": JSON.stringify(supabaseUrl),
       "process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY": JSON.stringify(supabaseKey),
     })

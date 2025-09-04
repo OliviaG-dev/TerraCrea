@@ -93,35 +93,21 @@ const RootNavigator = () => {
 };
 
 export default function App() {
-  // Version simplifiée pour diagnostic
-  try {
-    // Initialiser la configuration d'accessibilité
-    useEffect(() => {
-      try {
-        AccessibilityConfig.configureOverlayAccessibility();
-      } catch (error) {
-        console.log("Erreur AccessibilityConfig:", error);
-      }
-    }, []);
+  // Version simple sans try/catch pour éviter les conflits JSX
+  useEffect(() => {
+    try {
+      AccessibilityConfig.configureOverlayAccessibility();
+    } catch (error) {
+      console.log("Erreur AccessibilityConfig:", error);
+    }
+  }, []);
 
-    return (
-      <UserProvider>
-        <FavoritesProvider>
-          <RootNavigator />
-          <StatusBar style="auto" />
-        </FavoritesProvider>
-      </UserProvider>
-    );
-  } catch (error) {
-    console.error("Erreur dans App.tsx:", error);
-    // Fallback en cas d'erreur
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>
-          Erreur de chargement:{" "}
-          {error instanceof Error ? error.message : "Erreur inconnue"}
-        </Text>
-      </View>
-    );
-  }
+  return (
+    <UserProvider>
+      <FavoritesProvider>
+        <RootNavigator />
+        <StatusBar style="auto" />
+      </FavoritesProvider>
+    </UserProvider>
+  );
 }

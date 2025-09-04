@@ -1,9 +1,10 @@
 [build]
-  publish = "web-build"
+  publish = "dist"
   command = "npm run build:web"
 
 [build.environment]
   NODE_VERSION = "22"
+  NODE_ENV = "production"
 
 [[redirects]]
   from = "/*"

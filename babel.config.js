@@ -1,17 +1,6 @@
 module.exports = function (api) {
-  api.cache(true);
-  const isProduction = api.env("production");
-
+  api.cache.never();
   return {
-    presets: [
-      [
-        "babel-preset-expo",
-        {
-          jsxRuntime: "automatic",
-          jsxImportSource: "react",
-        },
-      ],
-    ],
-    plugins: isProduction ? [] : [],
+    presets: ["babel-preset-expo"],
   };
 };
