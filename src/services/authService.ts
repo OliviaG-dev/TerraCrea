@@ -188,7 +188,9 @@ export class AuthService {
     try {
       // Tenter une récupération de mot de passe pour voir si l'utilisateur existe
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "http://localhost:3000/reset-password",
+        redirectTo: `${
+          process.env.EXPO_PUBLIC_APP_URL || "http://localhost:3000"
+        }/reset-password`,
       });
 
       // Si pas d'erreur ou erreur "Email rate limit", l'utilisateur existe probablement
@@ -198,11 +200,11 @@ export class AuthService {
     }
   }
 
-  // Connexion sans vérification de confirmation obligatoire
+  // Connexion simplifiée sans gestion complexe
   static async signInWithEmailPassword(email: string, password: string) {
     try {
-      // Vérification des données avant envoi
-      if (!email || !password) {
+      // Validation basique
+      if (!email?.trim() || !password?.trim()) {
         return {
           data: { user: null, session: null },
           error: { message: "Email et mot de passe requis" },
@@ -210,9 +212,9 @@ export class AuthService {
         };
       }
 
-      // Vérification du format email
+      // Validation format email simple
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      if (!emailRegex.test(email.trim())) {
         return {
           data: { user: null, session: null },
           error: { message: "Format d'email invalide" },
@@ -220,129 +222,69 @@ export class AuthService {
         };
       }
 
-      // Vérification de la force du mot de passe
-      if (password.length < 6) {
-        return {
-          data: { user: null, session: null },
-          error: {
-            message: "Le mot de passe doit contenir au moins 6 caractères",
-          },
-          needsConfirmation: false,
-        };
-      }
-
-      // Essayer d'abord la connexion normale
-      let { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+      // Connexion directe avec Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
         password: password,
       });
 
       if (error) {
-        // Erreur de connexion
-      }
-
-      // Si la connexion par mot de passe échoue, essayer avec OTP
-      if (error && (error.status === 400 || error.status === 422)) {
-        const { data: otpData, error: otpError } =
-          await supabase.auth.signInWithOtp({
-            email: email.trim(),
-          });
-
-        if (!otpError) {
-          return {
-            data: otpData,
-            error: null,
-            needsConfirmation: false,
-            needsOtp: true,
-          };
-        }
-      }
-
-      // Si erreur 400 avec "Email not confirmed", essayer une approche alternative
-      if (
-        error &&
-        error.status === 400 &&
-        error.message.includes("Email not confirmed")
-      ) {
-        // Essayer de récupérer la session existante
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData.session) {
-          return { data: sessionData, error: null, needsConfirmation: false };
-        }
-      }
-
-      if (error) {
-        // Gestion spécifique des erreurs Supabase
+        // Gestion simplifiée des erreurs
         let errorMessage = "Erreur de connexion";
 
-        if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Email ou mot de passe incorrect";
-        } else if (error.message.includes("Email not confirmed")) {
-          // Permettre la connexion même si l'email n'est pas confirmé
-          return {
-            data,
-            error: null,
-            needsConfirmation: false,
-          };
-        } else if (error.message.includes("Too many requests")) {
-          errorMessage = "Trop de tentatives. Veuillez réessayer plus tard";
-        } else if (isTimeSyncError(error)) {
-          errorMessage = getTimeSyncHelpMessage();
-        } else if (error.status === 400) {
-          // Gestion spécifique de l'erreur 400
-          if (error.message.includes("Email not confirmed")) {
-            return {
-              data,
-              error: null,
-              needsConfirmation: false,
-            };
-          } else if (error.message.includes("Invalid login credentials")) {
+        switch (error.message) {
+          case "Invalid login credentials":
             errorMessage = "Email ou mot de passe incorrect";
-          } else if (error.message.includes("User not found")) {
+            break;
+          case "Email not confirmed":
             errorMessage =
-              "Aucun compte trouvé avec cet email. Vérifiez l'email ou créez un compte.";
-          } else if (error.message.includes("Invalid email")) {
-            errorMessage = "L'email fourni n'est pas valide";
-          } else if (error.message.includes("Password")) {
-            errorMessage =
-              "Le mot de passe ne respecte pas les critères requis (minimum 6 caractères)";
-          } else {
-            errorMessage = `Erreur de connexion (400): ${error.message}. Vérifiez vos informations de connexion.`;
-          }
-        } else if (error.status === 422) {
-          errorMessage =
-            "Données de connexion invalides. Vérifiez votre email et mot de passe.";
-        } else {
-          errorMessage = error.message;
+              "Veuillez confirmer votre email avant de vous connecter";
+            break;
+          case "Too Many Requests":
+            errorMessage = "Trop de tentatives. Veuillez réessayer plus tard";
+            break;
+          default:
+            if (error.message.includes("Invalid login credentials")) {
+              errorMessage = "Email ou mot de passe incorrect";
+            } else if (error.message.includes("User not found")) {
+              errorMessage = "Aucun compte trouvé avec cet email";
+            } else if (error.message.includes("Password")) {
+              errorMessage = "Mot de passe incorrect";
+            } else if (isTimeSyncError(error)) {
+              errorMessage = getTimeSyncHelpMessage();
+            } else {
+              errorMessage = error.message;
+            }
         }
+
+        console.error("Erreur de connexion Supabase:", error);
 
         return {
           data: { user: null, session: null },
-          error: { ...error, message: errorMessage },
+          error: { message: errorMessage, originalError: error },
           needsConfirmation: false,
         };
       }
-      // Ne pas bloquer la connexion si l'email n'est pas confirmé
-      return { data, error: null, needsConfirmation: false };
+
+      // Connexion réussie
+      return {
+        data,
+        error: null,
+        needsConfirmation: false,
+      };
     } catch (error: any) {
-      // Gestion détaillée des erreurs catch
+      console.error("Erreur inattendue lors de la connexion:", error);
+
       let errorMessage = "Erreur inattendue lors de la connexion";
 
       if (error?.name === "NetworkError" || error?.code === "NETWORK_ERROR") {
         errorMessage =
           "Problème de connexion internet. Vérifiez votre connexion.";
-      } else if (
-        error?.name === "TimeoutError" ||
-        error?.message?.includes("timeout")
-      ) {
-        errorMessage = "La connexion a pris trop de temps. Veuillez réessayer.";
       } else if (error?.message?.includes("fetch")) {
         errorMessage =
           "Erreur de connexion au serveur. Vérifiez votre connexion internet.";
-      } else if (error?.message?.includes("CORS")) {
-        errorMessage = "Erreur de configuration réseau. Contactez le support.";
       } else if (error?.message) {
-        errorMessage = `Erreur de connexion: ${error.message}`;
+        errorMessage = `Erreur: ${error.message}`;
       }
 
       return {

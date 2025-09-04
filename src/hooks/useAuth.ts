@@ -100,17 +100,9 @@ export const useAuth = () => {
         };
       }
 
+      console.log("Tentative de connexion pour:", email.trim());
       const result = await AuthService.signInWithEmailPassword(email, password);
-
-      // Gestion de l'OTP
-      if (result.needsOtp) {
-        const message = "Un lien de connexion a été envoyé à votre email";
-        return {
-          success: false,
-          error: message,
-          needsOtp: true,
-        };
-      }
+      console.log("Résultat de la connexion:", result);
 
       // Gestion des erreurs avec messages détaillés
       if (result.error) {
