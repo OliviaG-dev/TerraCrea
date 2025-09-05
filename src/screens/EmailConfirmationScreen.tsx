@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Linking,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { AuthService } from "../services/authService";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useEmailConfirmationHandler } from "../utils/emailConfirmationHandler";
 import { COLORS } from "../utils/colors";
+import { useToast } from "../context/ToastContext";
 
 type EmailConfirmationScreenProps = {
   route: {
@@ -25,7 +19,8 @@ export const EmailConfirmationScreen = ({
   route,
 }: EmailConfirmationScreenProps) => {
   const navigation = useNavigation<ScreenNavigationProp<"EmailConfirmation">>();
-  
+  const { showError, showSuccess } = useToast();
+
   const { email } = route.params;
 
   // Utiliser le handler de confirmation d'email sur cet écran
@@ -51,31 +46,11 @@ export const EmailConfirmationScreen = ({
   const handleResendEmail = async () => {
     const { error } = await AuthService.resendConfirmation(email);
     if (error) {
-      Alert.alert("Erreur", "Impossible de renvoyer l'email");
+      showError("Impossible de renvoyer l'email");
     } else {
-      Alert.alert("Email renvoyé", "Vérifiez votre boîte de réception");
+      showSuccess("Email renvoyé ! Vérifiez votre boîte de réception");
       setCanResend(false);
       setCountdown(60);
-    }
-  };
-
-  const openEmailApp = async () => {
-    // Tenter d'ouvrir l'app email par défaut
-    const emailUrls = [
-      "message://", // iOS Mail
-      "mailto:", // Email générique
-    ];
-
-    for (const url of emailUrls) {
-      try {
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-          await Linking.openURL(url);
-          break;
-        }
-      } catch (error) {
-        // Gestion silencieuse de l'erreur
-      }
     }
   };
 
@@ -114,18 +89,6 @@ export const EmailConfirmationScreen = ({
       marginBottom: 32,
       lineHeight: 20,
     },
-    emailButton: {
-      backgroundColor: COLORS.primary,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 8,
-      marginBottom: 16,
-    },
-    emailButtonText: {
-      color: COLORS.textOnPrimary,
-      fontSize: 16,
-      fontWeight: "600",
-    },
     resendText: {
       color: COLORS.primary,
       fontSize: 14,
@@ -155,13 +118,6 @@ export const EmailConfirmationScreen = ({
         <Text style={dynamicStyles.instructions}>
           Cliquez sur le lien dans l'email pour activer votre compte.
         </Text>
-
-        <TouchableOpacity
-          style={dynamicStyles.emailButton}
-          onPress={openEmailApp}
-        >
-          <Text style={dynamicStyles.emailButtonText}>Ouvrir l'app Email</Text>
-        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.resendButton, !canResend && styles.disabledButton]}

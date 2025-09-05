@@ -5,19 +5,19 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { CommonInput, CommonButton, ErrorDisplay } from "../components";
+import { CommonInput, CommonButton } from "../components";
 import { useAuth } from "../hooks/useAuth";
 import { ScreenNavigationProp } from "../types/Navigation";
 import { useUserContext } from "../context/UserContext";
 import { useEmailConfirmationHandler } from "../utils/emailConfirmationHandler";
 import { validateCredentials } from "../utils/userUtils";
+import { useToast } from "../context/ToastContext";
 
 const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
 
@@ -36,8 +36,9 @@ type LoginScreenProps = {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { signIn, signUp, error: authError } = useAuth();
+  const { signIn, signUp } = useAuth();
   const { user, isAuthenticated } = useUserContext();
+  const { showError, showSuccess, showInfo } = useToast();
 
   // Utiliser le handler de confirmation d'email seulement sur cet écran
   useEmailConfirmationHandler();
@@ -47,7 +48,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   const [lastName, setLastName] = useState("");
   const [isSignUp, setIsSignUp] = useState(route.params?.mode === "signup");
   const [loading, setLoading] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
@@ -55,12 +55,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
     setPassword("");
     setFirstName("");
     setLastName("");
-    setLocalError(null); // Effacer les erreurs quand on change de mode
-  };
-
-  const handleRetry = () => {
-    setLocalError(null);
-    handleSubmit();
   };
 
   const handleClose = () => {
@@ -68,11 +62,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    setLocalError(null); // Effacer les erreurs précédentes
-
     // Validation des champs requis
     if (!email.trim() || !password.trim()) {
-      setLocalError("Veuillez remplir tous les champs requis");
+      showError("Veuillez remplir tous les champs requis");
       return;
     }
 
@@ -80,20 +72,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
     const validation = validateCredentials(email, password);
 
     if (!validation.emailFormat) {
-      setLocalError("Format d'email invalide. Exemple: nom@domaine.com");
+      showError("Format d'email invalide. Exemple: nom@domaine.com");
       return;
     }
 
     if (!validation.passwordLength) {
-      setLocalError("Le mot de passe doit contenir au moins 6 caractères");
+      showError("Le mot de passe doit contenir au moins 6 caractères");
       return;
     }
 
     // Validation supplémentaire pour l'inscription
     if (isSignUp && (!firstName.trim() || !lastName.trim())) {
-      setLocalError("Veuillez remplir votre prénom et nom");
+      showError("Veuillez remplir votre prénom et nom");
       return;
     }
+
+    console.log("Mode actuel:", isSignUp ? "Inscription" : "Connexion");
+    console.log("Email:", email, "Password length:", password.length);
 
     setLoading(true);
     try {
@@ -107,20 +102,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
         if (result?.needsConfirmation) {
           // Rediriger vers l'écran de confirmation
           navigation.navigate("EmailConfirmation", { email });
-          Alert.alert(
-            "Email envoyé !",
-            "Un email de confirmation a été envoyé à votre adresse. Vérifiez votre boîte de réception.",
-            [{ text: "OK" }]
+          showInfo(
+            "Un email de confirmation a été envoyé à votre adresse. Vérifiez votre boîte de réception."
           );
         } else if (result?.error) {
-          setLocalError(result.error);
+          showError(result.error);
         } else if (result?.success) {
           // Inscription réussie sans confirmation nécessaire
-          Alert.alert(
-            "Inscription réussie !",
-            "Votre compte a été créé avec succès.",
-            [{ text: "OK", onPress: () => navigation.navigate("Home") }]
-          );
+          showSuccess("Votre compte a été créé avec succès.");
+          setTimeout(() => navigation.navigate("Home"), 1000);
         }
       } else {
         const result = await signIn(email, password);
@@ -128,23 +118,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
         if (result?.needsConfirmation) {
           // Rediriger vers l'écran de confirmation
           navigation.navigate("EmailConfirmation", { email });
-          Alert.alert(
-            "Email requis !",
-            "Veuillez confirmer votre email avant de vous connecter.",
-            [{ text: "OK" }]
-          );
+          showInfo("Veuillez confirmer votre email avant de vous connecter.");
         } else if (result?.error) {
-          // Utiliser le composant ErrorDisplay au lieu d'Alert
-          setLocalError(result.error);
+          showError(result.error);
         } else if (result?.success) {
           // Connexion réussie - redirection directe
-          navigation.navigate("Home");
+          showSuccess("Connexion réussie !");
+          setTimeout(() => navigation.navigate("Home"), 800);
         }
       }
     } catch (error) {
-      setLocalError(
-        "Une erreur inattendue s'est produite. Veuillez réessayer."
-      );
+      showError("Une erreur inattendue s'est produite. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -171,13 +155,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ route }) => {
               : "Accédez à votre compte pour découvrir des créations artisanales"}
           </Text>
         </View>
-
-        {/* Error Display */}
-        <ErrorDisplay
-          error={localError || authError}
-          onRetry={handleRetry}
-          onDismiss={() => setLocalError(null)}
-        />
 
         {/* Form */}
         <View style={styles.formContainer}>

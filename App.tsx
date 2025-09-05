@@ -5,6 +5,7 @@ import { Linking, View, Text } from "react-native";
 import { NavigationContainer, LinkingOptions } from "@react-navigation/native";
 import { UserProvider } from "./src/context/UserContext";
 import { FavoritesProvider } from "./src/context/FavoritesContext";
+import { ToastProvider } from "./src/context/ToastContext";
 import AccessibilityConfig from "./src/utils/accessibilityConfig";
 import {
   useEmailConfirmationHandler,
@@ -105,8 +106,10 @@ export default function App() {
   return (
     <UserProvider>
       <FavoritesProvider>
-        <RootNavigator />
-        <StatusBar style="auto" />
+        <ToastProvider>
+          <RootNavigator />
+          <StatusBar style="auto" />
+        </ToastProvider>
       </FavoritesProvider>
     </UserProvider>
   );

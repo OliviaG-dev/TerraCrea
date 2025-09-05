@@ -53,6 +53,8 @@ export class AuthService {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    console.log("Statut de l'utilisateur:", user);
+    console.log("Email confirmé à:", user?.email_confirmed_at);
     return user?.email_confirmed_at ? true : false;
   }
 
@@ -222,11 +224,17 @@ export class AuthService {
         };
       }
 
+      // Vérifier d'abord le statut de l'utilisateur
+      console.log("Tentative de connexion pour:", email.trim().toLowerCase());
+
       // Connexion directe avec Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password: password,
       });
+
+      console.log("Données de connexion:", data);
+      console.log("Erreur de connexion:", error);
 
       if (error) {
         // Gestion simplifiée des erreurs
@@ -237,8 +245,27 @@ export class AuthService {
             errorMessage = "Email ou mot de passe incorrect";
             break;
           case "Email not confirmed":
-            errorMessage =
-              "Veuillez confirmer votre email avant de vous connecter";
+            // Essayons de vérifier le statut réel
+            console.log("Email marqué comme non confirmé, vérification...");
+            try {
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
+              if (user?.email_confirmed_at) {
+                console.log(
+                  "Email actuellement confirmé à:",
+                  user.email_confirmed_at
+                );
+                errorMessage =
+                  "Problème de synchronisation. Veuillez réessayer dans quelques secondes.";
+              } else {
+                errorMessage =
+                  "Veuillez confirmer votre email avant de vous connecter";
+              }
+            } catch {
+              errorMessage =
+                "Veuillez confirmer votre email avant de vous connecter";
+            }
             break;
           case "Too Many Requests":
             errorMessage = "Trop de tentatives. Veuillez réessayer plus tard";
